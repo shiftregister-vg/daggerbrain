@@ -15,13 +15,11 @@
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { getCampaignContext } from '$lib/state/campaign.svelte';
 	import { cn } from '$lib/utils';
-	import { api } from '@convex/_generated/api';
-	import { useConvexClient } from 'convex-svelte';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import { toast } from 'svelte-sonner';
+	import { deleteApi, patchApi } from '$lib/api/client';
 
 	const campaignCtx = getCampaignContext();
-	const convexClient = useConvexClient();
 	const isGM = $derived(campaignCtx.isGm);
 
 	let showSettingsDialog = $state(false);
@@ -66,8 +64,7 @@
 			campaignCtx.campaign.fear_visible_to_players = fearVisibleToPlayers;
 
 			if (displayName.trim() !== (campaignCtx.userMembership?.display_name ?? '')) {
-				await convexClient.mutation(api.functions.campaigns.changeDisplayName, {
-					campaign_id: campaignCtx.id,
+				await patchApi<void>(`/campaigns/${campaignCtx.id}/display-name`, {
 					display_name: displayName.trim()
 				});
 			}
@@ -86,8 +83,7 @@
 
 		isSaving = true;
 		try {
-			await convexClient.mutation(api.functions.campaigns.changeDisplayName, {
-				campaign_id: campaignCtx.id,
+			await patchApi<void>(`/campaigns/${campaignCtx.id}/display-name`, {
 				display_name: displayName.trim()
 			});
 			showPlayerSettingsDialog = false;
@@ -103,7 +99,7 @@
 		if (!campaignCtx.id) return;
 
 		try {
-			await convexClient.mutation(api.functions.campaigns.remove, { id: campaignCtx.id });
+			await deleteApi<void>(`/campaigns/${campaignCtx.id}`);
 			goto('/campaigns');
 		} catch (error) {
 			console.error('Failed to delete campaign', error);
@@ -117,7 +113,7 @@
 
 		isLeaving = true;
 		try {
-			await convexClient.mutation(api.functions.campaigns.leave, { id: campaignCtx.id });
+			await patchApi<void>(`/campaigns/${campaignCtx.id}/leave`, {});
 			goto('/campaigns');
 		} catch (error) {
 			console.error('Failed to leave campaign', error);

@@ -35,7 +35,7 @@ const imageDataSchema = z
 
 export const upload_user_image = command(imageDataSchema, async ({ data, name, type }) => {
 	const event = getRequestEvent();
-	const auth_result = require_auth(event);
+	const auth_result = await require_auth(event);
 	if (is_failure(auth_result)) {
 		return auth_result;
 	}

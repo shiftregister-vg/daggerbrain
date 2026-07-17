@@ -2,7 +2,7 @@
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog/';
 	import * as Collapsible from '$lib/components/ui/collapsible/';
-	import { cn, renderMarkdown } from '$lib/utils';
+	import { cn, compareAlpha, renderMarkdown, sortEntriesByTitle } from '$lib/utils';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import ClassSummary from './class-summary.svelte';
 	import SubclassCard from '$lib/components/compendium-items/cards/subclass-card.svelte';
@@ -25,7 +25,7 @@
 		derived_character_data?.secondary_class_mastery_level ?? 0
 	);
 	const classEntries = $derived(
-		Object.entries(compendium?.classes ?? {}) as [string, CharacterClass][]
+		sortEntriesByTitle(Object.entries(compendium?.classes ?? {}) as [string, CharacterClass][])
 	);
 
 	const secondarySubclassOptions = $derived.by(() => {
@@ -35,7 +35,8 @@
 			.filter(
 				(entry): entry is { id: typeof entry.id; subclass: NonNullable<typeof entry.subclass> } =>
 					Boolean(entry.subclass)
-			);
+			)
+			.sort((left, right) => compareAlpha(left.subclass.title, right.subclass.title));
 	});
 
 	let secondary_class_dialog_open = $state(false);

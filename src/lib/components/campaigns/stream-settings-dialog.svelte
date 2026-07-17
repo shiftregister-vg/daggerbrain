@@ -8,14 +8,14 @@
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 	import { cn } from '$lib/utils';
-	import { api } from '@convex/_generated/api';
 	import type { Id } from '@convex/_generated/dataModel';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Eye from '@lucide/svelte/icons/eye';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
-	import { useConvexClient, useQuery } from 'convex-svelte';
 	import { toast } from 'svelte-sonner';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { getApi, patchApi } from '$lib/api/client';
 
 	let {
 		open = $bindable(false),
@@ -25,10 +25,21 @@
 		campaignId: Id<'campaigns'>;
 	} = $props();
 
-	const convexClient = useConvexClient();
 	const clipboard = new UseClipboard({ delay: 1200 });
-	const streamOverlayQuery = useQuery(api.functions.streamOverlays.getForCampaign, () =>
-		campaignId ? { campaign_id: campaignId } : 'skip'
+	const streamOverlayQuery = createApiResource<{
+		token: string;
+		enabled: boolean;
+		modules: { fear: boolean; countdowns: boolean };
+		settings: {
+			fear: { showLabel?: boolean };
+			countdowns: { groupWithFear?: boolean };
+		};
+		layout: {
+			fear?: { x?: number; y?: number; scale?: number };
+			countdowns?: { x?: number; y?: number; scale?: number };
+		};
+	} | null>(
+		async () => (campaignId ? await getApi(`/campaigns/${campaignId}/stream`) : null)
 	);
 	const streamOverlay = $derived(streamOverlayQuery.data ?? null);
 
@@ -135,7 +146,7 @@
 
 		settingsSave = settingsSave
 			.catch(() => {})
-			.then(() => convexClient.mutation(api.functions.streamOverlays.updateSettings, settings))
+			.then(() => patchApi(`/campaigns/${campaignId}/stream`, settings))
 			.catch((error) => {
 				console.error('Failed to save stream settings', error);
 				toast.error('Failed to save stream settings');
@@ -147,8 +158,24 @@
 
 		isGeneratingOverlay = true;
 		try {
-			const result = await convexClient.mutation(api.functions.streamOverlays.createOrRotate, {
-				campaign_id: campaignId
+			const result = await patchApi<{ token: string }>(`/campaigns/${campaignId}/stream`, {
+				enabled: true,
+				modules: {
+					fear: overlayFear,
+					countdowns: overlayCountdowns
+				},
+				settings: {
+					fear: { showLabel: overlayFearShowLabel },
+					countdowns: { groupWithFear: overlayCountdownsGroupWithFear }
+				},
+				layout: {
+					fear: { x: overlayFearX, y: overlayFearY, scale: overlayFearScale },
+					countdowns: {
+						x: overlayCountdownsX,
+						y: overlayCountdownsY,
+						scale: overlayCountdownsScale
+					}
+				}
 			});
 			overlayUrl = createOverlayUrl(result.token);
 			generatedOverlay = true;

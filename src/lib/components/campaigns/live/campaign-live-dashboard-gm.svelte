@@ -19,23 +19,21 @@
 	import { getCampaignContext } from '$lib/state/campaign.svelte';
 	import { getLocalstorageContext } from '$lib/state/localstorage.svelte';
 	import { cn } from '$lib/utils';
-	import { api } from '@convex/_generated/api';
 	import Box from '@lucide/svelte/icons/box';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import Hourglass from '@lucide/svelte/icons/hourglass';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Settings from '@lucide/svelte/icons/settings';
 	import TvMinimalPlay from '@lucide/svelte/icons/tv-minimal-play';
-	import { useConvexClient } from 'convex-svelte';
 	import { fade, slide } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
+	import { patchApi } from '$lib/api/client';
 
 	const mobilePages = ['Characters', 'Encounter', 'Notes'] as const;
 	const mobilePageQueryKeys = ['characters', 'encounter', 'notes'] as const;
 
 	const campaignCtx = getCampaignContext();
 	const localstorageCtx = getLocalstorageContext();
-	const convexClient = useConvexClient();
 	const isMobile = new IsMobile();
 
 	let showDiceLog = $state(false);
@@ -158,8 +156,7 @@
 			campaignCtx.campaign.fear_visible_to_players = fearVisibleToPlayers;
 
 			if (displayName.trim() !== (campaignCtx.userMembership?.display_name ?? '')) {
-				await convexClient.mutation(api.functions.campaigns.changeDisplayName, {
-					campaign_id: campaignCtx.id,
+				await patchApi<void>(`/campaigns/${campaignCtx.id}/display-name`, {
 					display_name: displayName.trim()
 				});
 			}

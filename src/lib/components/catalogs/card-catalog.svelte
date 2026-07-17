@@ -10,6 +10,7 @@
 	import Search from '@lucide/svelte/icons/search';
 	import type { CompendiumContent } from '@convex/schemas/compendium';
 	import type { Card } from '@convex/schemas/rules';
+	import { compareAlpha, sortEntriesByTitle } from '$lib/utils';
 
 	type CardTypeFilter = 'all' | 'domain' | 'ancestry' | 'community' | 'transformation';
 
@@ -34,22 +35,22 @@
 		const cards: Card[] = [];
 
 		// Domain cards
-		Object.entries(compendium.domain_cards).forEach(([id, card]) => {
+		sortEntriesByTitle(Object.entries(compendium.domain_cards)).forEach(([id, card]) => {
 			cards.push({ type: 'domain_card', id, card });
 		});
 
 		// Ancestry cards
-		Object.entries(compendium.ancestry_cards).forEach(([id, card]) => {
+		sortEntriesByTitle(Object.entries(compendium.ancestry_cards)).forEach(([id, card]) => {
 			cards.push({ type: 'ancestry_card', id, card });
 		});
 
 		// Community cards
-		Object.entries(compendium.community_cards).forEach(([id, card]) => {
+		sortEntriesByTitle(Object.entries(compendium.community_cards)).forEach(([id, card]) => {
 			cards.push({ type: 'community_card', id, card });
 		});
 
 		// Transformation cards
-		Object.entries(compendium.transformation_cards).forEach(([id, card]) => {
+		sortEntriesByTitle(Object.entries(compendium.transformation_cards)).forEach(([id, card]) => {
 			cards.push({
 				type: 'transformation_card',
 				id,
@@ -57,7 +58,7 @@
 			});
 		});
 
-		return cards;
+		return cards.sort((left, right) => compareAlpha(left.card.title, right.card.title));
 	});
 
 	// Helper function to check if card matches search

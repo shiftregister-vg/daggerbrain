@@ -22,11 +22,5 @@
 		>
 			Join the Discord
 		</Button>
-		<Button class="bg-emerald-900 text-emerald-50 hover:bg-emerald-900/70" href="/subscribe">
-			Become an Adventurer*
-		</Button>
 	</div>
-	<p class="mt-4 text-xs text-muted-foreground italic">
-		*The best way to support Daggerbrain. Unlocks unlimited characters & homebrew
-	</p>
 </div>

@@ -1,26 +1,25 @@
 import type { CompendiumContent } from '@convex/schemas/compendium';
 import { getContext, setContext } from 'svelte';
-import { useQuery } from 'convex-svelte';
-import { api } from '@convex/_generated/api';
 import { getUserContext } from './user.svelte';
 import type { SourceKey } from '@convex/schemas/rules';
 import {
 	getOfficialCompendiumFromSourceKeys,
 	getOfficialSourcesFromKeys
 } from '$lib/compendium/official-sources';
+import { createApiResource } from './api-resource.svelte';
+import { getApi } from '$lib/api/client';
 
 function createSources() {
 	const userContext = getUserContext();
 
-	const sourcesQuery = useQuery(api.functions.sources.list, () => (userContext.user ? {} : 'skip'));
-	const sourceKeys: SourceKey[] = $derived((sourcesQuery.data ?? []).map((s) => s.source_key));
+	const sourceResource = createApiResource<SourceKey[]>(async () => {
+		if (!userContext.user) return [];
+		return await getApi<SourceKey[]>('/sources');
+	});
+	const sourceKeys: SourceKey[] = $derived(sourceResource.data ?? []);
 	const sources = $derived(getOfficialSourcesFromKeys(sourceKeys));
-	const isReady = $derived(!userContext.user || sourcesQuery.data !== undefined);
-	const isLoading = $derived(
-		userContext.isLoading ||
-			(!!userContext.user && sourcesQuery.data === undefined && !sourcesQuery.error)
-	);
-	const error = $derived(sourcesQuery.error);
+	const isLoading = $derived(userContext.isLoading || sourceResource.isLoading);
+	const error = $derived(sourceResource.error);
 
 	const compendium: CompendiumContent = $derived(getCompendiumFromSourceKeys(...sourceKeys));
 

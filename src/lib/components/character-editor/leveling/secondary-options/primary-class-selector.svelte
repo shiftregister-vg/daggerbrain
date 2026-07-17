@@ -2,7 +2,7 @@
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog/';
 	import ClassSummary from './class-summary.svelte';
-	import { renderMarkdown } from '$lib/utils';
+	import { renderMarkdown, sortEntriesByTitle } from '$lib/utils';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import type { CharacterClass } from '@convex/schemas/compendium';
 
@@ -11,7 +11,7 @@
 	const derived_character_data = $derived(characterCtx.derived_character_data);
 	const compendium = $derived(characterCtx.character_compendium);
 	const primary_class = $derived(derived_character_data?.primary_class);
-	const classEntries = $derived(Object.entries(compendium?.classes ?? {}));
+	const classEntries = $derived(sortEntriesByTitle(Object.entries(compendium?.classes ?? {})));
 
 	let class_dialog_open = $state(false);
 	let remove_class_dialog_open = $state(false);

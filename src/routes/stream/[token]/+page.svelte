@@ -2,17 +2,29 @@
 	import { page } from '$app/state';
 	import Countdown from '$lib/components/character-sheet/campaign/countdown.svelte';
 	import Fear from '$lib/components/character-sheet/campaign/fear.svelte';
-	import { api } from '@convex/_generated/api';
 	import type { Countdown as CountdownType } from '@convex/schemas/rules';
-	import { useQuery } from 'convex-svelte';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { getApi } from '$lib/api/client';
+	import { browser } from '$app/environment';
+	import { onDestroy } from 'svelte';
 
-	const overlayQuery = useQuery(api.functions.streamOverlays.getOverlayState, () =>
-		page.params.token ? { token: page.params.token } : 'skip'
-	);
+	const overlayQuery = createApiResource<{
+		campaign: { fear_track: number | null };
+		countdowns: CountdownType[];
+		settings: {
+			fear: { showLabel?: boolean };
+			countdowns: { groupWithFear?: boolean };
+		};
+		layout: {
+			fear?: { x?: number; y?: number; scale?: number };
+			countdowns?: { x?: number; y?: number; scale?: number };
+		};
+	} | null>(async () => (page.params.token ? await getApi(`/stream/${page.params.token}`) : null));
 
 	const state = $derived(overlayQuery.data);
 	let fearValue = $state(0);
 	let countdowns: CountdownType[] = $state([]);
+	let events: EventSource | undefined;
 	const shouldGroupCountdownsWithFear = $derived(
 		state?.settings.countdowns.groupWithFear === true &&
 			state.campaign.fear_track !== null &&
@@ -64,6 +76,25 @@
 	$effect(() => {
 		fearValue = state?.campaign.fear_track ?? 0;
 		countdowns = state?.countdowns.map((countdown) => ({ ...countdown })) ?? [];
+	});
+
+	$effect(() => {
+		if (!browser || !page.params.token) return;
+
+		events?.close();
+		events = new EventSource(`/api/app/stream/${page.params.token}/events`);
+		events.onmessage = () => {
+			void overlayQuery.refresh();
+		};
+
+		return () => {
+			events?.close();
+			events = undefined;
+		};
+	});
+
+	onDestroy(() => {
+		events?.close();
 	});
 </script>
 

@@ -11,6 +11,7 @@
 	import AdversaryCardComponent from '$lib/components/compendium-items/adversary/adversary.svelte';
 	import { ADVERSARY_TYPE_BATTLE_POINTS_MAP } from '@convex/constants/rules';
 	import { getSourcesContext } from '$lib/state/sources.svelte';
+	import { sortEntriesByTitle } from '$lib/utils';
 
 	let {
 		onSelect,
@@ -59,7 +60,7 @@
 		return parseInt(tier);
 	}
 
-	const allAdversaries = $derived(Object.entries(compendium.adversaries));
+	const allAdversaries = $derived(sortEntriesByTitle(Object.entries(compendium.adversaries)));
 
 	const filteredAdversaries = $derived(
 		allAdversaries.filter(([id, adv]) => {

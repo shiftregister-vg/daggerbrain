@@ -4,18 +4,17 @@
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
-	import { ClerkLoaded, RedirectToSignIn, Show, SignUpButton } from 'svelte-clerk';
 	import Mockup from '$lib/components/decorations/device-mockup.svelte';
+	import { signIn } from '@auth/sveltekit/client';
 
 	let { children } = $props();
 	const isMarketingRoute = $derived(page.url.pathname === '/encounters');
-	const redirectUrl = $derived(`${page.url.pathname}${page.url.search}${page.url.hash}`);
+	const isLoggedIn = $derived(!!page.data.session?.user);
 </script>
 
-<Show when="signed-in">
+{#if isLoggedIn}
 	{@render children()}
-
-	{#snippet fallback()}
+{:else}
 		{#if isMarketingRoute}
 			<main class="relative min-h-[calc(100dvh-var(--navbar-height,3.5rem))] overflow-hidden">
 				<div
@@ -43,9 +42,13 @@
 							all in one place. With notes, editable adversaries and environments, and dice rolling
 							built in, creating balanced encounters is simple.
 						</p>
-						<SignUpButton class={cn(buttonVariants(), 'w-min')}
-							>Build Your First Encounter</SignUpButton
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants(), 'w-min')}
 						>
+							Build Your First Encounter
+						</button>
 
 						<div class="relative mt-4 mb-8 max-w-[500px]">
 							<Mockup class="aspect-auto sm:w-[500px]">
@@ -67,19 +70,26 @@
 							From social encounters, to massive combats, Daggerbrain helps GMs organize encounter
 							details without slowing down session prep.
 						</p>
-						<SignUpButton class={cn(buttonVariants(), 'w-min')}>Start Building</SignUpButton>
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants(), 'w-min')}
+						>
+							Start Building
+						</button>
 					</div>
 				</div>
 			</main>
 
 			<Footer />
 		{:else}
-			<ClerkLoaded>
-				<RedirectToSignIn {redirectUrl} />
-			</ClerkLoaded>
+			<div class="flex min-h-[calc(100dvh-var(--navbar-height,3.5rem))] items-center justify-center">
+				<button type="button" onclick={() => signIn('google')} class={cn(buttonVariants(), 'w-min')}>
+					Sign In
+				</button>
+			</div>
 		{/if}
-	{/snippet}
-</Show>
+{/if}
 
 <style>
 	.encounters-fade-container {

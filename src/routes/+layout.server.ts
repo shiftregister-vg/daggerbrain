@@ -1,9 +1,5 @@
-import { buildClerkProps } from 'svelte-clerk/server';
-
-export const load = async ({ locals }) => {
-	const auth = locals.auth();
-
+export const load = async (event) => {
 	return {
-		...buildClerkProps(auth)
+		session: await event.locals.auth()
 	};
 };

@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { CompendiumContent, DomainCard } from '@convex/schemas/compendium';
 	import type { Card } from '@convex/schemas/rules';
-	import { cn } from '$lib/utils';
-	import { renderMarkdown } from '$lib/utils';
+	import { cn, compareAlpha, renderMarkdown } from '$lib/utils';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import * as Dialog from '$lib/components/ui/dialog/';
@@ -63,7 +62,9 @@
 				if (a.card.level_requirement !== b.card.level_requirement) {
 					return a.card.level_requirement - b.card.level_requirement;
 				}
-				return (a.card.domain_id ?? '').localeCompare(b.card.domain_id ?? '');
+				const domainCompare = compareAlpha(a.card.domain_id ?? '', b.card.domain_id ?? '');
+				if (domainCompare !== 0) return domainCompare;
+				return compareAlpha(a.card.title, b.card.title);
 			})
 	);
 

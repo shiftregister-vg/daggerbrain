@@ -3,8 +3,8 @@ import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { withClerkHandler } from 'svelte-clerk/server';
 import { dev } from '$app/environment';
+import { handle as authHandle } from './auth';
 
 const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 	if (building) {
@@ -12,9 +12,10 @@ const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 	}
 
 	if (env.MAINTENANCE_MODE === 'true' && !event.url.pathname.startsWith('/maintenance')) {
-		const userId = event.locals.auth().userId;
+		const session = await event.locals.auth();
+		const userId = session?.user?.id;
 
-		const adminIds = env.ADMIN_CLERK_ID.split(',');
+		const adminIds = env.ADMIN_USER_ID?.split(',') ?? [];
 
 		if (!userId || !adminIds.includes(userId)) {
 			throw redirect(302, '/maintenance');
@@ -24,7 +25,7 @@ const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 };
 
 const sentryCloudflareHandle = Sentry.initCloudflareSentryHandle({
-	dsn: '<your-sentry-dsn>',
+	dsn: '',
 	tracesSampleRate: 1.0,
 	enableLogs: true,
 	environment: dev ? 'development' : 'production'
@@ -33,7 +34,7 @@ const sentryCloudflareHandle = Sentry.initCloudflareSentryHandle({
 export const handle = sequence(
 	sentryCloudflareHandle,
 	Sentry.sentryHandle(),
-	withClerkHandler(),
+	authHandle,
 	maintenanceModeHandle
 );
 export const handleError = Sentry.handleErrorWithSentry();

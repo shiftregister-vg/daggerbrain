@@ -6,12 +6,11 @@
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 	import { getCampaignContext } from '$lib/state/campaign.svelte';
 	import { cn } from '$lib/utils';
-	import { api } from '@convex/_generated/api';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
-	import { useConvexClient } from 'convex-svelte';
 	import { toast } from 'svelte-sonner';
+	import { postApi } from '$lib/api/client';
 
 	let {
 		isGM,
@@ -22,7 +21,6 @@
 	} = $props();
 
 	const campaignCtx = getCampaignContext();
-	const convexClient = useConvexClient();
 	const clipboard = new UseClipboard();
 	let showResetConfirmation = $state(false);
 	let isResetting = $state(false);
@@ -45,9 +43,7 @@
 
 		isResetting = true;
 		try {
-			await convexClient.mutation(api.functions.campaigns.rotateInviteCode, {
-				campaign_id: campaignCtx.id
-			});
+			await postApi(`/campaigns/${campaignCtx.id}/invite-code`, {});
 			showResetConfirmation = false;
 			toast.success('Invite link reset successfully');
 		} catch (error) {

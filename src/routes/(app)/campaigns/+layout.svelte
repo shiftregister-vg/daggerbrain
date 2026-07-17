@@ -5,17 +5,16 @@
 	import Mockup from '$lib/components/decorations/device-mockup.svelte';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
-	import { ClerkLoaded, RedirectToSignIn, Show, SignUpButton } from 'svelte-clerk';
+	import { signIn } from '@auth/sveltekit/client';
 
 	let { children } = $props();
 	const isMarketingRoute = $derived(page.url.pathname === '/campaigns');
-	const redirectUrl = $derived(`${page.url.pathname}${page.url.search}${page.url.hash}`);
+	const isLoggedIn = $derived(!!page.data.session?.user);
 </script>
 
-<Show when="signed-in">
+{#if isLoggedIn}
 	{@render children()}
-
-	{#snippet fallback()}
+{:else}
 		{#if isMarketingRoute}
 			<main class="relative min-h-[calc(100dvh-var(--navbar-height,3.5rem))] overflow-hidden">
 				<div
@@ -44,7 +43,13 @@
 							> to view your player characters, encounter, countdowns, fear tracker and notes all in one
 							place.
 						</p>
-						<SignUpButton class={cn(buttonVariants(), 'w-min')}>Start Your Campaign</SignUpButton>
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants(), 'w-min')}
+						>
+							Start Your Campaign
+						</button>
 
 						<div class="relative mt-4 mb-8 max-w-[500px]">
 							<Mockup class="aspect-auto sm:w-[500px]">
@@ -66,19 +71,26 @@
 							Whether you're a first-time GM or managing an ongoing story, Daggerbrain GM tools are
 							built for you.
 						</p>
-						<SignUpButton class={cn(buttonVariants(), 'w-min')}>Create a Campaign</SignUpButton>
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants(), 'w-min')}
+						>
+							Create a Campaign
+						</button>
 					</div>
 				</div>
 			</main>
 
 			<Footer />
 		{:else}
-			<ClerkLoaded>
-				<RedirectToSignIn {redirectUrl} />
-			</ClerkLoaded>
+			<div class="flex min-h-[calc(100dvh-var(--navbar-height,3.5rem))] items-center justify-center">
+				<button type="button" onclick={() => signIn('google')} class={cn(buttonVariants(), 'w-min')}>
+					Sign In
+				</button>
+			</div>
 		{/if}
-	{/snippet}
-</Show>
+{/if}
 
 <style>
 	.campaigns-fade-container {

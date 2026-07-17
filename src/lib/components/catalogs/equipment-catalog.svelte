@@ -20,7 +20,7 @@
 	import Search from '@lucide/svelte/icons/search';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import Check from '@lucide/svelte/icons/check';
-	import { cn, level_to_tier } from '$lib/utils';
+	import { cn, level_to_tier, sortEntriesByTitle } from '$lib/utils';
 	import { SvelteSet } from 'svelte/reactivity';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
@@ -94,7 +94,7 @@
 		return parseInt(tier);
 	}
 
-	const allPrimaryWeapons = $derived(Object.entries(compendium.primary_weapons));
+	const allPrimaryWeapons = $derived(sortEntriesByTitle(Object.entries(compendium.primary_weapons)));
 	// Filter primary weapons
 	const filteredPrimaryWeapons = $derived(
 		allPrimaryWeapons.filter(([id, weapon]) => {
@@ -119,7 +119,9 @@
 		})
 	);
 
-	const allSecondaryWeapons = $derived(Object.entries(compendium.secondary_weapons));
+	const allSecondaryWeapons = $derived(
+		sortEntriesByTitle(Object.entries(compendium.secondary_weapons))
+	);
 	// Filter secondary weapons
 	const filteredSecondaryWeapons = $derived(
 		allSecondaryWeapons.filter(([id, weapon]) => {
@@ -144,7 +146,7 @@
 		})
 	);
 
-	const allArmor = $derived(Object.entries(compendium.armor));
+	const allArmor = $derived(sortEntriesByTitle(Object.entries(compendium.armor)));
 	// Filter armor
 	const filteredArmor = $derived(
 		allArmor.filter(([id, armor]) => {
@@ -164,7 +166,7 @@
 		})
 	);
 
-	const allConsumables = $derived(Object.entries(compendium.consumables));
+	const allConsumables = $derived(sortEntriesByTitle(Object.entries(compendium.consumables)));
 	// Filter consumables (consumables don't have tier/level requirements)
 	const filteredConsumables = $derived(
 		allConsumables.filter(([id, consumable]) => {
@@ -178,7 +180,7 @@
 		})
 	);
 
-	const allLoot = $derived(Object.entries(compendium.loot));
+	const allLoot = $derived(sortEntriesByTitle(Object.entries(compendium.loot)));
 	// Filter loot (loot doesn't have tier/level requirements)
 	const filteredLoot = $derived(
 		allLoot.filter(([id, loot]) => {

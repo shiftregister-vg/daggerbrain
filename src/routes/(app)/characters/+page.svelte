@@ -14,16 +14,17 @@
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import CharacterPortrait from '$lib/components/character-sheet/standalone/character-portrait.svelte';
 	import type { Id } from '@convex/_generated/dataModel';
-	import { useQuery } from 'convex-svelte';
-	import { api } from '@convex/_generated/api';
 	import { fade } from 'svelte/transition';
-	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { toast } from 'svelte-sonner';
-	import { CHARACTER_LIMIT } from '@convex/constants/entitlements';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { getApi } from '$lib/api/client';
+	import type { Character } from '@convex/schemas/characters';
 
 	const userContext = getUserContext();
 
-	const charactersQuery = useQuery(api.functions.characters.list);
+	const charactersQuery = createApiResource<
+		{ id: Id<'characters'>; character: Character; campaign_name?: string }[]
+	>(async () => await getApi('/characters'));
 	const characters = $derived(charactersQuery.data ?? []);
 
 	let characterToDelete = $state<{ id: Id<'characters'>; name: string } | null>(null);
@@ -32,11 +33,6 @@
 	let creatingCharacter = $state(false);
 
 	const canCreateCharacter = $derived(userContext.character_limits.can_create_character);
-	const hasUnlimitedCharacters = $derived(userContext.character_limits.has_unlimited);
-
-	let titleText = $derived(
-		userContext.user ? `${userContext.user.character_count}/${CHARACTER_LIMIT}` : ''
-	);
 
 	async function handleCreateCharacter() {
 		creatingCharacter = true;
@@ -59,6 +55,7 @@
 		if (characterToDelete) {
 			try {
 				await userContext.deleteCharacter(characterToDelete.id);
+				await charactersQuery.refresh();
 				characterToDelete = null;
 				showDeleteDialog = false;
 			} catch (err) {
@@ -108,12 +105,6 @@
 				<div class="flex items-center justify-between gap-2">
 					<p class="flex h-9 items-center gap-2 text-2xl font-bold">
 						Characters
-
-						{#if !isLoading && !hasUnlimitedCharacters}<span
-								in:fade
-								class="rounded-full border bg-card px-2 py-0.5 text-base tracking-widest text-muted-foreground"
-								>{titleText}</span
-							>{/if}
 					</p>
 
 					<Button
@@ -131,17 +122,6 @@
 				{:else if loadError}
 					<LoadError />
 				{:else if characters.length === 0}
-					{#if !hasUnlimitedCharacters && !canCreateCharacter}
-						<div class="flex flex-col items-start gap-1">
-							<p class="text-sm text-muted-foreground">
-								Want unlimited characters? Become an
-								<a href="/subscribe" class="font-bold hover:underline">
-									Adventurer <ExternalLink class="-mt-[2px] inline size-3.5 stroke-3" />
-								</a>
-							</p>
-						</div>
-					{/if}
-
 					<div in:fade class="mx-auto my-20">
 						<Button onclick={handleCreateCharacter}>
 							<UserRoundPen />
@@ -149,17 +129,6 @@
 						</Button>
 					</div>
 				{:else}
-					{#if !hasUnlimitedCharacters && !canCreateCharacter}
-						<div class="flex flex-col items-start gap-1">
-							<p class="text-sm text-muted-foreground">
-								Want unlimited characters? Become an
-								<a href="/subscribe" class="font-bold hover:underline">
-									Adventurer <ExternalLink class="-mt-[2px] inline size-3.5 stroke-3" />
-								</a>
-							</p>
-						</div>
-					{/if}
-
 					<div in:fade class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{#each characters as { id, character }}
 							{#if id !== redirecting_to_character}

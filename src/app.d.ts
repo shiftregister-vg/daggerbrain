@@ -1,10 +1,17 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-/// <reference types="svelte-clerk/env" />
 
-import type { ConvexClient } from 'convex/browser';
+import type { DefaultSession } from '@auth/core/types';
 import type { R2Bucket } from '@cloudflare/workers-types';
 import type { Component } from 'svelte';
+
+declare module '@auth/core/types' {
+	interface Session {
+		user?: {
+			id: string;
+		} & DefaultSession['user'];
+	}
+}
 
 declare global {
 	namespace App {

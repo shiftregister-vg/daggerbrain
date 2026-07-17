@@ -1,10 +1,8 @@
-import { api } from '@convex/_generated/api';
 import type { Id } from '@convex/_generated/dataModel';
-import type { Character } from '@convex/schemas/characters';
+import type { Character, CharacterCompendiumScope } from '@convex/schemas/characters';
 import type { CompendiumContent } from '@convex/schemas/compendium';
 import type { SourceKey } from '@convex/schemas/rules';
 import type { SourceMetadata } from '@convex/schemas/sources';
-import { useConvexClient, useQuery } from 'convex-svelte';
 import { getContext, setContext } from 'svelte';
 import { merge_compendium_content } from '$lib/utils';
 import { derive_character_state, type DerivedCharacterData } from './derive_character';
@@ -13,6 +11,9 @@ import {
 	getOfficialCompendiumFromSourceKeys,
 	getOfficialSourcesFromKeys
 } from '$lib/compendium/official-sources';
+import { createApiResource } from './api-resource.svelte';
+import { getApi, patchApi } from '$lib/api/client';
+import type { CharacterAccess } from '@convex/permissions';
 
 const SYNC_DEBOUNCE_MS = 200;
 
@@ -38,10 +39,11 @@ function createCharacter() {
 	let lastReadyCharacterCompendium: CompendiumContent | null = $state(null);
 	let lastReadyCharacterCompendiumId: string | undefined = $state();
 
-	const convexClient = useConvexClient();
-	const characterQuery = useQuery(api.functions.characters.get, () => (id ? { id } : 'skip'));
-	const compendiumScopeQuery = useQuery(api.functions.characters.getCompendiumScopeForView, () =>
-		id ? { id } : 'skip'
+	const characterQuery = createApiResource<CharacterAccess | null>(
+		async () => (id ? await getApi<CharacterAccess | null>(`/characters/${id}`) : null)
+	);
+	const compendiumScopeQuery = createApiResource<CharacterCompendiumScope | null>(
+		async () => (id ? await getApi<CharacterCompendiumScope | null>(`/characters/${id}/scope`) : null)
 	);
 	const activeCharacterId = $derived.by(() => id as string | undefined);
 	const serverCharacter = $derived(characterQuery.data?.character ?? null);
@@ -64,6 +66,9 @@ function createCharacter() {
 		if (sourceKeySet.has('SRD')) {
 			sourceKeys.push('SRD');
 		}
+		if (sourceKeySet.has('HAF')) {
+			sourceKeys.push('HAF');
+		}
 		if (activeCharacter?.settings.void_enabled && sourceKeySet.has('The Void 1.5')) {
 			sourceKeys.push('The Void 1.5');
 		}
@@ -71,12 +76,10 @@ function createCharacter() {
 		return sourceKeys;
 	});
 	const ownerHomebrewVaultState = createVaultCompendiumSubscription({
-		convexClient,
 		getVault: () => (homebrewEnabled ? (compendiumScope?.homebrew_vault ?? null) : null),
 		getPrereqLoading: () => scopeQueryPending
 	});
 	const campaignVaultState = createVaultCompendiumSubscription({
-		convexClient,
 		getVault: () => (characterCampaignId ? (compendiumScope?.campaign_vault ?? null) : null),
 		getPrereqLoading: () => scopeQueryPending,
 		sourceKeyOverride: 'Campaign'
@@ -191,6 +194,11 @@ function createCharacter() {
 		bootstrapCompleted = false;
 		lastReadyCharacterCompendium = null;
 		lastReadyCharacterCompendiumId = undefined;
+
+		if (activeCharacterId) {
+			void characterQuery.refresh();
+			void compendiumScopeQuery.refresh();
+		}
 	});
 
 	$effect(() => {
@@ -262,10 +270,9 @@ function createCharacter() {
 		const capturedCharacter: Character = JSON.parse(JSON.stringify(sync_character));
 		debounceTimer = setTimeout(() => {
 			debounceTimer = undefined;
-			convexClient.mutation(api.functions.characters.update, {
-				id: capturedId,
-				character: capturedCharacter
-			});
+			void patchApi<void>(`/characters/${capturedId}`, capturedCharacter).then(() =>
+				characterQuery.refresh()
+			);
 		}, SYNC_DEBOUNCE_MS);
 
 		return () => {

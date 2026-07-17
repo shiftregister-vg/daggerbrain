@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { Show, SignInButton, SignUpButton, useClerkContext } from 'svelte-clerk';
-	import { createCheckAuthorization } from '@clerk/shared/authorization';
-	import type { ClerkJWTClaims } from '@clerk/shared/types';
+	import { page } from '$app/state';
 	import { cn } from '$lib/utils';
 	import Menu from '@lucide/svelte/icons/menu';
 	import campaignsImage from '$lib/assets/images/art/verticals/campaigns-vertical.webp';
@@ -12,22 +10,22 @@
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import { onDestroy, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import Infinity from '@lucide/svelte/icons/infinity';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import NavUserButton from '$lib/components/navigation/user-button.svelte';
+	import { signIn } from '@auth/sveltekit/client';
 
 	let open = $state(false);
 	let mobileCommunityOpen = $state(false);
 	let headerElement: HTMLElement | undefined = $state();
 
-	const clerkCtx = useClerkContext();
-	const user = $derived(clerkCtx.user);
-	const userImageUrl = $derived(user?.imageUrl || '/images/art/portrait-placeholder.webp');
-	const userName = $derived(user?.username || 'Profile');
+	const session = $derived(page.data.session);
+	const user = $derived(session?.user);
+	const userImageUrl = $derived(user?.image || '/images/art/portrait-placeholder.webp');
+	const userName = $derived(user?.name || user?.email || 'Profile');
 
 	function updateNavbarHeight() {
 		if (headerElement) {
@@ -61,22 +59,7 @@
 		)
 	);
 
-	const isLoggedIn = $derived(!!(clerkCtx.isLoaded && clerkCtx.auth.userId));
-	const isFreeUser = $derived.by(() => {
-		if (!clerkCtx.isLoaded || !clerkCtx.auth.userId) return false;
-
-		const has = createCheckAuthorization({
-			userId: clerkCtx.auth.userId,
-			orgId: clerkCtx.auth.orgId,
-			orgRole: clerkCtx.auth.orgRole,
-			orgPermissions: clerkCtx.auth.orgPermissions,
-			factorVerificationAge: clerkCtx.auth.factorVerificationAge,
-			features: ((clerkCtx.auth.sessionClaims as ClerkJWTClaims | undefined)?.fea as string) || '',
-			plans: ((clerkCtx.auth.sessionClaims as ClerkJWTClaims | undefined)?.pla as string) || ''
-		});
-
-		return has({ plan: 'user:free_user' });
-	});
+	const isLoggedIn = $derived(!!session?.user);
 
 	function preventSheetCloseForDesktopNavLinks(event: PointerEvent) {
 		const target = event.target;
@@ -148,26 +131,23 @@
 									</div>
 									{userName}
 								</Button>
-								{#if isFreeUser}
-									<Button
-										class="w-min font-bold tracking-wide"
-										href="/subscribe"
-										onclick={closeMobileMenu}
-										data-desktop-nav-sheet-safe
-									>
-										Subscribe
-									</Button>
-								{/if}
 							</div>
 						{:else}
 							<div class="flex gap-2">
-								<SignInButton
+								<button
+									type="button"
+									onclick={() => signIn('google')}
 									class={cn(buttonVariants({ size: 'sm', variant: 'outline' }), 'flex-1')}
-									>Sign In</SignInButton
 								>
-								<SignInButton class={cn(buttonVariants({ size: 'sm' }), 'flex-1')}
-									>Create Account</SignInButton
+									Sign In
+								</button>
+								<button
+									type="button"
+									onclick={() => signIn('google')}
+									class={cn(buttonVariants({ size: 'sm' }), 'flex-1')}
 								>
+									Create Account
+								</button>
 							</div>
 						{/if}
 					</Sheet.Header>
@@ -377,23 +357,23 @@
 				{#if isLoggedIn}
 					<div in:fade class="flex h-full items-center gap-3">
 						<NavUserButton />
-						{#if isFreeUser}
-							<Button
-								size="sm"
-								class="w-min font-bold tracking-wide"
-								href="/subscribe"
-								data-desktop-nav-sheet-safe
-							>
-								Subscribe
-							</Button>
-						{/if}
 					</div>
 				{:else}
 					<div class="flex gap-2">
-						<SignInButton class={cn(buttonVariants({ size: 'sm', variant: 'link' }))}
-							>Sign In</SignInButton
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants({ size: 'sm', variant: 'link' }))}
 						>
-						<SignInButton class={cn(buttonVariants({ size: 'sm' }))}>Create Account</SignInButton>
+							Sign In
+						</button>
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants({ size: 'sm' }))}
+						>
+							Create Account
+						</button>
 					</div>
 				{/if}
 			</div>

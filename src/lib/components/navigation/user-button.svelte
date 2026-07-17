@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import * as Popover from '$lib/components/ui/popover';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
-	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import Settings from '@lucide/svelte/icons/settings';
-	import { useClerkContext } from 'svelte-clerk';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
+	import { signOut } from '@auth/sveltekit/client';
 
-	const clerkCtx = useClerkContext();
-	const user = $derived(clerkCtx.user);
-	const userImageUrl = $derived(user?.imageUrl || '/images/art/portrait-placeholder.webp');
-	const userName = $derived(user?.username || 'Profile');
+	const session = $derived(page.data.session);
+	const user = $derived(session?.user);
+	const userImageUrl = $derived(user?.image || '/images/art/portrait-placeholder.webp');
+	const userName = $derived(user?.name || user?.email || 'Profile');
 
 	let open = $state(false);
 
@@ -24,7 +24,7 @@
 	async function handleSignOut() {
 		open = false;
 		await goto('/');
-		await clerkCtx.clerk?.signOut({ redirectUrl: '/' });
+		await signOut({ redirectTo: '/' });
 	}
 </script>
 

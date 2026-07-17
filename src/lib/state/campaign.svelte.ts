@@ -1,4 +1,3 @@
-import { api } from '@convex/_generated/api';
 import type { Id } from '@convex/_generated/dataModel';
 import type {
 	CharacterAccess,
@@ -10,10 +9,11 @@ import type { Campaign, CampaignCharacter, CampaignMember } from '@convex/schema
 import type { Character } from '@convex/schemas/characters';
 import type { CompendiumContent, CompendiumContentIds } from '@convex/schemas/compendium';
 import type { Roll } from '@convex/schemas/dice';
-import { useConvexClient, useQuery } from 'convex-svelte';
 import { getContext, onDestroy, setContext } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { getUserContext } from './user.svelte';
+import { createApiResource } from './api-resource.svelte';
+import { getApi, patchApi } from '$lib/api/client';
 
 const SYNC_DEBOUNCE_MS = 200;
 const VAULT_KEYS = [
@@ -97,19 +97,18 @@ function getAllVaultIds(vault: CompendiumContentIds): string[] {
 }
 
 function createCampaign() {
-	const convexClient = useConvexClient();
 	const userCtx = getUserContext();
 
 	let id: Id<'campaigns'> | undefined = $state();
 	let campaign: Campaign | undefined = $state();
 
-	const vaultSubscriptions = new Map<string, () => void>();
 	const vaultResults = new SvelteMap<string, HomebrewAccess<HomebrewTable> | null>();
 	const vaultErrors = new SvelteMap<string, Error>();
 
-	const rosterSubscriptions = new Map<string, () => void>();
 	const rosterResults = new SvelteMap<string, CharacterAccess | null>();
 	const rosterErrors = new SvelteMap<string, Error>();
+	let vaultRefreshGeneration = 0;
+	let rosterRefreshGeneration = 0;
 
 	let bootstrapCampaignId: string | undefined = $state();
 	let bootstrapRosterIds: string[] = $state([]);
@@ -118,19 +117,22 @@ function createCampaign() {
 	let bootstrapCompleted = $state(false);
 
 	onDestroy(() => {
-		for (const unsub of vaultSubscriptions.values()) unsub();
-		for (const unsub of rosterSubscriptions.values()) unsub();
-		vaultSubscriptions.clear();
 		vaultResults.clear();
 		vaultErrors.clear();
-		rosterSubscriptions.clear();
 		rosterResults.clear();
 		rosterErrors.clear();
 	});
 
-	const campaignQuery = useQuery(api.functions.campaigns.get, () => (id ? { id } : 'skip'));
-	const diceHistoryQuery = useQuery(api.functions.campaigns.getDiceHistory, () =>
-		id ? { campaign_id: id } : 'skip'
+	const campaignQuery = createApiResource<{
+		campaign_id: Id<'campaigns'>;
+		invite_code: string;
+		campaign: Campaign;
+		members: CampaignMember[];
+		characters: CampaignCharacter[];
+		isOwner: boolean;
+	} | null>(async () => (id ? await getApi(`/campaigns/${id}`) : null));
+	const diceHistoryQuery = createApiResource<{ rolls: Roll[] } | null>(
+		async () => (id ? await getApi(`/campaigns/${id}/dice`) : null)
 	);
 
 	const campaignAccess = $derived(campaignQuery.data ?? null);
@@ -170,6 +172,11 @@ function createCampaign() {
 		bootstrapVaultIds = [];
 		bootstrapTargetsCaptured = false;
 		bootstrapCompleted = false;
+
+		if (currentCampaignId) {
+			void campaignQuery.refresh();
+			void diceHistoryQuery.refresh();
+		}
 	});
 
 	const activeVault = $derived.by(
@@ -177,89 +184,80 @@ function createCampaign() {
 			campaign?.homebrew_vault ?? serverCampaign?.homebrew_vault ?? null
 	);
 
-	$effect(() => {
+	async function refreshVault() {
 		const vault = activeVault;
 		if (!vault) {
-			for (const unsub of vaultSubscriptions.values()) unsub();
-			vaultSubscriptions.clear();
 			vaultResults.clear();
 			vaultErrors.clear();
 			return;
 		}
 
-		const allVaultIds = new Set<string>(getAllVaultIds(vault));
+		const generation = ++vaultRefreshGeneration;
+		const allVaultIds = getAllVaultIds(vault);
 
-		for (const [itemId, unsub] of vaultSubscriptions) {
-			if (!allVaultIds.has(itemId)) {
-				unsub();
-				vaultSubscriptions.delete(itemId);
-				vaultResults.delete(itemId);
-				vaultErrors.delete(itemId);
+		for (const itemKey of allVaultIds) {
+			try {
+				const data = await getApi<HomebrewAccess<HomebrewTable> | null>(`/homebrew/${itemKey}`);
+				if (generation === vaultRefreshGeneration) {
+					vaultErrors.delete(itemKey);
+					vaultResults.set(itemKey, data);
+				}
+			} catch (error) {
+				if (generation === vaultRefreshGeneration) {
+					vaultErrors.set(
+						itemKey,
+						error instanceof Error ? error : new Error('Failed to load homebrew item')
+					);
+				}
 			}
 		}
 
-		for (const key of VAULT_KEYS) {
-			for (const itemId of vault[key]) {
-				const itemKey = itemId as string;
-				if (vaultSubscriptions.has(itemKey)) continue;
-
-				const unsub = convexClient.onUpdate(
-					api.functions.homebrew.get,
-					{ id: itemId as Id<HomebrewTable> },
-					(data) => {
-						vaultErrors.delete(itemKey);
-						vaultResults.set(itemKey, data);
-					},
-					(error) => {
-						vaultErrors.set(itemKey, error);
-					}
-				);
-
-				vaultSubscriptions.set(itemKey, unsub);
-			}
+		for (const itemKey of [...vaultResults.keys()]) {
+			if (!allVaultIds.includes(itemKey)) vaultResults.delete(itemKey);
 		}
-	});
+	}
 
 	$effect(() => {
+		void refreshVault();
+	});
+
+	async function refreshRoster() {
 		if (!id) {
-			for (const unsub of rosterSubscriptions.values()) unsub();
-			rosterSubscriptions.clear();
 			rosterResults.clear();
 			rosterErrors.clear();
 			return;
 		}
 
-		const allCharacterIds = new Set<string>(
-			campaignCharacters.map((campaignCharacter) => campaignCharacter.character_id as string)
+		const generation = ++rosterRefreshGeneration;
+		const allCharacterIds = campaignCharacters.map(
+			(campaignCharacter) => campaignCharacter.character_id as string
 		);
-
-		for (const [characterId, unsub] of rosterSubscriptions) {
-			if (!allCharacterIds.has(characterId)) {
-				unsub();
-				rosterSubscriptions.delete(characterId);
-				rosterResults.delete(characterId);
-				rosterErrors.delete(characterId);
-			}
-		}
 
 		for (const campaignCharacter of campaignCharacters) {
 			const characterId = campaignCharacter.character_id as string;
-			if (rosterSubscriptions.has(characterId)) continue;
-
-			const unsub = convexClient.onUpdate(
-				api.functions.characters.get,
-				{ id: campaignCharacter.character_id },
-				(data) => {
+			try {
+				const data = await getApi<CharacterAccess | null>(`/characters/${characterId}`);
+				if (generation === rosterRefreshGeneration) {
 					rosterErrors.delete(characterId);
 					rosterResults.set(characterId, data);
-				},
-				(error) => {
-					rosterErrors.set(characterId, error);
 				}
-			);
-
-			rosterSubscriptions.set(characterId, unsub);
+			} catch (error) {
+				if (generation === rosterRefreshGeneration) {
+					rosterErrors.set(
+						characterId,
+						error instanceof Error ? error : new Error('Failed to load character')
+					);
+				}
+			}
 		}
+
+		for (const characterId of [...rosterResults.keys()]) {
+			if (!allCharacterIds.includes(characterId)) rosterResults.delete(characterId);
+		}
+	}
+
+	$effect(() => {
+		void refreshRoster();
 	});
 
 	const userMembership = $derived.by(() => {
@@ -326,6 +324,7 @@ function createCampaign() {
 		const currentCampaignId = requestedCampaignId;
 		if (!currentCampaignId || bootstrapCompleted || bootstrapTargetsCaptured) return;
 		if (campaignQuery.isLoading || diceHistoryQuery.isLoading) return;
+		if (!hasResolvedCurrentCampaign) return;
 
 		bootstrapRosterIds = hasResolvedCurrentCampaign
 			? (campaignAccess?.characters ?? []).map(
@@ -441,10 +440,9 @@ function createCampaign() {
 
 		debounceTimer = setTimeout(() => {
 			debounceTimer = undefined;
-			convexClient.mutation(api.functions.campaigns.update, {
-				id: capturedId,
-				campaign: capturedCampaign
-			});
+			void patchApi<void>(`/campaigns/${capturedId}`, capturedCampaign).then(() =>
+				campaignQuery.refresh()
+			);
 		}, SYNC_DEBOUNCE_MS);
 
 		return () => {
@@ -482,10 +480,8 @@ function createCampaign() {
 			.sort((left, right) => left.timestamp - right.timestamp)
 			.slice(-50);
 
-		await convexClient.mutation(api.functions.campaigns.updateDiceHistory, {
-			campaign_id: id,
-			history: { rolls: nextHistory }
-		});
+		await patchApi<void>(`/campaigns/${id}/dice`, { rolls: nextHistory });
+		await diceHistoryQuery.refresh();
 	}
 
 	return {

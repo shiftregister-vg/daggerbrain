@@ -1,11 +1,10 @@
-import { api } from '@convex/_generated/api';
 import type { Id } from '@convex/_generated/dataModel';
 import type { CompendiumContent, CompendiumContentIds } from '@convex/schemas/compendium';
 import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@convex/permissions';
-import type { ConvexClient } from 'convex/browser';
 import { onDestroy } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { merge_compendium_content } from '$lib/utils';
+import { getApi } from '$lib/api/client';
 
 const VAULT_KEYS = [
 	'primary_weapons',
@@ -71,60 +70,53 @@ export function hasAnyVaultItems(vault: CompendiumContentIds | null | undefined)
 }
 
 export function createVaultCompendiumSubscription(options: {
-	convexClient: ConvexClient;
 	getVault: () => CompendiumContentIds | null;
 	getPrereqLoading?: () => boolean;
 	sourceKeyOverride?: VaultSourceOverride;
 }) {
-	const subscriptions = new Map<string, () => void>();
 	const results = new SvelteMap<string, HomebrewAccess<HomebrewTable> | null>();
 	const subscriptionErrors = new SvelteMap<string, Error>();
+	let generation = 0;
 
 	onDestroy(() => {
-		for (const unsub of subscriptions.values()) unsub();
-		subscriptions.clear();
 		results.clear();
 		subscriptionErrors.clear();
 	});
 
-	$effect(() => {
+	async function refresh() {
 		const vault = options.getVault();
 		if (!vault) {
-			for (const unsub of subscriptions.values()) unsub();
-			subscriptions.clear();
 			results.clear();
 			subscriptionErrors.clear();
 			return;
 		}
 
-		const allVaultIds = new Set<string>(getAllVaultIds(vault));
-
-		for (const [id, unsub] of subscriptions) {
-			if (!allVaultIds.has(id)) {
-				unsub();
-				subscriptions.delete(id);
-				results.delete(id);
-				subscriptionErrors.delete(id);
+		const currentGeneration = ++generation;
+		const ids = getAllVaultIds(vault);
+		for (const id of ids) {
+			try {
+				const data = await getApi<HomebrewAccess<HomebrewTable> | null>(`/homebrew/${id}`);
+				if (currentGeneration === generation) {
+					subscriptionErrors.delete(id);
+					results.set(id, data);
+				}
+			} catch (error) {
+				if (currentGeneration === generation) {
+					subscriptionErrors.set(
+						id,
+						error instanceof Error ? error : new Error('Failed to load homebrew item')
+					);
+				}
 			}
 		}
 
-		for (const id of allVaultIds) {
-			if (subscriptions.has(id)) continue;
-
-			const unsub = options.convexClient.onUpdate(
-				api.functions.homebrew.get,
-				{ id: id as Id<HomebrewTable> },
-				(data) => {
-					subscriptionErrors.delete(id);
-					results.set(id, data);
-				},
-				(error) => {
-					subscriptionErrors.set(id, error);
-				}
-			);
-
-			subscriptions.set(id, unsub);
+		for (const id of [...results.keys()]) {
+			if (!ids.includes(id)) results.delete(id);
 		}
+	}
+
+	$effect(() => {
+		void refresh();
 	});
 
 	const isReady = $derived.by(() => {

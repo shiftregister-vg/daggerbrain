@@ -7,7 +7,6 @@ import type { Campaign, CampaignSummary } from '../schemas/campaigns';
 import { getCampaignAccess } from '../permissions';
 import type { CampaignAccess } from '../permissions';
 import { DiceHistorySchema, type DiceHistory } from '../schemas/dice';
-import { UNLIMITED_CHARACTERS_FEATURE_SLUG, CHARACTER_LIMIT } from '../constants/entitlements';
 import { createEmptyCompendiumContentIds } from '../lib/characterCompendium';
 
 function generateInviteCode(): string {
@@ -647,17 +646,6 @@ export const claimCharacter = mutation({
 				throw new Error('User not found');
 			}
 			const characterCount = claimingUserDoc.character_count ?? 0;
-
-			const entitlementsDoc = await ctx.db
-				.query('user_entitlements')
-				.withIndex('by_clerk_user_id', (q) => q.eq('clerk_user_id', identity.subject))
-				.unique();
-			const hasUnlimitedCharacters =
-				entitlementsDoc?.feature_slugs.includes(UNLIMITED_CHARACTERS_FEATURE_SLUG) ?? false;
-
-			if (!hasUnlimitedCharacters && characterCount >= CHARACTER_LIMIT) {
-				throw new Error('Character limit reached');
-			}
 
 			const previousOwnerUserDoc = await ctx.db
 				.query('users')

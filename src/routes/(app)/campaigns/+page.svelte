@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { api } from '@convex/_generated/api';
 	import type { Id } from '@convex/_generated/dataModel';
 	import { artCampaigns } from '$lib/assets/images';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -14,16 +13,24 @@
 	import Loader from '$lib/components/utility/loader.svelte';
 	import { getUserContext } from '$lib/state/user.svelte';
 	import { cn, formatDate } from '$lib/utils';
-	import { useConvexClient, useQuery } from 'convex-svelte';
-	import { useClerkContext } from 'svelte-clerk';
 	import { fade } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { deleteApi, getApi, postApi } from '$lib/api/client';
 
 	const userCtx = getUserContext();
-	const convexClient = useConvexClient();
-	const clerkCtx = useClerkContext();
 
-	const campaignsQuery = useQuery(api.functions.campaigns.list, {});
+	type CampaignSummary = {
+		role: 'GM' | 'Player';
+		name: string;
+		player_count: number;
+		active_character_image_urls: string[];
+		creation_time: number;
+	};
+
+	const campaignsQuery = createApiResource<Record<string, CampaignSummary>>(
+		async () => await getApi('/campaigns')
+	);
 	const campaigns = $derived.by(() =>
 		Object.entries(campaignsQuery.data ?? {}).map(([id, campaign]) => ({
 			id: id as Id<'campaigns'>,
@@ -49,19 +56,16 @@
 	});
 
 	function openCreateDialog() {
-		gmDisplayName =
-			clerkCtx.user?.username ||
-			[clerkCtx.user?.firstName, clerkCtx.user?.lastName].filter(Boolean).join(' ') ||
-			'';
+		gmDisplayName = userCtx.user?.name || userCtx.user?.email || '';
 		showCreateDialog = true;
 	}
 
 	async function handleCreateCampaign() {
 		if (!newCampaignName.trim()) return;
 
-		creatingCampaign = true;
-		try {
-			const id = await convexClient.mutation(api.functions.campaigns.add, {
+			creatingCampaign = true;
+			try {
+			const { id } = await postApi<{ id: Id<'campaigns'> }>('/campaigns', {
 				name: newCampaignName.trim(),
 				display_name: gmDisplayName.trim()
 			});
@@ -83,7 +87,8 @@
 		if (!campaignToDelete) return;
 
 		try {
-			await convexClient.mutation(api.functions.campaigns.remove, { id: campaignToDelete.id });
+			await deleteApi<void>(`/campaigns/${campaignToDelete.id}`);
+			await campaignsQuery.refresh();
 			showDeleteDialog = false;
 			campaignToDelete = null;
 		} catch (error) {

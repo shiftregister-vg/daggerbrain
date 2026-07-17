@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api } from '@convex/_generated/api';
 	import { artCampaigns } from '$lib/assets/images';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
@@ -11,15 +10,17 @@
 	import { getUserContext } from '$lib/state/user.svelte';
 	import { cn } from '$lib/utils';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
-	import { useConvexClient, useQuery } from 'convex-svelte';
-	import { useClerkContext } from 'svelte-clerk';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { getApi, postApi } from '$lib/api/client';
 
 	const userCtx = getUserContext();
-	const convexClient = useConvexClient();
-	const clerkCtx = useClerkContext();
 	const inviteCode = $derived(page.params.uid ?? '');
-	const inviteQuery = useQuery(api.functions.campaigns.resolveInvite, () =>
-		!userCtx.isLoading && inviteCode ? { invite_code: inviteCode } : 'skip'
+	const inviteQuery = createApiResource<{
+		campaign_id: string;
+		campaign_name: string;
+		is_member: boolean;
+	} | null>(
+		async () => (!userCtx.isLoading && inviteCode ? await getApi(`/invites/${inviteCode}`) : null)
 	);
 	const inviteStatus = $derived(inviteQuery.data ?? null);
 	const isLoading = $derived(userCtx.isLoading || inviteQuery.isLoading);
@@ -32,10 +33,7 @@
 
 	$effect(() => {
 		if (hasInitializedDisplayName) return;
-		displayName =
-			clerkCtx.user?.username ||
-			[clerkCtx.user?.firstName, clerkCtx.user?.lastName].filter(Boolean).join(' ') ||
-			'';
+		displayName = userCtx.user?.name || userCtx.user?.email || '';
 		hasInitializedDisplayName = true;
 	});
 
@@ -55,11 +53,10 @@
 		joinError = '';
 
 		try {
-			const campaignId = await convexClient.mutation(api.functions.campaigns.join, {
-				invite_code: inviteCode,
-				display_name: displayName.trim()
+			const { id } = await postApi<{ id: string }>(`/invites/${inviteCode}/join`, {
+				displayName: displayName.trim()
 			});
-			goto(`/campaigns/${campaignId}`);
+			goto(`/campaigns/${id}`);
 		} catch (error) {
 			joinError = error instanceof Error ? error.message : 'Failed to join campaign';
 			joining = false;

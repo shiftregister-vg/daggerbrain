@@ -12,10 +12,9 @@
 	import ConditionChip from '$lib/components/conditions/condition-chip.svelte';
 	import type { CampaignRosterEntry } from '$lib/state/campaign.svelte';
 	import { cn } from '$lib/utils';
-	import { api } from '@convex/_generated/api';
 	import Pencil from '@lucide/svelte/icons/pencil';
-	import { useConvexClient } from 'convex-svelte';
 	import { toast } from 'svelte-sonner';
+	import { patchApi } from '$lib/api/client';
 
 	const SYNC_DEBOUNCE_MS = 200;
 
@@ -30,8 +29,6 @@
 		character: CampaignRosterEntry;
 		class?: string;
 	} = $props();
-
-	const convexClient = useConvexClient();
 
 	let editableMarkedArmor = $state<number | null>(null);
 
@@ -96,12 +93,7 @@
 
 		debounceTimer = setTimeout(() => {
 			debounceTimer = undefined;
-			convexClient
-				.mutation(api.functions.characters.update, {
-					id: character.characterId,
-					character: capturedCharacter
-				})
-				.catch((error) => {
+			patchApi<void>(`/characters/${character.characterId}`, capturedCharacter).catch((error) => {
 					console.error('Failed to update character', error);
 					toast.error('Failed to update character');
 				});

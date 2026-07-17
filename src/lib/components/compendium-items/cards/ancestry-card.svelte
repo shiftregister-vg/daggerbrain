@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { cn } from '$lib/utils';
-	import { renderMarkdown } from '$lib/utils';
+	import { cn, compareAlpha, renderMarkdown } from '$lib/utils';
 	import type { Snippet } from 'svelte';
 	import * as Select from '$lib/components/ui/select/';
 	import type { CompendiumContent, AncestryCard } from '@convex/schemas/compendium';
@@ -49,6 +48,7 @@
 				value: id,
 				label: ancestryCard.title
 			}))
+			.sort((left, right) => compareAlpha(left.label, right.label))
 	);
 
 	let selectedTopAncestryId = $derived(mixed_ancestry_choices?.top_ancestry_id);

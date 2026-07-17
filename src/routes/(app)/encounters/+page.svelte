@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { api } from '@convex/_generated/api';
 	import type { Id } from '@convex/_generated/dataModel';
 	import { BLANK_ENCOUNTER } from '@convex/constants/constants';
 	import { artEncounters } from '$lib/assets/images';
@@ -14,12 +13,15 @@
 	import Loader from '$lib/components/utility/loader.svelte';
 	import { getUserContext } from '$lib/state/user.svelte';
 	import { cn } from '$lib/utils';
-	import { useConvexClient, useQuery } from 'convex-svelte';
 	import { fade } from 'svelte/transition';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { deleteApi, getApi, postApi } from '$lib/api/client';
+	import type { Encounter } from '@convex/schemas/encounters';
 
 	const userContext = getUserContext();
-	const convexClient = useConvexClient();
-	const encountersQuery = useQuery(api.functions.encounters.list, {});
+	const encountersQuery = createApiResource<{ id: Id<'encounters'>; encounter: Encounter }[]>(
+		async () => await getApi('/encounters')
+	);
 	const encounters = $derived(encountersQuery.data ?? []);
 
 	let encounterToDelete = $state<{ id: Id<'encounters'>; name: string } | null>(null);
@@ -29,7 +31,7 @@
 	async function handleCreateEncounter() {
 		creatingEncounter = true;
 		try {
-			const id = await convexClient.mutation(api.functions.encounters.add, BLANK_ENCOUNTER);
+			const { id } = await postApi<{ id: Id<'encounters'> }>('/encounters', BLANK_ENCOUNTER);
 			goto(`/encounters/${id}`);
 		} catch (error) {
 			console.error('Failed to create encounter', error);
@@ -46,7 +48,8 @@
 		if (!encounterToDelete) return;
 
 		try {
-			await convexClient.mutation(api.functions.encounters.remove, { id: encounterToDelete.id });
+			await deleteApi<void>(`/encounters/${encounterToDelete.id}`);
+			await encountersQuery.refresh();
 		} catch (error) {
 			console.error('Failed to delete encounter', error);
 			return;

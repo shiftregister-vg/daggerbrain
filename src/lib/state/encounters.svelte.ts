@@ -1,15 +1,16 @@
-import { api } from '@convex/_generated/api';
 import type { Id } from '@convex/_generated/dataModel';
 import { ADVERSARY_TYPE_BATTLE_POINTS_MAP } from '@convex/constants/rules';
 import type { Adversary, CompendiumContent } from '@convex/schemas/compendium';
 import type { Encounter } from '@convex/schemas/encounters';
 import type { AdversaryType, SourceKey } from '@convex/schemas/rules';
 import { merge_compendium_content } from '$lib/utils';
-import { useConvexClient, useQuery } from 'convex-svelte';
 import { getContext, setContext } from 'svelte';
 import { getHomebrewContext } from './homebrew.svelte';
 import { getSourcesContext } from './sources.svelte';
 import { getUserContext } from './user.svelte';
+import { createApiResource } from './api-resource.svelte';
+import { deleteApi, getApi, patchApi, postApi } from '$lib/api/client';
+import type { EncounterAccess } from '@convex/permissions';
 
 const SYNC_DEBOUNCE_MS = 200;
 
@@ -40,8 +41,9 @@ function createEncounter() {
 	let id: Id<'encounters'> | undefined = $state();
 	let encounter: Encounter | undefined = $state();
 
-	const convexClient = useConvexClient();
-	const encounterQuery = useQuery(api.functions.encounters.get, () => (id ? { id } : 'skip'));
+	const encounterQuery = createApiResource<EncounterAccess | null>(
+		async () => (id ? await getApi<EncounterAccess | null>(`/encounters/${id}`) : null)
+	);
 	const serverEncounter = $derived(encounterQuery.data?.encounter ?? null);
 
 	const userCtx = getUserContext();
@@ -239,10 +241,9 @@ function createEncounter() {
 
 		debounceTimer = setTimeout(() => {
 			debounceTimer = undefined;
-			convexClient.mutation(api.functions.encounters.update, {
-				id: capturedId,
-				encounter: capturedEncounter
-			});
+			void patchApi<void>(`/encounters/${capturedId}`, capturedEncounter).then(() =>
+				encounterQuery.refresh()
+			);
 		}, SYNC_DEBOUNCE_MS);
 
 		return () => {
@@ -251,8 +252,9 @@ function createEncounter() {
 	});
 
 	async function create(newEncounter: Encounter) {
-		const createdId = await convexClient.mutation(api.functions.encounters.add, newEncounter);
+		const { id: createdId } = await postApi<{ id: Id<'encounters'> }>('/encounters', newEncounter);
 		id = createdId;
+		await encounterQuery.refresh();
 		return createdId;
 	}
 
@@ -261,7 +263,7 @@ function createEncounter() {
 
 		const capturedId = encounterId;
 		clearPendingSync();
-		await convexClient.mutation(api.functions.encounters.remove, { id: capturedId });
+		await deleteApi<void>(`/encounters/${capturedId}`);
 		if (id === capturedId) {
 			encounter = undefined;
 			appliedServerSnapshot = undefined;
@@ -274,7 +276,9 @@ function createEncounter() {
 			return id;
 		},
 		set id(value) {
+			if (id === value) return;
 			id = value;
+			if (id) void encounterQuery.refresh();
 		},
 		get encounter() {
 			return encounter;

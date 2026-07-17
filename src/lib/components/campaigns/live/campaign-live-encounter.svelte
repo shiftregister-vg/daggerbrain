@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Id } from '@convex/_generated/dataModel';
-	import { api } from '@convex/_generated/api';
 	import { BLANK_ENCOUNTER } from '@convex/constants/constants';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -11,10 +10,12 @@
 	import { getCampaignContext } from '$lib/state/campaign.svelte';
 	import { getEncounterContext } from '$lib/state/encounters.svelte';
 	import { cn } from '$lib/utils';
-	import { useQuery } from 'convex-svelte';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import Map from '@lucide/svelte/icons/map';
 	import { toast } from 'svelte-sonner';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { getApi } from '$lib/api/client';
+	import type { Encounter as EncounterType } from '@convex/schemas/encounters';
 
 	let {
 		class: className = '',
@@ -27,7 +28,9 @@
 	const campaignCtx = getCampaignContext();
 	const encounterCtx = getEncounterContext();
 
-	const encountersQuery = useQuery(api.functions.encounters.list, {});
+	const encountersQuery = createApiResource<{ id: Id<'encounters'>; encounter: EncounterType }[]>(
+		async () => await getApi('/encounters')
+	);
 	const encounters = $derived(encountersQuery.data ?? []);
 	const currentEncounterId = $derived(campaignCtx.campaign?.current_encounter_id);
 	const encounter = $derived(encounterCtx.encounter);

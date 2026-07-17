@@ -3,7 +3,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/';
 	import * as Collapsible from '$lib/components/ui/collapsible/';
 	import SubclassCard from '$lib/components/compendium-items/cards/subclass-card.svelte';
-	import { cn, renderMarkdown } from '$lib/utils';
+	import { cn, compareAlpha, renderMarkdown } from '$lib/utils';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
@@ -33,7 +33,8 @@
 		if (!primary_class || !compendium) return [];
 		return (primary_class.subclass_ids ?? [])
 			.map((id) => ({ id, subclass: compendium.subclasses[id] }))
-			.filter((entry) => Boolean(entry.subclass));
+			.filter((entry) => Boolean(entry.subclass))
+			.sort((left, right) => compareAlpha(left.subclass.title, right.subclass.title));
 	});
 
 	let subclass_dialog_open = $state(false);

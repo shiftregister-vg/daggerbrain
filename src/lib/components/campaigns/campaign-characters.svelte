@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { api } from '@convex/_generated/api';
 	import type { Id } from '@convex/_generated/dataModel';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import CharacterPortrait from '$lib/components/character-sheet/standalone/character-portrait.svelte';
@@ -10,19 +9,20 @@
 	import { getCampaignContext, type CampaignRosterEntry } from '$lib/state/campaign.svelte';
 	import { getUserContext } from '$lib/state/user.svelte';
 	import { cn } from '$lib/utils';
-	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
-	import { useConvexClient, useQuery } from 'convex-svelte';
 	import { toast } from 'svelte-sonner';
-	import { CHARACTER_LIMIT } from '@convex/constants/entitlements';
+	import { createApiResource } from '$lib/state/api-resource.svelte';
+	import { deleteApi, getApi, patchApi, postApi } from '$lib/api/client';
+	import type { Character } from '@convex/schemas/characters';
 
 	let { class: className = '' }: { class?: string } = $props();
 
 	const campaignCtx = getCampaignContext();
 	const userCtx = getUserContext();
-	const convexClient = useConvexClient();
-	const ownedCharactersQuery = useQuery(api.functions.characters.list);
+	const ownedCharactersQuery = createApiResource<
+		{ id: Id<'characters'>; character: Character; campaign_name?: string }[]
+	>(async () => await getApi('/characters'));
 
 	const campaign = $derived(campaignCtx.campaign);
 	const activeCharacters = $derived(campaignCtx.active_characters);
@@ -58,7 +58,6 @@
 	let isRemovingCharacter = $state(false);
 
 	let showLeaveCampaignDialog = $state(false);
-	let showCharacterLimitDialog = $state(false);
 
 	$effect(() => {
 		if (!showAddCharacterDialog) {
@@ -87,10 +86,7 @@
 		isAddingCharacter = true;
 		try {
 			const id = await userCtx.createCharacter();
-			await convexClient.mutation(api.functions.campaigns.addCharacter, {
-				campaign_id: requireCampaignId(),
-				character_id: id
-			});
+			await postApi<void>(`/campaigns/${requireCampaignId()}/characters`, { character_id: id });
 			showAddCharacterDialog = false;
 			await goto(`/characters/${id}/edit`);
 		} catch (error) {
@@ -106,10 +102,10 @@
 
 		isAddingCharacter = true;
 		try {
-			await convexClient.mutation(api.functions.campaigns.addCharacter, {
-				campaign_id: requireCampaignId(),
+			await postApi<void>(`/campaigns/${requireCampaignId()}/characters`, {
 				character_id: id as Id<'characters'>
 			});
+			await ownedCharactersQuery.refresh();
 			showAddCharacterDialog = false;
 			selectedCharacterId = '';
 		} catch (error) {
@@ -125,10 +121,8 @@
 
 		isRemovingCharacter = true;
 		try {
-			await convexClient.mutation(api.functions.campaigns.removeCharacter, {
-				campaign_id: requireCampaignId(),
-				character_id: characterToRemove
-			});
+			await deleteApi<void>(`/campaigns/${requireCampaignId()}/characters/${characterToRemove}`);
+			await ownedCharactersQuery.refresh();
 			showRemoveDialog = false;
 		} catch (error) {
 			console.error('Failed to remove character', error);
@@ -143,16 +137,8 @@
 			return;
 		}
 
-		if (!canCreateCharacter) {
-			showCharacterLimitDialog = true;
-			return;
-		}
-
 		try {
-			await convexClient.mutation(api.functions.campaigns.claimCharacter, {
-				campaign_id: requireCampaignId(),
-				character_id: id
-			});
+			await patchApi<void>(`/campaigns/${requireCampaignId()}/characters/${id}/claim`, {});
 		} catch (error) {
 			toast.error('Failed to claim character');
 			console.error(error);
@@ -163,10 +149,10 @@
 		if (!characterToUnassign) return;
 
 		try {
-			await convexClient.mutation(api.functions.campaigns.unassignCharacter, {
-				campaign_id: requireCampaignId(),
-				character_id: characterToUnassign
-			});
+			await patchApi<void>(
+				`/campaigns/${requireCampaignId()}/characters/${characterToUnassign}/unassign`,
+				{}
+			);
 			showUnassignDialog = false;
 		} catch (error) {
 			console.error('Failed to unassign character', error);
@@ -176,7 +162,7 @@
 
 	async function handleLeaveCampaign() {
 		try {
-			await convexClient.mutation(api.functions.campaigns.leave, { id: requireCampaignId() });
+			await patchApi<void>(`/campaigns/${requireCampaignId()}/leave`, {});
 			await goto('/campaigns');
 		} catch (error) {
 			console.error('Failed to leave campaign', error);
@@ -408,13 +394,6 @@
 					<Button onclick={createAndAddCharacter} disabled={!canCreateCharacter}>
 						Create New Character
 					</Button>
-
-					{#if !canCreateCharacter}
-						<p class="text-xs text-muted-foreground">
-							Free accounts can keep up to {CHARACTER_LIMIT} characters. Delete one or subscribe to
-							create another.
-						</p>
-					{/if}
 				</div>
 			</div>
 
@@ -512,30 +491,6 @@
 					onclick={handleLeaveCampaign}
 				>
 					Leave Campaign
-				</Dialog.Close>
-			</Dialog.Footer>
-		</Dialog.Content>
-	</Dialog.Root>
-
-	<Dialog.Root bind:open={showCharacterLimitDialog}>
-		<Dialog.Content class="sm:max-w-md">
-			<Dialog.Header>
-				<Dialog.Title>Character Limit Reached</Dialog.Title>
-				<Dialog.Description>
-					<p class="mb-2">
-						Free accounts can keep up to {CHARACTER_LIMIT} characters. Delete one or subscribe to
-						claim another.
-					</p>
-
-					<Button variant="link" href="/characters" class="pl-0 text-accent">
-						<ArrowRight />
-						Manage Characters
-					</Button>
-				</Dialog.Description>
-			</Dialog.Header>
-			<Dialog.Footer class="flex gap-3">
-				<Dialog.Close type="button" class={cn(buttonVariants({ variant: 'default' }))}>
-					OK
 				</Dialog.Close>
 			</Dialog.Footer>
 		</Dialog.Content>

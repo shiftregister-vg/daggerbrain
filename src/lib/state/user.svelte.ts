@@ -1,96 +1,70 @@
-import { api } from '@convex/_generated/api';
-import type { Doc, Id } from '@convex/_generated/dataModel';
+import type { Id } from '@convex/_generated/dataModel';
 import { CHARACTER_DEFAULTS } from '@convex/constants/constants';
-import { useConvexClient, useQuery } from 'convex-svelte';
 import { getContext, setContext } from 'svelte';
 import { upload_user_image } from '$lib/remote/images.remote';
-import { useClerkContext } from 'svelte-clerk';
-import {
-	CHARACTER_LIMIT,
-	HOMEBREW_LIMIT,
-	UNLIMITED_CHARACTERS_FEATURE_SLUG,
-	UNLIMITED_HOMEBREW_FEATURE_SLUG
-} from '@convex/constants/entitlements';
+import { page } from '$app/state';
+import { createEmptyCompendiumContentIds } from '@convex/lib/characterCompendium';
+import { createApiResource } from './api-resource.svelte';
+import { deleteApi, getApi, postApi } from '$lib/api/client';
+
+type AppUser = {
+	_id: Id<'users'>;
+	clerk_id: string;
+	campaign_ids: Id<'campaigns'>[];
+	character_count: number;
+	homebrew_count: number;
+	homebrew_vault: ReturnType<typeof createEmptyCompendiumContentIds>;
+	name?: string | null;
+	email?: string | null;
+	image?: string | null;
+};
 
 function userContext() {
-	// setup convex for querying
-	let token: string | null | undefined = $state();
-	let createUserPromise: Promise<Id<'users'> | null> | null = null;
-	const clerkCtx = useClerkContext();
-	const convexClient = useConvexClient();
-
-	$effect(() => {
-		convexClient.setAuth(async () => {
-			if (!clerkCtx.isLoaded || !clerkCtx.session) {
-				token = null;
-				return null;
-			}
-
-			token = await clerkCtx.session.getToken({
-				template: 'convex'
-			});
-
-			return token;
-		});
+	const sessionUser = $derived(page.data.session?.user);
+	const userResource = createApiResource<AppUser | null>(async () => {
+		if (!sessionUser?.id) return null;
+		return await getApi<AppUser>('/me');
 	});
-
-	const userQuery = $derived(token ? useQuery(api.functions.users.get) : undefined);
-	const user: Doc<'users'> | null = $derived(userQuery ? (userQuery.data ?? null) : null);
-
-	const featuresQuery = $derived(
-		user ? useQuery(api.functions.entitlements.getFeatures) : undefined
+	const fallbackUser: AppUser | null = $derived.by(() =>
+		sessionUser?.id
+			? {
+					_id: sessionUser.id as Id<'users'>,
+					clerk_id: sessionUser.id,
+					campaign_ids: [],
+					character_count: 0,
+					homebrew_count: 0,
+					homebrew_vault: createEmptyCompendiumContentIds(),
+					name: sessionUser.name,
+					email: sessionUser.email,
+					image: sessionUser.image
+				}
+			: null
 	);
-	const features: string[] = $derived(featuresQuery ? (featuresQuery.data ?? []) : []);
+	const user: AppUser | null = $derived(userResource.data ?? fallbackUser);
 
 	const character_limits = $derived.by(() => {
-		const has_unlimited = features.includes(UNLIMITED_CHARACTERS_FEATURE_SLUG) ?? false;
-		const character_count = user?.character_count ?? 0;
-		const can_create_character = has_unlimited || character_count < CHARACTER_LIMIT;
-		// const over_limit = character_count > CHARACTER_LIMIT
-		// const at_limit = character_count === CHARACTER_LIMIT
-
-		return { has_unlimited, can_create_character };
+		return { has_unlimited: true, can_create_character: !!user };
 	});
 
 	const homebrew_limits = $derived.by(() => {
-		const has_unlimited = features.includes(UNLIMITED_HOMEBREW_FEATURE_SLUG) ?? false;
-		const homebrew_count = user?.homebrew_count ?? 0;
-		const can_create_homebrew = has_unlimited || homebrew_count < HOMEBREW_LIMIT;
-
-		return { has_unlimited, can_create_homebrew };
+		return { has_unlimited: true, can_create_homebrew: !!user };
 	});
-	const isLoading = $derived(
-		!userQuery || userQuery.isLoading || !featuresQuery || featuresQuery.isLoading
-	);
-	const error = $derived(userQuery?.error || featuresQuery?.error);
-
-	// create user if none exists
-	$effect(() => {
-		if (!token || !userQuery || userQuery.isLoading || userQuery.data || createUserPromise) {
-			return;
-		}
-
-		createUserPromise = convexClient
-			.mutation(api.functions.users.create, {})
-			.catch((error) => {
-				console.warn('Failed to ensure user exists', error);
-				return null;
-			})
-			.finally(() => {
-				createUserPromise = null;
-			});
-	});
+	const isLoading = $derived(userResource.isLoading);
+	const error = $derived(userResource.error);
 
 	async function createCharacter(): Promise<Id<'characters'>> {
 		if (!user) {
 			throw new Error('User not found');
 		}
 
-		return await convexClient.mutation(api.functions.characters.add, CHARACTER_DEFAULTS);
+		const result = await postApi<{ id: Id<'characters'> }>('/characters', CHARACTER_DEFAULTS);
+		await userResource.refresh();
+		return result.id;
 	}
 
 	async function deleteCharacter(id: Id<'characters'>): Promise<void> {
-		await convexClient.mutation(api.functions.characters.remove, { id });
+		await deleteApi<void>(`/characters/${id}`);
+		await userResource.refresh();
 	}
 
 	const uploadImage = async (params: { data: string; name: string; type: string }) => {
@@ -107,7 +81,7 @@ function userContext() {
 			return user;
 		},
 		get features() {
-			return features;
+			return [];
 		},
 		get character_limits() {
 			return character_limits;

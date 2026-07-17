@@ -5,6 +5,7 @@
 	import type { CompendiumContent, DomainCard } from '@convex/schemas/compendium';
 	import DomainCardComponent from '$lib/components/compendium-items/cards/domain-card.svelte';
 	import Search from '@lucide/svelte/icons/search';
+	import { sortEntriesByTitle } from '$lib/utils';
 	let {
 		onSelect = () => {},
 		disabledIds = [],
@@ -34,7 +35,7 @@
 		return titleMatch || categoryMatch || featuresMatch;
 	}
 
-	const allDomainCards = $derived(Object.entries(compendium.domain_cards));
+	const allDomainCards = $derived(sortEntriesByTitle(Object.entries(compendium.domain_cards)));
 
 	// Filter domain cards
 	const filteredCards = $derived(
@@ -63,7 +64,7 @@
 	}
 
 	// All domains derived from compendium
-	let allDomains = $derived(Object.keys(compendium.domains));
+	let allDomains = $derived(sortEntriesByTitle(Object.entries(compendium.domains)).map(([id]) => id));
 
 	const allLevels = Array.from({ length: 10 }, (_, i) => i + 1);
 

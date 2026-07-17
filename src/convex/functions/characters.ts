@@ -6,7 +6,6 @@ import type { Character } from '../schemas/characters';
 import { getCampaignAccess, getCharacterAccess } from '../permissions';
 import type { CharacterAccess } from '../permissions';
 import type { Id } from '../_generated/dataModel';
-import { UNLIMITED_CHARACTERS_FEATURE_SLUG, CHARACTER_LIMIT } from '../constants/entitlements';
 import { getCharacterCompendiumScopeForView } from '../lib/characterCompendium';
 
 export const list = query({
@@ -89,17 +88,6 @@ export const add = mutation({
 			throw new Error('User not found');
 		}
 		const characterCount = user.character_count ?? 0;
-
-		const entitlementsDoc = await ctx.db
-			.query('user_entitlements')
-			.withIndex('by_clerk_user_id', (q) => q.eq('clerk_user_id', identity.subject))
-			.unique();
-		const hasUnlimitedCharacters =
-			entitlementsDoc?.feature_slugs.includes(UNLIMITED_CHARACTERS_FEATURE_SLUG) ?? false;
-
-		if (!hasUnlimitedCharacters && characterCount >= CHARACTER_LIMIT) {
-			throw new Error('Character limit reached');
-		}
 
 		const characterId = await ctx.db.insert('characters', {
 			character: {

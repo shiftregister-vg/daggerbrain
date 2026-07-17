@@ -21,7 +21,6 @@ import {
 	PrimaryWeaponSchema,
 	SecondaryWeaponSchema
 } from '../schemas/compendium';
-import { HOMEBREW_LIMIT, UNLIMITED_HOMEBREW_FEATURE_SLUG } from '../constants/entitlements';
 import type { Id } from '../_generated/dataModel';
 import { createEmptyCompendiumContentIds } from '../lib/characterCompendium';
 
@@ -154,17 +153,6 @@ export const add = mutation({
 
 		if (!userDoc) {
 			throw new Error('User not found');
-		}
-		const homebrewCount = countHomebrewVault(userDoc.homebrew_vault);
-		const entitlementsDoc = await ctx.db
-			.query('user_entitlements')
-			.withIndex('by_clerk_user_id', (q) => q.eq('clerk_user_id', identity.subject))
-			.unique();
-		const hasUnlimitedHomebrew =
-			entitlementsDoc?.feature_slugs.includes(UNLIMITED_HOMEBREW_FEATURE_SLUG) ?? false;
-
-		if (!hasUnlimitedHomebrew && homebrewCount >= HOMEBREW_LIMIT) {
-			throw new Error('Homebrew limit reached');
 		}
 
 		const { data } = args;

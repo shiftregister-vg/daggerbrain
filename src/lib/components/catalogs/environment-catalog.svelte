@@ -10,6 +10,7 @@
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
 	import EnvironmentCard from '$lib/components/compendium-items/environment.svelte';
 	import { getSourcesContext } from '$lib/state/sources.svelte';
+	import { sortEntriesByTitle } from '$lib/utils';
 
 	let {
 		onSelect,
@@ -47,7 +48,7 @@
 		return parseInt(tier);
 	}
 
-	const allEnvironments = $derived(Object.entries(compendium.environments));
+	const allEnvironments = $derived(sortEntriesByTitle(Object.entries(compendium.environments)));
 
 	const filteredEnvironments = $derived(
 		allEnvironments.filter(([id, env]) => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from '$lib/utils';
+	import { cn, sortEntriesByTitle } from '$lib/utils';
 	import * as Dialog from '$lib/components/ui/dialog/index';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import Dropdown from '$lib/components/utility/dropdown.svelte';
@@ -13,6 +13,11 @@
 	const derived_character_data = $derived(characterCtx.derived_character_data);
 	const character = $derived(characterCtx.character);
 	const compendium = $derived(characterCtx.character_compendium);
+	const sortedAncestryEntries = $derived(sortEntriesByTitle(Object.entries(compendium.ancestry_cards)));
+	const sortedCommunityEntries = $derived(sortEntriesByTitle(Object.entries(compendium.community_cards)));
+	const sortedTransformationEntries = $derived(
+		sortEntriesByTitle(Object.entries(compendium.transformation_cards))
+	);
 
 	let ancestryDialogOpen = $state(false);
 	let communityDialogOpen = $state(false);
@@ -160,7 +165,7 @@
 				<Dialog.Title>Select an ancestry</Dialog.Title>
 			</Dialog.Header>
 			<div class="grid grid-cols-1 gap-3 overflow-y-auto p-2 sm:grid-cols-2">
-				{#each Object.entries(compendium.ancestry_cards) as [id, card]}
+				{#each sortedAncestryEntries as [id, card] (id)}
 					<div>
 						<AncestryCard {card} {compendium}
 							><Button
@@ -186,7 +191,7 @@
 				<Dialog.Title>Select a community</Dialog.Title>
 			</Dialog.Header>
 			<div class="grid grid-cols-1 gap-3 overflow-y-auto p-2 sm:grid-cols-2">
-				{#each Object.entries(compendium.community_cards) as [id, card]}
+				{#each sortedCommunityEntries as [id, card] (id)}
 					<div>
 						<CommunityCard {card}
 							><Button
@@ -212,7 +217,7 @@
 				<Dialog.Title>Select a transformation</Dialog.Title>
 			</Dialog.Header>
 			<div class="grid grid-cols-1 gap-3 overflow-y-auto p-2 sm:grid-cols-2">
-				{#each Object.entries(compendium.transformation_cards) as [id, card]}
+				{#each sortedTransformationEntries as [id, card] (id)}
 					<div>
 						<TransformationCard {card}
 							><Button

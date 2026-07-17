@@ -19,6 +19,20 @@ export function capitalize(string: string): string {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+export function compareAlpha(left: string, right: string): number {
+	return left.localeCompare(right, undefined, { sensitivity: 'base' });
+}
+
+export function sortEntriesByTitle<T extends { title: string }>(
+	entries: Iterable<[string, T]>
+): [string, T][] {
+	return [...entries].sort(([, left], [, right]) => compareAlpha(left.title, right.title));
+}
+
+export function sortByName<T extends { name: string }>(items: Iterable<T>): T[] {
+	return [...items].sort((left, right) => compareAlpha(left.name, right.name));
+}
+
 /**
  * Renders markdown to sanitized HTML
  * @param markdown - The markdown string to render

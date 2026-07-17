@@ -8,18 +8,17 @@
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
-	import { ClerkLoaded, RedirectToSignIn, Show, SignUpButton } from 'svelte-clerk';
 	import Mockup from '$lib/components/decorations/device-mockup.svelte';
+	import { signIn } from '@auth/sveltekit/client';
 
 	let { children } = $props();
 	const isMarketingRoute = $derived(page.url.pathname === '/characters');
-	const redirectUrl = $derived(`${page.url.pathname}${page.url.search}${page.url.hash}`);
+	const isLoggedIn = $derived(!!page.data.session?.user);
 </script>
 
-<Show when="signed-in">
+{#if isLoggedIn}
 	{@render children()}
-
-	{#snippet fallback()}
+{:else}
 		{#if isMarketingRoute}
 			<main class="relative min-h-[calc(100dvh-var(--navbar-height,3.5rem))] overflow-hidden">
 				<div
@@ -49,7 +48,13 @@
 							right from your sheet. Domain, Ancestry, and Community cards with tokens and
 							interactive choices. And more!
 						</p>
-						<SignUpButton class={cn(buttonVariants(), 'w-min')}>Create a Character!</SignUpButton>
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants(), 'w-min')}
+						>
+							Create a Character!
+						</button>
 
 						<div class="relative mb-16 max-w-[500px]">
 							<Mockup class="aspect-auto sm:-ml-12 sm:w-[500px]">
@@ -77,25 +82,31 @@
 
 				<div class="relative mb-8 w-full bg-background/90 shadow-xl">
 					<div class="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 pt-6 pb-8 text-center">
-						<h2 class="text-lg font-bold">Create up to 6 Characters for Free</h2>
+						<h2 class="text-lg font-bold">Create Characters for Free</h2>
 						<p>
 							Whether you are a veteran GM or just love creating characters, Daggerbrain's character
 							builder tool and digital character sheets make it easier than ever to play the game!
 						</p>
-						<SignUpButton class={cn(buttonVariants(), 'w-min')}>Start Playing for Free</SignUpButton
+						<button
+							type="button"
+							onclick={() => signIn('google')}
+							class={cn(buttonVariants(), 'w-min')}
 						>
+							Start Playing for Free
+						</button>
 					</div>
 				</div>
 			</main>
 
 			<Footer />
 		{:else}
-			<ClerkLoaded>
-				<RedirectToSignIn {redirectUrl} />
-			</ClerkLoaded>
+			<div class="flex min-h-[calc(100dvh-var(--navbar-height,3.5rem))] items-center justify-center">
+				<button type="button" onclick={() => signIn('google')} class={cn(buttonVariants(), 'w-min')}>
+					Sign In
+				</button>
+			</div>
 		{/if}
-	{/snippet}
-</Show>
+{/if}
 
 <style>
 	.characters-fade-container {

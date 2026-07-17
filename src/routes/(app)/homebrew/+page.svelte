@@ -3,7 +3,6 @@
 	import { fade } from 'svelte/transition';
 	import type { Id } from '@convex/_generated/dataModel';
 	import { COMPENDIUM_DEFAULTS } from '@convex/constants/constants';
-	import { HOMEBREW_LIMIT } from '@convex/constants/entitlements';
 	import type {
 		Adversary,
 		AncestryCard,
@@ -36,7 +35,6 @@
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Plus from '@lucide/svelte/icons/plus';
-	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { artForge } from '$lib/assets/images';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import SafeDelete from '$lib/components/shared/safe-delete.svelte';
@@ -52,7 +50,7 @@
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { getSourcesContext } from '$lib/state/sources.svelte';
 	import { getUserContext } from '$lib/state/user.svelte';
-	import { cn, level_to_tier, merge_compendium_content } from '$lib/utils';
+	import { cn, compareAlpha, level_to_tier, merge_compendium_content } from '$lib/utils';
 
 	type CreateHomebrewType =
 		| 'primary-weapon'
@@ -128,7 +126,7 @@
 		const compendium = homebrew.compendium;
 		if (!compendium) return [] as HomebrewEntry[];
 
-		return [
+		const entries = [
 			...Object.entries(compendium.primary_weapons).map(
 				([id, item]) =>
 					({ id: id as Id<'primary_weapons'>, table: 'primary_weapons', item }) as const
@@ -179,6 +177,8 @@
 				([id, item]) => ({ id: id as Id<'environments'>, table: 'environments', item }) as const
 			)
 		] satisfies HomebrewEntry[];
+
+		return entries.sort((left, right) => compareAlpha(left.item.title, right.item.title));
 	});
 
 	const countByTable = $derived.by(() => {
@@ -209,10 +209,6 @@
 
 	const totalCount = $derived(userContext.user?.homebrew_count ?? allItems.length);
 	const canCreateHomebrew = $derived(userContext.homebrew_limits.can_create_homebrew);
-	const hasUnlimitedHomebrew = $derived(userContext.homebrew_limits.has_unlimited);
-	const titleText = $derived(
-		userContext.user ? `${userContext.user.homebrew_count}/${HOMEBREW_LIMIT}` : ''
-	);
 
 	let searchQuery = $state('');
 	let activeTab = $state<ActiveTab>('');
@@ -740,13 +736,6 @@
 			<div class="flex items-center justify-between gap-2">
 				<p class="flex h-9 items-center gap-2 text-2xl font-bold">
 					Homebrew
-					{#if !isLoading && !hasUnlimitedHomebrew}
-						<span
-							in:fade
-							class="rounded-full border bg-card px-2 py-0.5 text-base tracking-widest text-muted-foreground"
-							>{titleText}</span
-						>
-					{/if}
 				</p>
 
 				<div class="flex gap-2">
@@ -760,19 +749,6 @@
 					</Button>
 				</div>
 			</div>
-
-			{#if !isLoading && !hasUnlimitedHomebrew}
-				<div class="flex flex-col items-start gap-1">
-					{#if !canCreateHomebrew}
-						<p class="text-sm text-muted-foreground">
-							Want unlimited homebrew? Become an
-							<a href="/subscribe" class="font-bold hover:underline">
-								Adventurer <ExternalLink class="-mt-[2px] inline size-3.5 stroke-3" />
-							</a>
-						</p>
-					{/if}
-				</div>
-			{/if}
 
 			{#if isLoading}
 				<div></div>

@@ -8,7 +8,7 @@ import type {
 } from './compendium';
 import type { TableNames } from '../_generated/dataModel';
 
-export const SourceKeySchema = z.enum(['SRD', 'The Void 1.5', 'Campaign', 'Homebrew']);
+export const SourceKeySchema = z.enum(['SRD', 'HAF', 'The Void 1.5', 'Campaign', 'Homebrew']);
 export type SourceKey = z.infer<typeof SourceKeySchema>;
 
 export const DomainCardIdSchema = z.object({

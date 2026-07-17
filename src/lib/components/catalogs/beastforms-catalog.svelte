@@ -10,7 +10,7 @@
 	import Dropdown from '$lib/components/utility/dropdown.svelte';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
-	import { level_to_tier } from '$lib/utils';
+	import { level_to_tier, sortEntriesByTitle } from '$lib/utils';
 	import { getSourcesContext } from '$lib/state/sources.svelte';
 
 	let {
@@ -60,7 +60,7 @@
 	}
 
 	// Get all beastforms from compendium
-	const allBeastforms = $derived(Object.entries(compendium.beastforms));
+	const allBeastforms = $derived(sortEntriesByTitle(Object.entries(compendium.beastforms)));
 
 	// Filter beastforms
 	const filteredBeastforms = $derived(

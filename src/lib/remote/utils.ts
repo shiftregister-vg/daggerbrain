@@ -1,6 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import type { R2Bucket } from '@cloudflare/workers-types';
-import type { SessionAuthObject } from 'svelte-clerk/server';
 
 export type AppErrorCode =
 	| 'unauthorized'
@@ -44,15 +43,16 @@ export const fail = (
 
 export const is_failure = <T>(result: AppResult<T>): result is AppFailure => !result.ok;
 
-export const require_auth = (
+export const require_auth = async (
 	event: RequestEvent
-): AppResult<SessionAuthObject & { userId: string }> => {
-	const auth = event.locals.auth();
-	if (!auth?.userId) {
+): Promise<AppResult<{ userId: string }>> => {
+	const session = await event.locals.auth();
+	const userId = session?.user?.id;
+	if (!userId) {
 		console.log('Unauthorized: No user ID found in auth');
 		return fail('unauthorized', 'Unauthorized', 401);
 	}
-	return ok(auth);
+	return ok({ userId });
 };
 
 export const require_r2_images = (event: RequestEvent): AppResult<R2Bucket> => {

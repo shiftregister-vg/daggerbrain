@@ -3,8 +3,14 @@
 	import type { Snippet } from 'svelte';
 	import * as Select from '$lib/components/ui/select/';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
-	import { capitalize, cn, applyProficiencyToDice, level_to_tier } from '$lib/utils';
-	import { renderMarkdown } from '$lib/utils';
+	import {
+		capitalize,
+		cn,
+		applyProficiencyToDice,
+		level_to_tier,
+		renderMarkdown,
+		sortEntriesByTitle
+	} from '$lib/utils';
 
 	let {
 		choices = $bindable({}),
@@ -129,10 +135,13 @@
 
 {#snippet legendary_beast_choices()}
 	{#if isLegendaryBeast(beastform)}
-		{@const available_forms = Object.fromEntries(
+		{@const available_form_entries = sortEntriesByTitle(
 			Object.entries(compendium.beastforms).filter(
 				([id, bf]) => id !== excludedBeastformId && bf.level_requirement === 1
 			)
+		)}
+		{@const available_forms = Object.fromEntries(
+			available_form_entries
 		)}
 		{@const current_choice = choices.legendary_beast_base_form?.[0] || ''}
 		{@const current_form = current_choice ? available_forms[current_choice] : undefined}
@@ -163,7 +172,7 @@
 					<Select.Item value="" class="justify-center text-muted-foreground"
 						>-- Select none --</Select.Item
 					>
-					{#each Object.entries(available_forms) as [id, form]}
+					{#each available_form_entries as [id, form]}
 						<Select.Item value={id}>
 							<div class="flex items-center gap-1.5">
 								<span>{form.title} ({form.category})</span>
@@ -181,10 +190,13 @@
 
 {#snippet legendary_hybrid_choices()}
 	{#if isLegendaryHybrid(beastform)}
-		{@const available_forms = Object.fromEntries(
+		{@const available_form_entries = sortEntriesByTitle(
 			Object.entries(compendium.beastforms).filter(
 				([id, bf]) => id !== excludedBeastformId && bf.level_requirement <= 4
 			)
+		)}
+		{@const available_forms = Object.fromEntries(
+			available_form_entries
 		)}
 
 		{@const base_forms = choices.legendary_hybrid_base_forms ?? []}
@@ -232,7 +244,7 @@
 						>
 							-- Clear selection --
 						</Select.Item>
-						{#each Object.entries(available_forms) as [id, form]}
+						{#each available_form_entries as [id, form]}
 							<Select.Item value={id} disabled={base_forms.length >= 2 && !base_forms.includes(id)}>
 								<div class="flex items-center gap-1.5">
 									<span>{form.title} ({form.category})</span>
@@ -446,10 +458,13 @@
 
 {#snippet mythic_beast_choices()}
 	{#if isMythicBeast(beastform)}
-		{@const available_forms = Object.fromEntries(
+		{@const available_form_entries = sortEntriesByTitle(
 			Object.entries(compendium.beastforms).filter(
 				([id, bf]) => id !== excludedBeastformId && bf.level_requirement <= 4
 			)
+		)}
+		{@const available_forms = Object.fromEntries(
+			available_form_entries
 		)}
 		{@const current_choice = choices.mythic_beast_base_form?.[0] || ''}
 		{@const current_form = current_choice ? available_forms[current_choice] : undefined}
@@ -480,7 +495,7 @@
 					<Select.Item value="" class="justify-center text-muted-foreground"
 						>-- Select none --</Select.Item
 					>
-					{#each Object.entries(available_forms) as [id, form]}
+					{#each available_form_entries as [id, form]}
 						<Select.Item value={id}>
 							<div class="flex items-center gap-1.5">
 								<span>{form.title} ({form.category})</span>
@@ -498,10 +513,13 @@
 
 {#snippet mythic_hybrid_choices()}
 	{#if isMythicHybrid(beastform)}
-		{@const available_forms = Object.fromEntries(
+		{@const available_form_entries = sortEntriesByTitle(
 			Object.entries(compendium.beastforms).filter(
 				([id, bf]) => id !== excludedBeastformId && bf.level_requirement <= 7
 			)
+		)}
+		{@const available_forms = Object.fromEntries(
+			available_form_entries
 		)}
 		{@const base_forms = choices.mythic_hybrid_base_forms ?? []}
 		{@const base_form_0 = base_forms[0] ? compendium.beastforms[base_forms[0]] : undefined}
@@ -549,7 +567,7 @@
 						>
 							-- Clear selection --
 						</Select.Item>
-						{#each Object.entries(available_forms) as [id, form]}
+						{#each available_form_entries as [id, form]}
 							<Select.Item value={id} disabled={base_forms.length >= 3 && !base_forms.includes(id)}>
 								<div class="flex items-center gap-1.5">
 									<span>{form.title} ({form.category})</span>

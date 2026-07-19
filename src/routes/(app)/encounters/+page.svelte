@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Id } from '@convex/_generated/dataModel';
-	import { BLANK_ENCOUNTER } from '@convex/constants/constants';
+	import type { Id } from '@domain/ids';
+	import { BLANK_ENCOUNTER } from '@domain/constants/constants';
 	import { artEncounters } from '$lib/assets/images';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Swords from '@lucide/svelte/icons/swords';
@@ -16,7 +16,7 @@
 	import { fade } from 'svelte/transition';
 	import { createApiResource } from '$lib/state/api-resource.svelte';
 	import { deleteApi, getApi, postApi } from '$lib/api/client';
-	import type { Encounter } from '@convex/schemas/encounters';
+	import type { Encounter } from '@domain/schemas/encounters';
 
 	const userContext = getUserContext();
 	const encountersQuery = createApiResource<{ id: Id<'encounters'>; encounter: Encounter }[]>(

@@ -1,5 +1,5 @@
-import { TransformationCardSchema, type TransformationCard } from '@convex/schemas/compendium';
-import type { Feature } from '@convex/schemas/rules';
+import { TransformationCardSchema, type TransformationCard } from '@domain/schemas/compendium';
+import type { Feature } from '@domain/schemas/rules';
 import DOMPurify from 'dompurify';
 
 function cloneFormValue<T>(value: T): T {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { PrimaryWeapon } from '@convex/schemas/compendium';
-	import type { DamageType } from '@convex/schemas/rules';
+	import type { PrimaryWeapon } from '@domain/schemas/compendium';
+	import type { DamageType } from '@domain/schemas/rules';
 	import Hand from '@lucide/svelte/icons/hand';
 	import { capitalize, level_to_tier, renderMarkdown } from '$lib/utils';
 

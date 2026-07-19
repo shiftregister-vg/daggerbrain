@@ -5,8 +5,8 @@
 	import DomainIcon from '$lib/components/decorations/domain-icon.svelte';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import { level_to_tier } from '$lib/utils';
-	import type { CompendiumContent } from '@convex/schemas/compendium';
-	import type { SourceKey } from '@convex/schemas/rules';
+	import type { CompendiumContent } from '@domain/schemas/compendium';
+	import type { SourceKey } from '@domain/schemas/rules';
 
 	type CreateHomebrewType =
 		| 'primary-weapon'

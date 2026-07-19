@@ -13,12 +13,12 @@
 	import { getUserContext } from '$lib/state/user.svelte';
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import CharacterPortrait from '$lib/components/character-sheet/standalone/character-portrait.svelte';
-	import type { Id } from '@convex/_generated/dataModel';
+	import type { Id } from '@domain/ids';
 	import { fade } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
 	import { createApiResource } from '$lib/state/api-resource.svelte';
 	import { getApi } from '$lib/api/client';
-	import type { Character } from '@convex/schemas/characters';
+	import type { Character } from '@domain/schemas/characters';
 
 	const userContext = getUserContext();
 

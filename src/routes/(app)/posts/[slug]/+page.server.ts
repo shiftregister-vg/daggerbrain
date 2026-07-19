@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		metadata: metadataModule.metadata,
 		rawSource,
 		canonicalPath: `/posts/${params.slug}`,
-		seoTitle: `${metadataModule.metadata.title} | Daggerbrain Posts`,
+		seoTitle: `${metadataModule.metadata.title} | Daggerlore Posts`,
 		notFoundMessage: 'Post not found',
 		slug: params.slug
 	});

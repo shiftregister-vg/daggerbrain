@@ -247,8 +247,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legacy_convex_id": {
-          "name": "legacy_convex_id",
+        "legacy_import_id": {
+          "name": "legacy_import_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -295,11 +295,11 @@
             "invite_code"
           ]
         },
-        "campaigns_legacy_convex_id_unique": {
-          "name": "campaigns_legacy_convex_id_unique",
+        "campaigns_legacy_import_id_unique": {
+          "name": "campaigns_legacy_import_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "legacy_convex_id"
+            "legacy_import_id"
           ]
         }
       },
@@ -336,8 +336,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legacy_convex_id": {
-          "name": "legacy_convex_id",
+        "legacy_import_id": {
+          "name": "legacy_import_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -406,11 +406,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "characters_legacy_convex_id_unique": {
-          "name": "characters_legacy_convex_id_unique",
+        "characters_legacy_import_id_unique": {
+          "name": "characters_legacy_import_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "legacy_convex_id"
+            "legacy_import_id"
           ]
         }
       },
@@ -503,8 +503,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legacy_convex_id": {
-          "name": "legacy_convex_id",
+        "legacy_import_id": {
+          "name": "legacy_import_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -558,11 +558,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "encounters_legacy_convex_id_unique": {
-          "name": "encounters_legacy_convex_id_unique",
+        "encounters_legacy_import_id_unique": {
+          "name": "encounters_legacy_import_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "legacy_convex_id"
+            "legacy_import_id"
           ]
         }
       },
@@ -599,8 +599,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legacy_convex_id": {
-          "name": "legacy_convex_id",
+        "legacy_import_id": {
+          "name": "legacy_import_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -675,11 +675,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "homebrew_items_legacy_convex_id_unique": {
-          "name": "homebrew_items_legacy_convex_id_unique",
+        "homebrew_items_legacy_import_id_unique": {
+          "name": "homebrew_items_legacy_import_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "legacy_convex_id"
+            "legacy_import_id"
           ]
         }
       },
@@ -936,6 +936,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "is_admin": {
+          "name": "is_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "false"
         },
         "homebrew_vault": {
           "name": "homebrew_vault",

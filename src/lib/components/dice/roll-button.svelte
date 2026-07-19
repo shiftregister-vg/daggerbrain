@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { cn, applyProficiencyToDice, parseDiceString } from '$lib/utils';
-	import type { RollInput } from '@convex/schemas/dice';
-	import type { DamageType, TraitId } from '@convex/schemas/rules';
+	import type { RollInput } from '@domain/schemas/dice';
+	import type { DamageType, TraitId } from '@domain/schemas/rules';
 	import { getDiceContext } from '$lib/state/dice.svelte';
-	import { TRAITS } from '@convex/constants/rules';
+	import { TRAITS } from '@domain/constants/rules';
 	import type { Snippet } from 'svelte';
 
 	type RollButtonProps = {

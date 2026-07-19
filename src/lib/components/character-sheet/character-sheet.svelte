@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TraitId } from '@convex/schemas/rules';
+	import type { TraitId } from '@domain/schemas/rules';
 	import { cn } from '$lib/utils';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 

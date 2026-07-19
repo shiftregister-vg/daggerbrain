@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { CompendiumContent, DomainCard } from '@convex/schemas/compendium';
+	import type { CompendiumContent, DomainCard } from '@domain/schemas/compendium';
 	import { cn } from '$lib/utils';
 	import { renderMarkdown } from '$lib/utils';
 	import type { Snippet } from 'svelte';
 	import DomainBanner from '$lib/components/decorations/domain-banner.svelte';
-	import type { CardChoices } from '@convex/schemas/rules';
+	import type { CardChoices } from '@domain/schemas/rules';
 	import CardOptions from './card-options.svelte';
 
 	let {

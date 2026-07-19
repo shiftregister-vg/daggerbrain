@@ -2,8 +2,8 @@
 	import { cn, compareAlpha, renderMarkdown } from '$lib/utils';
 	import type { Snippet } from 'svelte';
 	import * as Select from '$lib/components/ui/select/';
-	import type { CompendiumContent, AncestryCard } from '@convex/schemas/compendium';
-	import type { CardChoices } from '@convex/schemas/rules';
+	import type { CompendiumContent, AncestryCard } from '@domain/schemas/compendium';
+	import type { CardChoices } from '@domain/schemas/rules';
 	import CardOptions from './card-options.svelte';
 
 	let {

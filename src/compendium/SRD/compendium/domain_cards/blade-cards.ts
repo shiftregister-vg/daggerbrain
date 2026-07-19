@@ -1,4 +1,4 @@
-import type { DomainCard } from '../../../../convex/schemas/compendium';
+import type { DomainCard } from '@domain/schemas/compendium';
 
 export const BLADE_DOMAIN_CARDS = {
 	get_back_up: {

@@ -1,24 +1,21 @@
 import { SRD_COMPENDIUM, SRD_SOURCE_METADATA } from '../../compendium/SRD';
 import { HAF_COMPENDIUM, HAF_SOURCE_METADATA } from '../../compendium/Hope_and_Fear';
-// import {
-// 	THE_VOID_1_5_COMPENDIUM,
-// 	THE_VOID_1_5_SOURCE_METADATA
-// } from '../../compendium/the-void-1-5';
-import type { CompendiumContent } from '@convex/schemas/compendium';
-import type { SourceMetadata } from '@convex/schemas/sources';
-import type { SourceKey } from '@convex/schemas/rules';
+import { THE_VOID_COMPENDIUM, THE_VOID_SOURCE_METADATA } from '../../compendium/The_Void';
+import type { CompendiumContent } from '@domain/schemas/compendium';
+import type { SourceMetadata } from '@domain/schemas/sources';
+import type { SourceKey } from '@domain/schemas/rules';
 import { merge_compendium_content } from '$lib/utils';
 
 const OFFICIAL_SOURCE_METADATA = {
 	SRD: SRD_SOURCE_METADATA,
-	HAF: HAF_SOURCE_METADATA
-	// 'The Void 1.5': THE_VOID_1_5_SOURCE_METADATA
+	HAF: HAF_SOURCE_METADATA,
+	'The Void': THE_VOID_SOURCE_METADATA
 } satisfies Partial<Record<SourceKey, SourceMetadata>>;
 
 const OFFICIAL_COMPENDIUMS = {
 	SRD: SRD_COMPENDIUM,
-	HAF: HAF_COMPENDIUM
-	// 'The Void 1.5': THE_VOID_1_5_COMPENDIUM
+	HAF: HAF_COMPENDIUM,
+	'The Void': THE_VOID_COMPENDIUM
 } satisfies Partial<Record<SourceKey, CompendiumContent>>;
 
 export function getOfficialSourceMetadata(sourceKey: SourceKey): SourceMetadata | null {

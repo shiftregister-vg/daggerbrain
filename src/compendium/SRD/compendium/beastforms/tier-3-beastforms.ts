@@ -1,4 +1,4 @@
-import type { Beastform } from '../../../../convex/schemas/compendium';
+import type { Beastform } from '@domain/schemas/compendium';
 
 export const TIER_3_BEASTFORMS = {
 	great_predator: {

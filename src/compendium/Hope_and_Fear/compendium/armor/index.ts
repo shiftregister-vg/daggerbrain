@@ -1,4 +1,4 @@
-import type { Armor } from '../../../../convex/schemas/compendium';
+import type { Armor } from '@domain/schemas/compendium';
 import { TIER_1_ARMOR } from './tier-1-armor';
 import { TIER_2_ARMOR } from './tier-2-armor';
 import { TIER_3_ARMOR } from './tier-3-armor';

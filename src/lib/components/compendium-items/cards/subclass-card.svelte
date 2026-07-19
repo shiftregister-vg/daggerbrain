@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { CompendiumContent, SubclassCard } from '@convex/schemas/compendium';
+	import type { CompendiumContent, SubclassCard } from '@domain/schemas/compendium';
 	import { cn } from '$lib/utils';
 	import { renderMarkdown } from '$lib/utils';
 	import type { Snippet } from 'svelte';
 	import ClassBanner from '$lib/components/decorations/class-banner.svelte';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
-	import type { CardChoices } from '@convex/schemas/rules';
+	import type { CardChoices } from '@domain/schemas/rules';
 	import CardOptions from './card-options.svelte';
 
 	let {

@@ -3,7 +3,7 @@
 	import * as Select from '$lib/components/ui/select';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
-	import type { LevelUpChoices } from '@convex/schemas/rules';
+	import type { LevelUpChoices } from '@domain/schemas/rules';
 
 	let {
 		level = $bindable(),

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
-	import type { Traits, TraitId } from '@convex/schemas/rules';
-	import { TRAITS } from '@convex/constants/rules';
+	import type { Traits, TraitId } from '@domain/schemas/rules';
+	import { TRAITS } from '@domain/constants/rules';
 	import { getDiceContext } from '$lib/state/dice.svelte';
 
 	let {

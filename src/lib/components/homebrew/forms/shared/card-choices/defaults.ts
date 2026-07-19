@@ -1,4 +1,4 @@
-import type { CardOption } from '@convex/schemas/rules';
+import type { CardOption } from '@domain/schemas/rules';
 
 export function emptyCardSelection(
 	selectionId: string = crypto.randomUUID()

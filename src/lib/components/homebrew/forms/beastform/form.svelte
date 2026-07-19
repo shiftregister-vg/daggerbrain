@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { BeastformSchema, type Beastform } from '@convex/schemas/compendium';
-	import type { DamageType, Range, TraitId } from '@convex/schemas/rules';
+	import { BeastformSchema, type Beastform } from '@domain/schemas/compendium';
+	import type { DamageType, Range, TraitId } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';

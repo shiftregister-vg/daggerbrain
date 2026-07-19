@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-	<title>Maintenance | Daggerbrain</title>
+	<title>Maintenance | Daggerlore</title>
 	<meta name="description" content="We are undergoing maintenance." />
 </svelte:head>
 
@@ -27,8 +27,8 @@
 	>
 		<h1 class="font-eveleth text-4xl">We'll be back soon!</h1>
 		<p class="">
-			<img src="/images/daggerbrain.svg" alt="Daggerbrain" class="inline size-8" />
-			<b>Daggerbrain</b> is being upgraded!
+			<img src="/images/daggerlore.svg" alt="Daggerlore" class="inline size-8" />
+			<b>Daggerlore</b> is being upgraded!
 			<span class="text-nowrap">Please check back soon.</span>
 		</p>
 	</div>

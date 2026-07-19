@@ -8,14 +8,14 @@
 			<p class="mb-3 text-sm font-semibold text-accent">Effective Date: May 13, 2026</p>
 			<h1 class="font-eveleth text-2xl">Terms of Service</h1>
 			<p class=" text-muted-foreground">
-				Welcome to Daggerbrain ("Daggerbrain," "we," "our," or "us"). We operate
+				Welcome to Daggerlore ("Daggerlore," "we," "our," or "us"). We operate
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="https://daggerbrain.com">https://daggerbrain.com</a
+					href="https://daggerlore.com">https://daggerlore.com</a
 				>, a set of rich digital tools for the Daggerheart TTRPG.
 			</p>
 			<p class=" text-muted-foreground">
-				By accessing or using Daggerbrain (the "Service"), you agree to these Terms of Service
+				By accessing or using Daggerlore (the "Service"), you agree to these Terms of Service
 				("Terms") and our
 				<a class="underline underline-offset-[0.2em] hover:text-accent" href="/privacy"
 					>Privacy Policy</a
@@ -27,7 +27,7 @@
 			<h2 class="border-b pb-3 text-xl font-bold">1. Your Content, Your Rights</h2>
 			<p class=" text-muted-foreground">
 				You retain ownership of content you create, upload, publish, sell, or otherwise provide
-				through Daggerbrain, including homebrew rules, characters, campaigns, images, text, files,
+				through Daggerlore, including homebrew rules, characters, campaigns, images, text, files,
 				and marketplace listings.
 			</p>
 			<ul class="ml-5 grid list-outside gap-[0.35rem]">
@@ -35,9 +35,9 @@
 					<strong class="text-foreground">Ownership.</strong> We do not claim ownership over your content.
 				</li>
 				<li class=" text-muted-foreground">
-					<strong class="text-foreground">License to Daggerbrain.</strong> By submitting content, you
-					grant us a non-exclusive, worldwide license to host, store, reproduce, display, distribute,
-					and promote that content as needed to operate, improve, and market the Service and the marketplace.
+					<strong class="text-foreground">License to Daggerlore.</strong> By submitting content, you grant
+					us a non-exclusive, worldwide license to host, store, reproduce, display, distribute, and promote
+					that content as needed to operate, improve, and market the Service and the marketplace.
 				</li>
 				<li class=" text-muted-foreground">
 					<strong class="text-foreground">Responsibility.</strong> You are responsible for your content
@@ -45,7 +45,7 @@
 					any applicable game license or community content rules.
 				</li>
 				<li class=" text-muted-foreground">
-					<strong class="text-foreground">No Exclusivity.</strong> Daggerbrain does not require exclusivity.
+					<strong class="text-foreground">No Exclusivity.</strong> Daggerlore does not require exclusivity.
 					You may share, sell, or publish your content on other platforms unless you separately agree
 					otherwise in writing.
 				</li>
@@ -55,7 +55,7 @@
 		<section class="space-y-4">
 			<h2 class="border-b pb-3 text-xl font-bold">2. Marketplace Content</h2>
 			<p class=" text-muted-foreground">
-				Daggerbrain may allow users to list, sell, purchase, download, or otherwise access digital
+				Daggerlore may allow users to list, sell, purchase, download, or otherwise access digital
 				content through a marketplace. Marketplace creators are responsible for accurate listings,
 				lawful content, support for their products, and honoring any representations made in their
 				listings.
@@ -63,15 +63,15 @@
 			<p class=" text-muted-foreground">
 				You may not upload or sell content that infringes intellectual property rights, violates
 				applicable law, contains malicious files, misrepresents compatibility, or violates
-				Daggerbrain policies. We may remove marketplace listings or suspend marketplace access at
-				our discretion.
+				Daggerlore policies. We may remove marketplace listings or suspend marketplace access at our
+				discretion.
 			</p>
 		</section>
 
 		<section class="space-y-4">
 			<h2 class="border-b pb-3 text-xl font-bold">3. Community Guidelines</h2>
 			<p class=" text-muted-foreground">
-				Users must help keep Daggerbrain useful, lawful, and respectful. You agree not to:
+				Users must help keep Daggerlore useful, lawful, and respectful. You agree not to:
 			</p>
 			<ul class="ml-5 grid list-outside gap-[0.35rem]">
 				<li class=" text-muted-foreground">Harass, threaten, abuse, or target other users.</li>
@@ -93,9 +93,9 @@
 		<section class="space-y-4">
 			<h2 class="border-b pb-3 text-xl font-bold">4. Payments, Fees, and Stripe</h2>
 			<p class=" text-muted-foreground">
-				Daggerbrain may offer paid digital products, marketplace purchases, subscriptions, creator
+				Daggerlore may offer paid digital products, marketplace purchases, subscriptions, creator
 				payouts, or other paid features. Payments are processed through Stripe or another
-				third-party payment processor. Daggerbrain does not store full payment card details.
+				third-party payment processor. Daggerlore does not store full payment card details.
 			</p>
 			<p class=" text-muted-foreground">
 				Prices, taxes, commissions, platform fees, payout timing, and creator eligibility rules may
@@ -144,7 +144,7 @@
 				To request a refund, contact
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerbrain.com">scribe@daggerbrain.com</a
+					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
 				> with the order details, a description of the issue, and any helpful screenshots or error messages.
 				We may grant or deny refunds at our discretion, subject to applicable law and payment processor
 				rules.
@@ -166,7 +166,7 @@
 				7. Daggerheart Compatibility and Third-Party Rights
 			</h2>
 			<p class=" text-muted-foreground">
-				Daggerbrain is an independent platform and is not affiliated with, endorsed by, or sponsored
+				Daggerlore is an independent platform and is not affiliated with, endorsed by, or sponsored
 				by Darrington Press or Critical Role. Users are responsible for complying with any
 				applicable Daggerheart licenses, community gaming terms, publisher guidelines, and
 				third-party intellectual property rights.
@@ -186,12 +186,12 @@
 			<h2 class="border-b pb-3 text-xl font-bold">9. Termination</h2>
 			<p class=" text-muted-foreground">
 				We may suspend or terminate accounts, remove content, restrict marketplace access, or take
-				other action if we believe you violated these Terms, created risk for Daggerbrain or others,
+				other action if we believe you violated these Terms, created risk for Daggerlore or others,
 				infringed third-party rights, or used the Service unlawfully. If you believe an action was
 				taken in error, contact us at
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerbrain.com">scribe@daggerbrain.com</a
+					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
 				>.
 			</p>
 		</section>
@@ -208,7 +208,7 @@
 		<section class="space-y-4">
 			<h2 class="border-b pb-3 text-xl font-bold">11. Limitation of Liability</h2>
 			<p class=" text-muted-foreground">
-				To the fullest extent permitted by law, Daggerbrain will not be liable for indirect,
+				To the fullest extent permitted by law, Daggerlore will not be liable for indirect,
 				incidental, consequential, special, punitive, or exemplary damages, or for lost profits,
 				revenue, data, goodwill, or business opportunities arising from your use of the Service.
 			</p>
@@ -218,7 +218,7 @@
 			<h2 class="border-b pb-3 text-xl font-bold">12. Changes to These Terms</h2>
 			<p class=" text-muted-foreground">
 				We may update these Terms from time to time. If we make material changes, we may provide
-				notice through the Service or by other reasonable means. Continued use of Daggerbrain after
+				notice through the Service or by other reasonable means. Continued use of Daggerlore after
 				updated Terms are posted means you accept the changes.
 			</p>
 		</section>
@@ -229,7 +229,7 @@
 				Questions about these Terms can be sent to
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerbrain.com">scribe@daggerbrain.com</a
+					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
 				>.
 			</p>
 		</section>

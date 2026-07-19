@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
-	import type { CompendiumContent } from '@convex/schemas/compendium';
+	import type { CompendiumContent } from '@domain/schemas/compendium';
 	import DomainIcon from './domain-icon.svelte';
 
 	let {

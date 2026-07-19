@@ -1,4 +1,4 @@
-import type { CharacterModifier, Feature, WeaponModifier } from '@convex/schemas/rules';
+import type { CharacterModifier, Feature, WeaponModifier } from '@domain/schemas/rules';
 
 export function emptyFeature(): Feature {
 	return {

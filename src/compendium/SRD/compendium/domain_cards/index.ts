@@ -1,4 +1,4 @@
-import type { DomainCard } from '../../../../convex/schemas/compendium';
+import type { DomainCard } from '@domain/schemas/compendium';
 import { ARCANA_DOMAIN_CARDS } from './arcana-cards';
 import { BLADE_DOMAIN_CARDS } from './blade-cards';
 import { BONE_DOMAIN_CARDS } from './bone-cards';

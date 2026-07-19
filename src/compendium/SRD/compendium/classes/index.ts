@@ -1,4 +1,4 @@
-import type { CharacterClass } from '../../../../convex/schemas/compendium';
+import type { CharacterClass } from '@domain/schemas/compendium';
 
 export const CLASSES = {
 	bard: {

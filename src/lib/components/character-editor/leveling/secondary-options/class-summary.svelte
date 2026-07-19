@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Banner from '$lib/components/decorations/class-banner.svelte';
-	import type { CharacterClass } from '@convex/schemas/compendium';
+	import type { CharacterClass } from '@domain/schemas/compendium';
 	import { cn, renderMarkdown } from '$lib/utils';
 	import type { Snippet } from 'svelte';
 	import * as Select from '$lib/components/ui/select/';

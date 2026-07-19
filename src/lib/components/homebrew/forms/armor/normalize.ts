@@ -1,5 +1,5 @@
-import { ArmorSchema, type Armor } from '@convex/schemas/compendium';
-import type { Feature } from '@convex/schemas/rules';
+import { ArmorSchema, type Armor } from '@domain/schemas/compendium';
+import type { Feature } from '@domain/schemas/rules';
 import DOMPurify from 'dompurify';
 
 function cloneFormValue<T>(value: T): T {

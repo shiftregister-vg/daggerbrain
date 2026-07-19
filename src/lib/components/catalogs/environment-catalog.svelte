@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Environment, CompendiumContent } from '@convex/schemas/compendium';
-	import { type EnvironmentType, type SourceKey } from '@convex/schemas/rules';
+	import type { Environment, CompendiumContent } from '@domain/schemas/compendium';
+	import { type EnvironmentType, type SourceKey } from '@domain/schemas/rules';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Select from '$lib/components/ui/select';

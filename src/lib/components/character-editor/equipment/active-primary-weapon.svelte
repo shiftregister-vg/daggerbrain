@@ -2,7 +2,7 @@
 	import { cn, capitalize } from '$lib/utils';
 	import Hand from '@lucide/svelte/icons/hand';
 	import * as Select from '$lib/components/ui/select/';
-	import type { DamageType, TraitId } from '@convex/schemas/rules';
+	import type { DamageType, TraitId } from '@domain/schemas/rules';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 
 	let {

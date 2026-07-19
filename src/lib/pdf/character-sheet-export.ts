@@ -11,7 +11,7 @@ import {
 	rgb,
 	type PDFImage
 } from 'pdf-lib';
-import type { Character } from '@convex/schemas/characters';
+import type { Character } from '@domain/schemas/characters';
 import type {
 	Armor,
 	Beastform,
@@ -20,8 +20,8 @@ import type {
 	PrimaryWeapon,
 	SecondaryWeapon,
 	Subclass
-} from '@convex/schemas/compendium';
-import type { Feature } from '@convex/schemas/rules';
+} from '@domain/schemas/compendium';
+import type { Feature } from '@domain/schemas/rules';
 import type { DerivedCharacterData } from '$lib/state/derive_character';
 
 const BLANK_CHARACTER_SHEET_URL = '/pdfs/blank-character-sheet.pdf';

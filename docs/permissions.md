@@ -4,7 +4,7 @@ This document describes the intended permission model for the app. It is about p
 
 ## Core Principles
 
-- Permissions are enforced server-side in Convex.
+- Permissions are enforced server-side.
 - The client may hide or show UI affordances, but the server decides access.
 - Authenticated users act only as themselves.
 - Users should not be able to pass another user's ID to gain access or ownership.
@@ -69,6 +69,6 @@ Campaign membership may reveal that a campaign references an encounter, but it s
 
 ## Future Direction
 
-The preferred long-term identity model is to use internal Convex user IDs for ownership and permission checks, with auth provider identifiers stored only as lookup metadata.
+The preferred long-term identity model is to use internal app user IDs for ownership and permission checks, with auth provider identifiers stored only as lookup metadata.
 
 Until that migration is complete, existing Clerk subject based ownership should be treated as the current app user key.

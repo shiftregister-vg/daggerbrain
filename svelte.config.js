@@ -12,7 +12,7 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter(),
 		alias: {
-			'@convex': './src/convex'
+			'@domain': './src/lib/domain'
 		},
 		experimental: {
 			remoteFunctions: true,

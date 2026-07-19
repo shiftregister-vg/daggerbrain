@@ -1,5 +1,5 @@
-import { AncestryCardSchema, type AncestryCard } from '@convex/schemas/compendium';
-import type { CardOption, Feature } from '@convex/schemas/rules';
+import { AncestryCardSchema, type AncestryCard } from '@domain/schemas/compendium';
+import type { CardOption, Feature } from '@domain/schemas/rules';
 import DOMPurify from 'dompurify';
 
 function cloneFormValue<T>(value: T): T {

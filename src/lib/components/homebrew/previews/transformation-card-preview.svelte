@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TransformationCard } from '@convex/schemas/compendium';
+	import type { TransformationCard } from '@domain/schemas/compendium';
 	import TransformationCardComponent from '$lib/components/compendium-items/cards/transformation-card.svelte';
 
 	let { card }: { card: TransformationCard } = $props();

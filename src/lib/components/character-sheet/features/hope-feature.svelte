@@ -3,8 +3,8 @@
 	import { cn } from '$lib/utils';
 	import { renderMarkdown } from '$lib/utils';
 	import * as Select from '$lib/components/ui/select';
-	import { TRAITS } from '@convex/constants/rules';
-	import type { TraitId } from '@convex/schemas/rules';
+	import { TRAITS } from '@domain/constants/rules';
+	import type { TraitId } from '@domain/schemas/rules';
 
 	const characterCtx = getCharacterContext();
 	const character = $derived(characterCtx.character);

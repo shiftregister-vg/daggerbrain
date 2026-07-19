@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { flip } from 'svelte/animate';
 	import type { Snippet } from 'svelte';
-	import type { Adversary, Environment } from '@convex/schemas/compendium';
-	import type { AdversaryInstance, Encounter } from '@convex/schemas/encounters';
+	import type { Adversary, Environment } from '@domain/schemas/compendium';
+	import type { AdversaryInstance, Encounter } from '@domain/schemas/encounters';
 	import { artEncounters } from '$lib/assets/images';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte';

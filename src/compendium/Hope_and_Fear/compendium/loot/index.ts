@@ -1,4 +1,4 @@
-import type { Loot } from '../../../../convex/schemas/compendium';
+import type { Loot } from '@domain/schemas/compendium';
 
 // todo: verify everything below
 export const LOOT = {

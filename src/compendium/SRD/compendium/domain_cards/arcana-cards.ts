@@ -1,4 +1,4 @@
-import type { DomainCard } from '../../../../convex/schemas/compendium';
+import type { DomainCard } from '@domain/schemas/compendium';
 
 export const ARCANA_DOMAIN_CARDS = {
 	rune_ward: {

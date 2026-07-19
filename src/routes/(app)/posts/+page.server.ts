@@ -24,19 +24,17 @@ export const load: PageServerLoad = async ({ url }) => {
 		pagination,
 		seo: {
 			title:
-				pagination.page <= 1
-					? 'Posts | Daggerbrain'
-					: `Posts Page ${pagination.page} | Daggerbrain`,
+				pagination.page <= 1 ? 'Posts | Daggerlore' : `Posts Page ${pagination.page} | Daggerlore`,
 			description:
-				'Read Daggerbrain product updates, development notes, and behind-the-screen posts from the app build process.',
+				'Read Daggerlore product updates, development notes, and behind-the-screen posts from the app build process.',
 			robots: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1',
 			canonical: createAbsoluteUrl(env.PUBLIC_ORIGIN, canonicalPath),
-			siteName: 'Daggerbrain',
+			siteName: 'Daggerlore',
 			locale: 'en_US',
 			type: 'website',
 			url: createAbsoluteUrl(env.PUBLIC_ORIGIN, canonicalPath),
 			image: createAbsoluteUrl(env.PUBLIC_ORIGIN, '/images/card/banner.webp'),
-			imageAlt: 'Daggerbrain banner artwork'
+			imageAlt: 'Daggerlore banner artwork'
 		}
 	};
 };

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { TraitId, Traits } from '@convex/schemas/rules';
-	import { TRAITS } from '@convex/constants/rules';
+	import type { TraitId, Traits } from '@domain/schemas/rules';
+	import { TRAITS } from '@domain/constants/rules';
 	import * as Select from '$lib/components/ui/select/';
 
 	let {

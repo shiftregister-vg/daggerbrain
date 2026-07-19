@@ -7,7 +7,7 @@
 	import ClassSummary from './class-summary.svelte';
 	import SubclassCard from '$lib/components/compendium-items/cards/subclass-card.svelte';
 	import { getCharacterContext } from '$lib/state/character.svelte';
-	import type { CharacterClass } from '@convex/schemas/compendium';
+	import type { CharacterClass } from '@domain/schemas/compendium';
 
 	let { after_remove_secondary_class = () => {} } = $props();
 

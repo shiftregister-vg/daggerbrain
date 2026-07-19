@@ -1,16 +1,16 @@
 import { FAQ_ITEMS } from '../../../routes/(app)/faq/faqs';
 
-export const SITE_NAME = 'Daggerbrain';
+export const SITE_NAME = 'Daggerlore';
 export const SITE_LOCALE = 'en_US';
 export const DEFAULT_ROBOTS =
 	'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
 export const PRIVATE_ROBOTS = 'noindex,nofollow';
 export const DEFAULT_OG_IMAGE_PATH = '/favicon.webp';
-export const DEFAULT_OG_IMAGE_ALT = 'Daggerbrain banner artwork';
+export const DEFAULT_OG_IMAGE_ALT = 'Daggerlore banner artwork';
 export const SITE_DESCRIPTION =
-	'Build Daggerheart characters, run campaigns, prep encounters, and create homebrew content with Daggerbrain.';
-export const CONTACT_EMAIL = 'scribe@daggerbrain.com';
-export const SITE_LOGO_PATH = '/images/logos/daggerbrain.svg';
+	'Build Daggerheart characters, run campaigns, prep encounters, and create homebrew content with Daggerlore.';
+export const CONTACT_EMAIL = 'scribe@daggerlore.com';
+export const SITE_LOGO_PATH = '/images/logos/daggerlore.svg';
 
 export type PublicPageDefinition = {
 	routeId: string;
@@ -28,108 +28,108 @@ export const PUBLIC_PAGE_DEFINITIONS = {
 	home: {
 		routeId: '/(app)',
 		pathname: '/',
-		title: 'Daggerbrain | Digital Character Builder for Daggerheart',
+		title: 'Daggerlore | Digital Character Builder for Daggerheart',
 		description: SITE_DESCRIPTION,
 		summary:
-			'Overview of Daggerbrain, including its Daggerheart character builder, campaign tools, encounter builder, homebrew tools, pricing, and roadmap.',
+			'Overview of Daggerlore, including its Daggerheart character builder, campaign tools, encounter builder, homebrew tools, pricing, and roadmap.',
 		changefreq: 'weekly',
 		priority: '1.0'
 	},
 	characters: {
 		routeId: '/(app)/characters',
 		pathname: '/characters',
-		title: 'Daggerheart Character Builder | Daggerbrain',
+		title: 'Daggerheart Character Builder | Daggerlore',
 		description:
 			'Create Daggerheart characters online with interactive sheets, cards, dice rolling, and campaign-ready tools.',
 		summary:
-			'Public landing page for the Daggerbrain character builder with feature highlights, screenshots, and sign-up calls to action.',
+			'Public landing page for the Daggerlore character builder with feature highlights, screenshots, and sign-up calls to action.',
 		changefreq: 'weekly',
 		priority: '0.9'
 	},
 	campaigns: {
 		routeId: '/(app)/campaigns',
 		pathname: '/campaigns',
-		title: 'Daggerheart Campaign Manager | Daggerbrain',
+		title: 'Daggerheart Campaign Manager | Daggerlore',
 		description:
 			'Run Daggerheart campaigns with live dashboards, player management, notes, countdowns, and encounter support.',
 		summary:
-			'Public landing page for Daggerbrain campaign tools, including campaign dashboards, player management, countdowns, and GM workflows.',
+			'Public landing page for Daggerlore campaign tools, including campaign dashboards, player management, countdowns, and GM workflows.',
 		changefreq: 'weekly',
 		priority: '0.9'
 	},
 	encounters: {
 		routeId: '/(app)/encounters',
 		pathname: '/encounters',
-		title: 'Daggerheart Encounter Builder | Daggerbrain',
+		title: 'Daggerheart Encounter Builder | Daggerlore',
 		description:
 			'Plan Daggerheart encounters with adversaries, environments, battle point support, and built-in prep notes.',
 		summary:
-			'Public landing page for the Daggerbrain encounter builder with encounter prep workflows and balancing tools for GMs.',
+			'Public landing page for the Daggerlore encounter builder with encounter prep workflows and balancing tools for GMs.',
 		changefreq: 'weekly',
 		priority: '0.8'
 	},
 	homebrew: {
 		routeId: '/(app)/homebrew',
 		pathname: '/homebrew',
-		title: 'Daggerheart Homebrew Tools | Daggerbrain',
+		title: 'Daggerheart Homebrew Tools | Daggerlore',
 		description:
-			'Create custom Daggerheart weapons, classes, adversaries, environments, and more with Daggerbrain homebrew tools.',
+			'Create custom Daggerheart weapons, classes, adversaries, environments, and more with Daggerlore homebrew tools.',
 		summary:
-			'Public landing page for Daggerbrain homebrew tools, covering custom content creation for players and GMs.',
+			'Public landing page for Daggerlore homebrew tools, covering custom content creation for players and GMs.',
 		changefreq: 'weekly',
 		priority: '0.8'
 	},
 	roadmap: {
 		routeId: '/(app)/roadmap',
 		pathname: '/roadmap',
-		title: 'Roadmap | Daggerbrain',
+		title: 'Roadmap | Daggerlore',
 		description:
-			'See what is next for Daggerbrain, from campaign tools and encounter prep to art, content, and future features.',
+			'See what is next for Daggerlore, from campaign tools and encounter prep to art, content, and future features.',
 		summary:
-			'Public roadmap for Daggerbrain covering shipped features, work in progress, and upcoming plans.',
+			'Public roadmap for Daggerlore covering shipped features, work in progress, and upcoming plans.',
 		changefreq: 'weekly',
 		priority: '0.8'
 	},
 	posts: {
 		routeId: '/(app)/posts',
 		pathname: '/posts',
-		title: 'Posts | Daggerbrain',
+		title: 'Posts | Daggerlore',
 		description:
-			'Read Daggerbrain product updates, development notes, and behind-the-screen posts from the app build process.',
+			'Read Daggerlore product updates, development notes, and behind-the-screen posts from the app build process.',
 		summary:
-			'Public posts index for Daggerbrain covering updates, design notes, implementation details, and release writeups.',
+			'Public posts index for Daggerlore covering updates, design notes, implementation details, and release writeups.',
 		changefreq: 'weekly',
 		priority: '0.7'
 	},
 	changelog: {
 		routeId: '/(app)/changelog',
 		pathname: '/changelog',
-		title: 'Changelog | Daggerbrain',
+		title: 'Changelog | Daggerlore',
 		description:
-			'Follow shipped updates, product improvements, and notable changes across Daggerbrain.',
+			'Follow shipped updates, product improvements, and notable changes across Daggerlore.',
 		summary:
-			'Public changelog for Daggerbrain with release notes, shipped improvements, and ongoing product updates.',
+			'Public changelog for Daggerlore with release notes, shipped improvements, and ongoing product updates.',
 		changefreq: 'weekly',
 		priority: '0.7'
 	},
 	faq: {
 		routeId: '/(app)/faq',
 		pathname: '/faq',
-		title: 'FAQ | Daggerbrain',
+		title: 'FAQ | Daggerlore',
 		description:
-			'Answers to common questions about Daggerbrain, including who it is for, what it does, and how pricing works.',
+			'Answers to common questions about Daggerlore, including who it is for, what it does, and how pricing works.',
 		summary:
-			'Public FAQ for Daggerbrain covering product capabilities, audience, free access, and upgrade questions.',
+			'Public FAQ for Daggerlore covering product capabilities, audience, free access, and upgrade questions.',
 		changefreq: 'monthly',
 		priority: '0.7'
 	},
 	contact: {
 		routeId: '/(app)/contact',
 		pathname: '/contact',
-		title: 'Contact | Daggerbrain',
+		title: 'Contact | Daggerlore',
 		description:
-			'Contact Daggerbrain for questions, feedback, support, partnerships, or community discussions.',
-		summary: 'Public contact page for Daggerbrain with email, Discord, and support options.',
+			'Contact Daggerlore for questions, feedback, support, partnerships, or community discussions.',
+		summary: 'Public contact page for Daggerlore with email, Discord, and support options.',
 		changefreq: 'monthly',
 		priority: '0.8',
 		imagePath: '/images/me.webp',
@@ -138,22 +138,22 @@ export const PUBLIC_PAGE_DEFINITIONS = {
 	terms: {
 		routeId: '/(app)/terms',
 		pathname: '/terms',
-		title: 'Terms of Service | Daggerbrain',
+		title: 'Terms of Service | Daggerlore',
 		description:
-			'Review the Daggerbrain terms for accounts, user-created content, marketplace purchases, Stripe payments, refunds, and platform use.',
+			'Review the Daggerlore terms for accounts, user-created content, marketplace purchases, Stripe payments, refunds, and platform use.',
 		summary:
-			'Daggerbrain Terms of Service covering user content, marketplace rules, payments, refunds, accounts, compatibility, and platform policies.',
+			'Daggerlore Terms of Service covering user content, marketplace rules, payments, refunds, accounts, compatibility, and platform policies.',
 		changefreq: 'monthly',
 		priority: '0.5'
 	},
 	privacy: {
 		routeId: '/(app)/privacy',
 		pathname: '/privacy',
-		title: 'Privacy Policy | Daggerbrain',
+		title: 'Privacy Policy | Daggerlore',
 		description:
-			'Learn how Daggerbrain collects, uses, shares, and protects information for accounts, user content, marketplace purchases, Stripe payments, and support.',
+			'Learn how Daggerlore collects, uses, shares, and protects information for accounts, user content, marketplace purchases, Stripe payments, and support.',
 		summary:
-			'Daggerbrain Privacy Policy covering account data, user content, marketplace and purchase data, Stripe payments, service providers, retention, and privacy rights.',
+			'Daggerlore Privacy Policy covering account data, user content, marketplace and purchase data, Stripe payments, service providers, retention, and privacy rights.',
 		changefreq: 'monthly',
 		priority: '0.5'
 	}
@@ -183,33 +183,33 @@ export type PrivateRouteDefinition = {
 
 export const PRIVATE_ROUTE_DEFINITIONS = {
 	'/(app)/profile': {
-		title: 'Your Profile | Daggerbrain',
-		description: 'Manage your Daggerbrain account settings and profile details.',
+		title: 'Your Profile | Daggerlore',
+		description: 'Manage your Daggerlore account settings and profile details.',
 		robots: PRIVATE_ROBOTS
 	},
 	'/(app)/characters/[id]': {
-		title: 'Character Sheet | Daggerbrain',
-		description: 'View and edit a private Daggerbrain character sheet.',
+		title: 'Character Sheet | Daggerlore',
+		description: 'View and edit a private Daggerlore character sheet.',
 		robots: PRIVATE_ROBOTS
 	},
 	'/(app)/campaigns/[id]': {
-		title: 'Campaign Dashboard | Daggerbrain',
-		description: 'View and manage a private Daggerbrain campaign dashboard.',
+		title: 'Campaign Dashboard | Daggerlore',
+		description: 'View and manage a private Daggerlore campaign dashboard.',
 		robots: PRIVATE_ROBOTS
 	},
 	'/(app)/encounters/[id]': {
-		title: 'Encounter Builder | Daggerbrain',
-		description: 'View and edit a private Daggerbrain encounter.',
+		title: 'Encounter Builder | Daggerlore',
+		description: 'View and edit a private Daggerlore encounter.',
 		robots: PRIVATE_ROBOTS
 	},
 	'/(app)/homebrew/[type]/[uid]': {
-		title: 'Homebrew Editor | Daggerbrain',
-		description: 'View and edit a private Daggerbrain homebrew entry.',
+		title: 'Homebrew Editor | Daggerlore',
+		description: 'View and edit a private Daggerlore homebrew entry.',
 		robots: PRIVATE_ROBOTS
 	},
 	'/(app)/campaigns/join/[uid]': {
-		title: 'Campaign Invite | Daggerbrain',
-		description: 'Join a private Daggerbrain campaign from an invite link.',
+		title: 'Campaign Invite | Daggerlore',
+		description: 'Join a private Daggerlore campaign from an invite link.',
 		robots: PRIVATE_ROBOTS
 	}
 } as const satisfies Record<string, PrivateRouteDefinition>;
@@ -310,8 +310,7 @@ export function getPublicPageDefinitionByRouteId(routeId: string | null | undefi
 	if (!routeId) return null;
 	return (
 		(PUBLIC_ROUTE_DEFINITIONS[routeId as keyof typeof PUBLIC_ROUTE_DEFINITIONS] as
-			| PublicPageDefinition
-			| undefined) ?? null
+			PublicPageDefinition | undefined) ?? null
 	);
 }
 
@@ -406,7 +405,7 @@ export function buildRouteJsonLd(rawOrigin: string, routeId: string | null, seo:
 			return {
 				'@context': 'https://schema.org',
 				'@type': 'ContactPage',
-				name: 'Contact Daggerbrain',
+				name: 'Contact Daggerlore',
 				url: seo.canonical,
 				description: seo.description
 			};

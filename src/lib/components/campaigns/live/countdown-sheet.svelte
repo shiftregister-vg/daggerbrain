@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Countdown } from '@convex/schemas/rules';
+	import type { Countdown } from '@domain/schemas/rules';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import Input from '$lib/components/ui/input/input.svelte';

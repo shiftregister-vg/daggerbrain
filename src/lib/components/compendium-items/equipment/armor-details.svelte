@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { renderMarkdown } from '$lib/utils';
-	import type { Armor } from '@convex/schemas/compendium';
+	import type { Armor } from '@domain/schemas/compendium';
 	import Shield from '@lucide/svelte/icons/shield';
 
 	let { armor }: { armor: Armor } = $props();

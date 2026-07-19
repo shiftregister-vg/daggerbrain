@@ -3,7 +3,7 @@
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import D4 from '$lib/components/dice/svg-components/d4.svelte';
 	import { getDiceContext } from '$lib/state/dice.svelte';
-	import type { Roll } from '@convex/schemas/dice';
+	import type { Roll } from '@domain/schemas/dice';
 
 	const characterCtx = getCharacterContext();
 	const derived_character_data = $derived(characterCtx.derived_character_data);

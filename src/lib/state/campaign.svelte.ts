@@ -1,14 +1,14 @@
-import type { Id } from '@convex/_generated/dataModel';
+import type { Id } from '@domain/ids';
 import type {
 	CharacterAccess,
 	HomebrewAccess,
 	HomebrewItem,
 	HomebrewTable
-} from '@convex/permissions';
-import type { Campaign, CampaignCharacter, CampaignMember } from '@convex/schemas/campaigns';
-import type { Character } from '@convex/schemas/characters';
-import type { CompendiumContent, CompendiumContentIds } from '@convex/schemas/compendium';
-import type { Roll } from '@convex/schemas/dice';
+} from '@domain/permissions';
+import type { Campaign, CampaignCharacter, CampaignMember } from '@domain/schemas/campaigns';
+import type { Character } from '@domain/schemas/characters';
+import type { CompendiumContent, CompendiumContentIds } from '@domain/schemas/compendium';
+import type { Roll } from '@domain/schemas/dice';
 import { getContext, onDestroy, setContext } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { getUserContext } from './user.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CompendiumContent } from '@convex/schemas/compendium';
+	import type { CompendiumContent } from '@domain/schemas/compendium';
 	import { cn } from '$lib/utils';
 	import { onMount, tick } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
@@ -15,7 +15,7 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import ChevronFirst from '@lucide/svelte/icons/chevron-first';
 	import ChevronLast from '@lucide/svelte/icons/chevron-last';
-	import type { CardChoices, Card } from '@convex/schemas/rules';
+	import type { CardChoices, Card } from '@domain/schemas/rules';
 
 	const localstorageCtx = getLocalstorageContext();
 	const isSmall = new MediaQuery('max-width: 639px');

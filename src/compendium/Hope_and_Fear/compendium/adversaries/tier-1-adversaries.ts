@@ -1,4 +1,4 @@
-import type { Adversary } from '../../../../convex/schemas/compendium';
+import type { Adversary } from '@domain/schemas/compendium';
 
 export const TIER_1_ADVERSARIES = {
 	mountain_troll: {

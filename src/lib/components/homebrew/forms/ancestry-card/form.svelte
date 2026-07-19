@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { AncestryCardSchema, type AncestryCard } from '@convex/schemas/compendium';
+	import { AncestryCardSchema, type AncestryCard } from '@domain/schemas/compendium';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';

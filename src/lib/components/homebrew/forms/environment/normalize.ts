@@ -1,4 +1,4 @@
-import { EnvironmentSchema, type Environment } from '@convex/schemas/compendium';
+import { EnvironmentSchema, type Environment } from '@domain/schemas/compendium';
 import DOMPurify from 'dompurify';
 
 function cloneFormValue<T>(value: T): T {

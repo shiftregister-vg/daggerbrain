@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Beastform, CompendiumContent } from '@convex/schemas/compendium';
+	import type { Beastform, CompendiumContent } from '@domain/schemas/compendium';
 	import type { Snippet } from 'svelte';
 	import * as Select from '$lib/components/ui/select/';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';

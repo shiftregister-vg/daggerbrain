@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { SubclassCard as SubclassCardData } from '@convex/schemas/compendium';
-	import type { AllTierLevelUpOptionId } from '@convex/schemas/rules';
+	import type { SubclassCard as SubclassCardData } from '@domain/schemas/compendium';
+	import type { AllTierLevelUpOptionId } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select/';
 	import SubclassCard from '$lib/components/compendium-items/cards/subclass-card.svelte';
 	import { getCharacterContext } from '$lib/state/character.svelte';

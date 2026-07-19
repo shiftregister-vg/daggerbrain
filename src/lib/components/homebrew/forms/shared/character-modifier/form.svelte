@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CardOption, CharacterModifier, TraitId } from '@convex/schemas/rules';
+	import type { CardOption, CharacterModifier, TraitId } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { AllTierLevelUpOptionId, LevelUpChoice, LevelUpOption } from '@convex/schemas/rules';
+	import type { AllTierLevelUpOptionId, LevelUpChoice, LevelUpOption } from '@domain/schemas/rules';
 	import { cn, renderMarkdown } from '$lib/utils';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Square from '@lucide/svelte/icons/square';

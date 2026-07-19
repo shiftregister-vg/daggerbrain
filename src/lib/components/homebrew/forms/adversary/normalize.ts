@@ -1,4 +1,4 @@
-import { AdversarySchema, type Adversary } from '@convex/schemas/compendium';
+import { AdversarySchema, type Adversary } from '@domain/schemas/compendium';
 import DOMPurify from 'dompurify';
 
 function cloneFormValue<T>(value: T): T {

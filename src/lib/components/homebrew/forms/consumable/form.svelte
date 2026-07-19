@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ConsumableSchema, type Consumable } from '@convex/schemas/compendium';
+	import { ConsumableSchema, type Consumable } from '@domain/schemas/compendium';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import { cn } from '$lib/utils';

@@ -1,7 +1,7 @@
-import type { CompendiumContent } from '@convex/schemas/compendium';
+import type { CompendiumContent } from '@domain/schemas/compendium';
 import { getContext, setContext } from 'svelte';
 import { getUserContext } from './user.svelte';
-import type { SourceKey } from '@convex/schemas/rules';
+import type { SourceKey } from '@domain/schemas/rules';
 import {
 	getOfficialCompendiumFromSourceKeys,
 	getOfficialSourcesFromKeys

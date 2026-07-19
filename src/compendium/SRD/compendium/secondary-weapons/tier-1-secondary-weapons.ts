@@ -1,4 +1,4 @@
-import type { SecondaryWeapon } from '../../../../convex/schemas/compendium';
+import type { SecondaryWeapon } from '@domain/schemas/compendium';
 
 // todo: verify all below
 

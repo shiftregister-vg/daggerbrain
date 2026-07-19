@@ -3,7 +3,7 @@ import type {
 	CharacterClassBanner,
 	CharacterClassBannerDomain,
 	Companion
-} from '@convex/schemas/characters';
+} from '@domain/schemas/characters';
 import {
 	type DomainCard,
 	type AncestryCard,
@@ -21,7 +21,7 @@ import {
 	type CompendiumContent,
 	type Domain,
 	type SubclassLevelUpOption
-} from '@convex/schemas/compendium';
+} from '@domain/schemas/compendium';
 import type {
 	Traits,
 	TraitId,
@@ -36,13 +36,13 @@ import type {
 	WeaponModifier,
 	Feature,
 	CardOption
-} from '@convex/schemas/rules';
+} from '@domain/schemas/rules';
 import {
 	ALL_LEVEL_UP_OPTIONS,
 	BASE_COMPANION,
 	BASE_STATS,
 	COMPANION_BASE_EXPERIENCE_MODIFIER
-} from '../../convex/constants/rules';
+} from '@domain/constants/rules';
 import { increaseDie, increase_range } from '$lib/utils';
 
 type InventoryPrimaryWeapon = PrimaryWeapon & { inventory_id: string };

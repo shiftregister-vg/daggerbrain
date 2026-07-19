@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Subclass } from '@convex/schemas/compendium';
+	import type { Subclass } from '@domain/schemas/compendium';
 	import SubclassCardComponent from '$lib/components/compendium-items/cards/subclass-card.svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';

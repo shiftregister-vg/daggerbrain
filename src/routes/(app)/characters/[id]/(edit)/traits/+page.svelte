@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { getCharacterContext } from '$lib/state/character.svelte';
-	import type { TraitId } from '@convex/schemas/rules';
+	import type { TraitId } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select';
 	import { capitalize } from '$lib/utils';
 	import { cn } from '$lib/utils';
-	import { TRAIT_OPTIONS, TRAITS } from '@convex/constants/rules';
+	import { TRAIT_OPTIONS, TRAITS } from '@domain/constants/rules';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 

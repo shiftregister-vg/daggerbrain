@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { PrimaryWeaponSchema, type PrimaryWeapon } from '@convex/schemas/compendium';
-	import type { DamageType, Range, TraitId, WeaponType } from '@convex/schemas/rules';
+	import { PrimaryWeaponSchema, type PrimaryWeapon } from '@domain/schemas/compendium';
+	import type { DamageType, Range, TraitId, WeaponType } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';

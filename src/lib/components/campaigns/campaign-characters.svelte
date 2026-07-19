@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Id } from '@convex/_generated/dataModel';
+	import type { Id } from '@domain/ids';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import CharacterPortrait from '$lib/components/character-sheet/standalone/character-portrait.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -14,7 +14,7 @@
 	import { toast } from 'svelte-sonner';
 	import { createApiResource } from '$lib/state/api-resource.svelte';
 	import { deleteApi, getApi, patchApi, postApi } from '$lib/api/client';
-	import type { Character } from '@convex/schemas/characters';
+	import type { Character } from '@domain/schemas/characters';
 
 	let { class: className = '' }: { class?: string } = $props();
 

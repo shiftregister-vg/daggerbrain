@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DiceType, Roll, RollInput } from '@convex/schemas/dice';
+	import type { DiceType, Roll, RollInput } from '@domain/schemas/dice';
 	import { cn } from '$lib/utils';
 	import { scale } from 'svelte/transition';
 	import X from '@lucide/svelte/icons/x';

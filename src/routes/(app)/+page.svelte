@@ -63,7 +63,7 @@
 							Build Your Character
 						</h2>
 						<p class="relative grow text-sm">
-							Use Daggerbrain's D&D beyond style character creator to build your Daggerheart
+							Use Daggerlore's D&D beyond style character creator to build your Daggerheart
 							character and <b>get ready for an epic adventure!</b>
 						</p>
 						<div class={cn(buttonVariants(), 'w-min border border-muted/20 shadow-lg')}>

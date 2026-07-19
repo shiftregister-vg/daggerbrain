@@ -1,8 +1,8 @@
-import type { Id } from '@convex/_generated/dataModel';
-import { ADVERSARY_TYPE_BATTLE_POINTS_MAP } from '@convex/constants/rules';
-import type { Adversary, CompendiumContent } from '@convex/schemas/compendium';
-import type { Encounter } from '@convex/schemas/encounters';
-import type { AdversaryType, SourceKey } from '@convex/schemas/rules';
+import type { Id } from '@domain/ids';
+import { ADVERSARY_TYPE_BATTLE_POINTS_MAP } from '@domain/constants/rules';
+import type { Adversary, CompendiumContent } from '@domain/schemas/compendium';
+import type { Encounter } from '@domain/schemas/encounters';
+import type { AdversaryType, SourceKey } from '@domain/schemas/rules';
 import { merge_compendium_content } from '$lib/utils';
 import { getContext, setContext } from 'svelte';
 import { getHomebrewContext } from './homebrew.svelte';
@@ -10,7 +10,7 @@ import { getSourcesContext } from './sources.svelte';
 import { getUserContext } from './user.svelte';
 import { createApiResource } from './api-resource.svelte';
 import { deleteApi, getApi, patchApi, postApi } from '$lib/api/client';
-import type { EncounterAccess } from '@convex/permissions';
+import type { EncounterAccess } from '@domain/permissions';
 
 const SYNC_DEBOUNCE_MS = 200;
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Consumable } from '@convex/schemas/compendium';
+	import type { Consumable } from '@domain/schemas/compendium';
 	import { renderMarkdown } from '$lib/utils';
 
 	let { consumable }: { consumable: Consumable } = $props();

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArmorSchema, type Armor } from '@convex/schemas/compendium';
+	import { ArmorSchema, type Armor } from '@domain/schemas/compendium';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';

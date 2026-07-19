@@ -3,7 +3,7 @@
 	import { slide } from 'svelte/transition';
 	import RollSummary from './roll-summary.svelte';
 	import { cn } from '$lib/utils';
-	import type { Roll } from '@convex/schemas/dice';
+	import type { Roll } from '@domain/schemas/dice';
 	import { flip } from 'svelte/animate';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Box from '@lucide/svelte/icons/box';

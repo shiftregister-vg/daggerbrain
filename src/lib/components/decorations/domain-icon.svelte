@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
-	import type { Domain } from '@convex/schemas/compendium';
+	import type { Domain } from '@domain/schemas/compendium';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 
 	type DomainIconData = Pick<Domain, 'title' | 'image_url'>;

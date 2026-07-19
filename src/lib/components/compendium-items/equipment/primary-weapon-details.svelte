@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { capitalize } from '$lib/utils';
 	import { renderMarkdown } from '$lib/utils';
-	import type { PrimaryWeapon } from '@convex/schemas/compendium';
+	import type { PrimaryWeapon } from '@domain/schemas/compendium';
 	import Hand from '@lucide/svelte/icons/hand';
 
 	let { weapon }: { weapon: PrimaryWeapon } = $props();

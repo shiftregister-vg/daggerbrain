@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Adversary, CompendiumContent } from '@convex/schemas/compendium';
-	import { type AdversaryType, type SourceKey } from '@convex/schemas/rules';
+	import type { Adversary, CompendiumContent } from '@domain/schemas/compendium';
+	import { type AdversaryType, type SourceKey } from '@domain/schemas/rules';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Select from '$lib/components/ui/select';
@@ -9,7 +9,7 @@
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
 	import AdversaryCardComponent from '$lib/components/compendium-items/adversary/adversary.svelte';
-	import { ADVERSARY_TYPE_BATTLE_POINTS_MAP } from '@convex/constants/rules';
+	import { ADVERSARY_TYPE_BATTLE_POINTS_MAP } from '@domain/constants/rules';
 	import { getSourcesContext } from '$lib/state/sources.svelte';
 	import { sortEntriesByTitle } from '$lib/utils';
 

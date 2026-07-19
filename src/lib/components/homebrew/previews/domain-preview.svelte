@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Domain } from '@convex/schemas/compendium';
+	import type { Domain } from '@domain/schemas/compendium';
 	import DomainIcon from '$lib/components/decorations/domain-icon.svelte';
 	import { renderMarkdown } from '$lib/utils';
 

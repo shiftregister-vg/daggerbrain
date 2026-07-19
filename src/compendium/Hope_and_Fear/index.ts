@@ -1,6 +1,6 @@
 
-import type { SourceMetadata } from '../../convex/schemas/sources';
-import type { CompendiumContent } from '../../convex/schemas/compendium';
+import type { SourceMetadata } from '@domain/schemas/sources';
+import type { CompendiumContent } from '@domain/schemas/compendium';
 import { COMPENDIUM } from './compendium';
 
 export const HAF_SOURCE_METADATA: SourceMetadata = {

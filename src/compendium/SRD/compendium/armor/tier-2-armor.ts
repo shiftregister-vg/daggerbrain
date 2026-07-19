@@ -1,4 +1,4 @@
-import type { Armor } from '../../../../convex/schemas/compendium';
+import type { Armor } from '@domain/schemas/compendium';
 
 export const TIER_2_ARMOR = {
 	improved_gambeson_armor: {

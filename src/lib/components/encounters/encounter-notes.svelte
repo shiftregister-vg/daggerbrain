@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Encounter } from '@convex/schemas/encounters';
+	import type { Encounter } from '@domain/schemas/encounters';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import { getEncounterContext } from '$lib/state/encounters.svelte';

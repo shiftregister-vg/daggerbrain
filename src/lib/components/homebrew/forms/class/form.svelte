@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { CharacterClassSchema, type CharacterClass } from '@convex/schemas/compendium';
-	import type { TraitId } from '@convex/schemas/rules';
+	import { CharacterClassSchema, type CharacterClass } from '@domain/schemas/compendium';
+	import type { TraitId } from '@domain/schemas/rules';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -16,7 +16,7 @@
 	import X from '@lucide/svelte/icons/x';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { getSourcesContext } from '$lib/state/sources.svelte';
-	import { TRAIT_OPTIONS } from '@convex/constants/rules';
+	import { TRAIT_OPTIONS } from '@domain/constants/rules';
 	import { superForm, intProxy, stringProxy } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { get } from 'svelte/store';

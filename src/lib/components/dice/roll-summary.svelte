@@ -2,7 +2,7 @@
 	import { getDiceContext } from '$lib/state/dice.svelte';
 	import { cn } from '$lib/utils';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
-	import type { DiceType, Roll } from '@convex/schemas/dice';
+	import type { DiceType, Roll } from '@domain/schemas/dice';
 	import D4 from './svg-components/d4.svelte';
 	import D6 from './svg-components/d6.svelte';
 	import D8 from './svg-components/d8.svelte';

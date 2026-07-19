@@ -1,4 +1,4 @@
-import type { Domain } from '../../../../convex/schemas/compendium';
+import type { Domain } from '@domain/schemas/compendium';
 export const DOMAINS = {
 	arcana: {
 		source_key: 'SRD',

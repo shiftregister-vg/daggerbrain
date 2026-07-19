@@ -2,14 +2,14 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Select from '$lib/components/ui/select/';
-	import type { AncestryCard } from '@convex/schemas/compendium';
+	import type { AncestryCard } from '@domain/schemas/compendium';
 	import DomainCardComponent from '$lib/components/compendium-items/cards/domain-card.svelte';
 	import AncestryCardComponent from '$lib/components/compendium-items/cards/ancestry-card.svelte';
 	import CommunityCardComponent from '$lib/components/compendium-items/cards/community-card.svelte';
 	import TransformationCardComponent from '$lib/components/compendium-items/cards/transformation-card.svelte';
 	import Search from '@lucide/svelte/icons/search';
-	import type { CompendiumContent } from '@convex/schemas/compendium';
-	import type { Card } from '@convex/schemas/rules';
+	import type { CompendiumContent } from '@domain/schemas/compendium';
+	import type { Card } from '@domain/schemas/rules';
 	import { compareAlpha, sortEntriesByTitle } from '$lib/utils';
 
 	type CardTypeFilter = 'all' | 'domain' | 'ancestry' | 'community' | 'transformation';

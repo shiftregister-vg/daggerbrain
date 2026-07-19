@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { fade } from 'svelte/transition';
-	import type { Id } from '@convex/_generated/dataModel';
-	import { COMPENDIUM_DEFAULTS } from '@convex/constants/constants';
+	import type { Id } from '@domain/ids';
+	import { COMPENDIUM_DEFAULTS } from '@domain/constants/constants';
 	import type {
 		Adversary,
 		AncestryCard,
@@ -19,8 +19,8 @@
 		SecondaryWeapon,
 		Subclass,
 		TransformationCard
-	} from '@convex/schemas/compendium';
-	import type { HomebrewTable } from '@convex/permissions';
+	} from '@domain/schemas/compendium';
+	import type { HomebrewTable } from '@domain/permissions';
 	import Search from '@lucide/svelte/icons/search';
 	import Shield from '@lucide/svelte/icons/shield';
 	import Swords from '@lucide/svelte/icons/swords';
@@ -46,6 +46,7 @@
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import LoadError from '$lib/components/utility/load-error.svelte';
 	import TemplateCombobox from '$lib/components/homebrew/template-combobox.svelte';
+	import DomainIcon from '$lib/components/decorations/domain-icon.svelte';
 	import Loader from '$lib/components/utility/loader.svelte';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { getSourcesContext } from '$lib/state/sources.svelte';
@@ -315,6 +316,11 @@
 	function getDomainName(domainId: string | undefined): string {
 		if (!domainId) return 'Unknown';
 		return fullCompendium.domains[domainId]?.title || domainId;
+	}
+
+	function getDomain(domainId: string | undefined): Domain | undefined {
+		if (!domainId) return undefined;
+		return fullCompendium.domains[domainId];
 	}
 
 	function getItemName(entry: HomebrewEntry): string {
@@ -734,9 +740,7 @@
 	>
 		<div class="flex w-full max-w-6xl flex-col space-y-4 px-4 py-4">
 			<div class="flex items-center justify-between gap-2">
-				<p class="flex h-9 items-center gap-2 text-2xl font-bold">
-					Homebrew
-				</p>
+				<p class="flex h-9 items-center gap-2 text-2xl font-bold">Homebrew</p>
 
 				<div class="flex gap-2">
 					<Button
@@ -1039,13 +1043,21 @@
 															alt="Subclass"
 														/>{:else}<BookOpen
 															class="size-6 text-muted-foreground"
-														/>{/if}{:else if entry.table === 'domains'}{#if entry.item.image_url}<img
+														/>{/if}{:else if entry.table === 'domains'}<DomainIcon
+														domain={entry.item}
+														class="size-6 text-muted-foreground"
+													/>{:else if entry.table === 'domain_cards'}{@const domain = getDomain(
+														entry.item.domain_id
+													)}{#if domain}<DomainIcon
+															{domain}
+															class="size-6 text-muted-foreground"
+														/>{:else if entry.item.image_url}<img
 															class="h-full w-full rounded-md object-cover"
 															src={entry.item.image_url}
-															alt="Domain"
+															alt={getItemName(entry)}
 														/>{:else}<Sparkles
 															class="size-6 text-muted-foreground"
-														/>{/if}{:else if entry.table === 'domain_cards' || entry.table === 'ancestry_cards' || entry.table === 'community_cards' || entry.table === 'transformation_cards'}{#if entry.item.image_url}<img
+														/>{/if}{:else if entry.table === 'ancestry_cards' || entry.table === 'community_cards' || entry.table === 'transformation_cards'}{#if entry.item.image_url}<img
 															class="h-full w-full rounded-md object-cover"
 															src={entry.item.image_url}
 															alt={getItemName(entry)}

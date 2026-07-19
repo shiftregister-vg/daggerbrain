@@ -1,4 +1,4 @@
-import type { CharacterCondition } from '@convex/schemas/rules';
+import type { CharacterCondition } from '@domain/schemas/rules';
 
 export function emptyCardChoiceCondition(
 	cardId = ''

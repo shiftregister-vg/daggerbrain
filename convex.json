@@ -1,4 +1,0 @@
-{
-	"functions": "src/convex/",
-	"typescriptCompiler": "tsgo"
-}

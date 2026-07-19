@@ -1,6 +1,6 @@
-import type { Id } from '@convex/_generated/dataModel';
-import type { CompendiumContent, CompendiumContentIds } from '@convex/schemas/compendium';
-import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@convex/permissions';
+import type { Id } from '@domain/ids';
+import type { CompendiumContent, CompendiumContentIds } from '@domain/schemas/compendium';
+import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@domain/permissions';
 import { onDestroy } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { merge_compendium_content } from '$lib/utils';

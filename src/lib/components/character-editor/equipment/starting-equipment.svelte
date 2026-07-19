@@ -4,7 +4,7 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
 	import { getCharacterContext } from '$lib/state/character.svelte';
-	import type { Loot, Consumable } from '@convex/schemas/compendium';
+	import type { Loot, Consumable } from '@domain/schemas/compendium';
 	import { cn } from '$lib/utils';
 	import { toast } from 'svelte-sonner';
 

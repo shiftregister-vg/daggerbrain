@@ -9,8 +9,8 @@
 		Armor,
 		Consumable,
 		Loot
-	} from '@convex/schemas/compendium';
-	import type { SourceKey } from '@convex/schemas/rules';
+	} from '@domain/schemas/compendium';
+	import type { SourceKey } from '@domain/schemas/rules';
 	import ArmorDetails from '$lib/components/compendium-items/equipment/armor-details.svelte';
 	import ConsumableDetails from '$lib/components/compendium-items/equipment/consumable-details.svelte';
 	import LootDetails from '$lib/components/compendium-items/equipment/loot-details.svelte';
@@ -24,8 +24,8 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
-	import type { CompendiumContent } from '@convex/schemas/compendium';
-	import type { SourceMetadata } from '@convex/schemas/sources';
+	import type { CompendiumContent } from '@domain/schemas/compendium';
+	import type { SourceMetadata } from '@domain/schemas/sources';
 
 	let {
 		onSelect,

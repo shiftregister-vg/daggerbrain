@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DamageType, Range, WeaponCondition } from '@convex/schemas/rules';
+	import type { DamageType, Range, WeaponCondition } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select';
 	import { defaultDamageTypeWeaponCondition, defaultRangeWeaponCondition } from './defaults';
 

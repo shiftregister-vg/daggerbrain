@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Id } from '@convex/_generated/dataModel';
-	import { BLANK_ENCOUNTER } from '@convex/constants/constants';
+	import type { Id } from '@domain/ids';
+	import { BLANK_ENCOUNTER } from '@domain/constants/constants';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Encounter from '$lib/components/encounters/encounter.svelte';
@@ -15,7 +15,7 @@
 	import { toast } from 'svelte-sonner';
 	import { createApiResource } from '$lib/state/api-resource.svelte';
 	import { getApi } from '$lib/api/client';
-	import type { Encounter as EncounterType } from '@convex/schemas/encounters';
+	import type { Encounter as EncounterType } from '@domain/schemas/encounters';
 
 	let {
 		class: className = '',

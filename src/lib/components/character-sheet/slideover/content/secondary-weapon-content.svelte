@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DamageType, Range } from '@convex/schemas/rules';
+	import type { DamageType, Range } from '@domain/schemas/rules';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import * as Select from '$lib/components/ui/select';

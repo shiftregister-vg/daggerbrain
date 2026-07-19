@@ -1,4 +1,4 @@
-import type { SecondaryWeapon } from '../../../../convex/schemas/compendium';
+import type { SecondaryWeapon } from '@domain/schemas/compendium';
 import { TIER_1_SECONDARY_WEAPONS } from './tier-1-secondary-weapons';
 import { TIER_2_SECONDARY_WEAPONS } from './tier-2-secondary-weapons';
 import { TIER_3_SECONDARY_WEAPONS } from './tier-3-secondary-weapons';

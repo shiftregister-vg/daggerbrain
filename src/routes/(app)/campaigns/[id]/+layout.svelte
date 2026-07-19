@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import type { Id } from '@convex/_generated/dataModel';
+	import type { Id } from '@domain/ids';
 	import LoadError from '$lib/components/utility/load-error.svelte';
 	import Loader from '$lib/components/utility/loader.svelte';
 	import { getCampaignContext, setCampaignContext } from '$lib/state/campaign.svelte';

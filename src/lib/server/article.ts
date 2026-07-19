@@ -131,7 +131,7 @@ export function buildArticleSeo(rawOrigin: string, article: ArticleSeo) {
 				: {}),
 			publisher: {
 				'@type': 'Organization',
-				name: 'Daggerbrain'
+				name: 'Daggerlore'
 			},
 			image: {
 				'@type': 'ImageObject',

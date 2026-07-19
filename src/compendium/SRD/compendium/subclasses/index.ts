@@ -1,4 +1,4 @@
-import type { Subclass } from '../../../../convex/schemas/compendium';
+import type { Subclass } from '@domain/schemas/compendium';
 export const SUBCLASSES = {
 	bard_troubadour: {
 		source_key: 'SRD',

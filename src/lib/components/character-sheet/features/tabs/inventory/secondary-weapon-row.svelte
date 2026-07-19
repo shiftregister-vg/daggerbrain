@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn, level_to_tier } from '$lib/utils';
-	import type { DamageType, TraitId, Traits } from '@convex/schemas/rules';
+	import type { DamageType, TraitId, Traits } from '@domain/schemas/rules';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import RollButton from '$lib/components/dice/roll-button.svelte';
 	import Hand from '@lucide/svelte/icons/hand';

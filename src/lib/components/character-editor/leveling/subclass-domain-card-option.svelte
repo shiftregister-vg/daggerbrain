@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { cn, renderMarkdown } from '$lib/utils';
-	import type { DomainCard, SubclassLevelUpOption } from '@convex/schemas/compendium';
-	import type { DomainCardId } from '@convex/schemas/rules';
+	import type { DomainCard, SubclassLevelUpOption } from '@domain/schemas/compendium';
+	import type { DomainCardId } from '@domain/schemas/rules';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import DomainCardSelector from './secondary-options/domain-card-selector.svelte';
 

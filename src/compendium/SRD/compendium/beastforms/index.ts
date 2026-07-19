@@ -1,4 +1,4 @@
-import type { Beastform } from '../../../../convex/schemas/compendium';
+import type { Beastform } from '@domain/schemas/compendium';
 import { TIER_4_BEASTFORMS } from './tier-4-beastforms';
 import { TIER_3_BEASTFORMS } from './tier-3-beastforms';
 import { TIER_2_BEASTFORMS } from './tier-2-beastforms';

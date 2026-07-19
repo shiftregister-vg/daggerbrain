@@ -32,11 +32,11 @@ CREATE TABLE "campaigns" (
 	"campaign" jsonb NOT NULL,
 	"members" jsonb NOT NULL,
 	"characters" jsonb NOT NULL,
-	"legacy_convex_id" text,
+	"legacy_import_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "campaigns_invite_code_unique" UNIQUE("invite_code"),
-	CONSTRAINT "campaigns_legacy_convex_id_unique" UNIQUE("legacy_convex_id")
+	CONSTRAINT "campaigns_legacy_import_id_unique" UNIQUE("legacy_import_id")
 );
 --> statement-breakpoint
 CREATE TABLE "characters" (
@@ -44,10 +44,10 @@ CREATE TABLE "characters" (
 	"owner_user_id" uuid NOT NULL,
 	"campaign_id" uuid,
 	"character" jsonb NOT NULL,
-	"legacy_convex_id" text,
+	"legacy_import_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "characters_legacy_convex_id_unique" UNIQUE("legacy_convex_id")
+	CONSTRAINT "characters_legacy_import_id_unique" UNIQUE("legacy_import_id")
 );
 --> statement-breakpoint
 CREATE TABLE "dice_history" (
@@ -60,10 +60,10 @@ CREATE TABLE "encounters" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"owner_user_id" uuid NOT NULL,
 	"encounter" jsonb NOT NULL,
-	"legacy_convex_id" text,
+	"legacy_import_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "encounters_legacy_convex_id_unique" UNIQUE("legacy_convex_id")
+	CONSTRAINT "encounters_legacy_import_id_unique" UNIQUE("legacy_import_id")
 );
 --> statement-breakpoint
 CREATE TABLE "homebrew_items" (
@@ -71,10 +71,10 @@ CREATE TABLE "homebrew_items" (
 	"owner_user_id" uuid NOT NULL,
 	"type" text NOT NULL,
 	"item" jsonb NOT NULL,
-	"legacy_convex_id" text,
+	"legacy_import_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "homebrew_items_legacy_convex_id_unique" UNIQUE("legacy_convex_id")
+	CONSTRAINT "homebrew_items_legacy_import_id_unique" UNIQUE("legacy_import_id")
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
@@ -106,6 +106,7 @@ CREATE TABLE "users" (
 	"email_verified" timestamp,
 	"image" text,
 	"legacy_clerk_id" text,
+	"is_admin" boolean DEFAULT false NOT NULL,
 	"homebrew_vault" jsonb DEFAULT '{
 	"primary_weapons": [],
 	"secondary_weapons": [],

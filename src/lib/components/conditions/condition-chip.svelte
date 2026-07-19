@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Condition } from '@convex/schemas/characters';
+	import type { Condition } from '@domain/schemas/characters';
 	import { cn } from '$lib/utils';
 
 	let {

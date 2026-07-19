@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DeathState } from '@convex/schemas/characters';
+	import type { DeathState } from '@domain/schemas/characters';
 	import Activity from '@lucide/svelte/icons/activity';
 	import Flame from '@lucide/svelte/icons/flame';
 	import Sword from '@lucide/svelte/icons/sword';

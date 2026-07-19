@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
-	import type { Countdown } from '@convex/schemas/rules';
+	import type { Countdown } from '@domain/schemas/rules';
 	import Eye from '@lucide/svelte/icons/eye';
 	import EyeOff from '@lucide/svelte/icons/eye-off';
 

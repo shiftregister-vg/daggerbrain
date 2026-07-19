@@ -87,7 +87,7 @@
 		<Dialog.Header>
 			<Dialog.Title>Beta</Dialog.Title>
 			<Dialog.Description>
-				This is a Beta version of Daggerbrain that is under active development. Expect bugs and
+				This is a Beta version of Daggerlore that is under active development. Expect bugs and
 				frequent data deletion.
 			</Dialog.Description>
 			<Dialog.Footer>

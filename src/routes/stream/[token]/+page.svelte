@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import Countdown from '$lib/components/character-sheet/campaign/countdown.svelte';
 	import Fear from '$lib/components/character-sheet/campaign/fear.svelte';
-	import type { Countdown as CountdownType } from '@convex/schemas/rules';
+	import type { Countdown as CountdownType } from '@domain/schemas/rules';
 	import { createApiResource } from '$lib/state/api-resource.svelte';
 	import { getApi } from '$lib/api/client';
 	import { browser } from '$app/environment';
@@ -99,7 +99,7 @@
 </script>
 
 <svelte:head>
-	<title>Daggerbrain Stream Overlay</title>
+	<title>Daggerlore Stream Overlay</title>
 </svelte:head>
 
 {#if state}

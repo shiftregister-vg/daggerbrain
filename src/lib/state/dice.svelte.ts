@@ -1,4 +1,4 @@
-import type { DiceType, Roll, RollInput } from '@convex/schemas/dice';
+import type { DiceType, Roll, RollInput } from '@domain/schemas/dice';
 import { getContext, setContext } from 'svelte';
 import DiceBox, { type DieResult, type RollGroup } from '@3d-dice/dice-box';
 

@@ -5,8 +5,8 @@ export type FaqItem = {
 
 export const FAQ_ITEMS = [
 	{
-		question: 'What is Daggerbrain?',
+		question: 'What is Daggerlore?',
 		answer:
-			'Daggerbrain is like DNDBeyond, but for Daggerheart. Create characters, run campaigns, make a homebrew library, and build encounters all in one place.'
+			'Daggerlore is like DNDBeyond, but for Daggerheart. Create characters, run campaigns, make a homebrew library, and build encounters all in one place.'
 	}
 ] as const satisfies readonly FaqItem[];

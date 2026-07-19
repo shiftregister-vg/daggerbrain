@@ -1,4 +1,4 @@
-import type { Beastform } from '../../../../convex/schemas/compendium';
+import type { Beastform } from '@domain/schemas/compendium';
 
 export const TIER_1_BEASTFORMS = {
 	agile_scout: {

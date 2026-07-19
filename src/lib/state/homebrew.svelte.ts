@@ -1,6 +1,6 @@
-import type { Id } from '@convex/_generated/dataModel';
-import type { CompendiumContent } from '@convex/schemas/compendium';
-import type { HomebrewItem, HomebrewTable } from '@convex/permissions';
+import type { Id } from '@domain/ids';
+import type { CompendiumContent } from '@domain/schemas/compendium';
+import type { HomebrewItem, HomebrewTable } from '@domain/permissions';
 import { getContext, setContext } from 'svelte';
 import { createApiResource } from './api-resource.svelte';
 import { deleteApi, getApi, patchApi, postApi } from '$lib/api/client';

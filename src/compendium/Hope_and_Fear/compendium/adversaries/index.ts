@@ -1,4 +1,4 @@
-import type { Adversary } from '../../../../convex/schemas/compendium';
+import type { Adversary } from '@domain/schemas/compendium';
 import { TIER_1_ADVERSARIES } from './tier-1-adversaries';
 import { TIER_2_ADVERSARIES } from './tier-2-adversaries';
 import { TIER_3_ADVERSARIES } from './tier-3-adversaries';

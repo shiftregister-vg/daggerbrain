@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DeathMoveId } from '@convex/schemas/characters';
+	import type { DeathMoveId } from '@domain/schemas/characters';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import Button from '$lib/components/ui/button/button.svelte';

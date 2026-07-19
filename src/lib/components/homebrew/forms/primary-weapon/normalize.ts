@@ -1,5 +1,5 @@
-import { PrimaryWeaponSchema, type PrimaryWeapon } from '@convex/schemas/compendium';
-import type { Feature } from '@convex/schemas/rules';
+import { PrimaryWeaponSchema, type PrimaryWeapon } from '@domain/schemas/compendium';
+import type { Feature } from '@domain/schemas/rules';
 import DOMPurify from 'dompurify';
 
 function cloneFormValue<T>(value: T): T {

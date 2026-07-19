@@ -7,12 +7,12 @@
 		CommunityCard,
 		CompendiumContent,
 		TransformationCard
-	} from '@convex/schemas/compendium';
+	} from '@domain/schemas/compendium';
 	import AncestryCardComponent from '$lib/components/compendium-items/cards/ancestry-card.svelte';
 	import CommunityCardComponent from '$lib/components/compendium-items/cards/community-card.svelte';
 	import TransformationCardComponent from '$lib/components/compendium-items/cards/transformation-card.svelte';
 	import Search from '@lucide/svelte/icons/search';
-	import type { Card } from '@convex/schemas/rules';
+	import type { Card } from '@domain/schemas/rules';
 	import { compareAlpha, sortEntriesByTitle } from '$lib/utils';
 
 	type HeritageCardFilter = 'ancestry_card' | 'community_card' | 'transformation_card';

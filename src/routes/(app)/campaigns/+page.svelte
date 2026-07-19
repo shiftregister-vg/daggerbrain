@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Id } from '@convex/_generated/dataModel';
+	import type { Id } from '@domain/ids';
 	import { artCampaigns } from '$lib/assets/images';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Rocket from '@lucide/svelte/icons/rocket';

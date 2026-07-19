@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CardOption, CharacterCondition } from '@convex/schemas/rules';
+	import type { CardOption, CharacterCondition } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { cn, merge_compendium_content } from '$lib/utils';

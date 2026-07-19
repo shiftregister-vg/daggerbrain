@@ -1,16 +1,16 @@
-import { CHARACTER_DEFAULTS } from '@convex/constants/constants';
-import { DEFAULT_UNLOCKED_SOURCES } from '@convex/constants/entitlements';
-import type { Campaign, CampaignCharacter, CampaignMember } from '@convex/schemas/campaigns';
-import type { Character, CharacterCompendiumScope } from '@convex/schemas/characters';
-import type { CompendiumContent, CompendiumContentIds } from '@convex/schemas/compendium';
-import type { DiceHistory } from '@convex/schemas/dice';
-import type { Encounter } from '@convex/schemas/encounters';
-import type { SourceKey } from '@convex/schemas/rules';
-import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@convex/permissions';
-import type { Id } from '@convex/_generated/dataModel';
+import { CHARACTER_DEFAULTS } from '@domain/constants/constants';
+import { DEFAULT_UNLOCKED_SOURCES } from '@domain/constants/entitlements';
+import type { Campaign, CampaignCharacter, CampaignMember } from '@domain/schemas/campaigns';
+import type { Character, CharacterCompendiumScope } from '@domain/schemas/characters';
+import type { CompendiumContent, CompendiumContentIds } from '@domain/schemas/compendium';
+import type { DiceHistory } from '@domain/schemas/dice';
+import type { Encounter } from '@domain/schemas/encounters';
+import type { SourceKey } from '@domain/schemas/rules';
+import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@domain/permissions';
+import type { Id } from '@domain/ids';
 import { publish } from './events';
 import { execute, jsonParam, parseJson, queryOne, queryRows } from '$lib/server/db/client';
-import { createEmptyCompendiumContentIds } from '@convex/lib/characterCompendium';
+import { createEmptyCompendiumContentIds } from '@domain/character-compendium';
 
 const VAULT_KEYS = [
 	'primary_weapons',
@@ -35,6 +35,7 @@ type UserRow = {
 	name: string | null;
 	email: string | null;
 	image: string | null;
+	is_admin: boolean | number;
 	homebrew_vault: unknown;
 };
 
@@ -119,11 +120,15 @@ function emptyCompendium(): CompendiumContent {
 
 async function getUserRow(userId: string): Promise<UserRow> {
 	const row = await queryOne<UserRow>(
-		'select id, name, email, image, homebrew_vault from users where id = ?',
+		'select id, name, email, image, is_admin, homebrew_vault from users where id = ?',
 		[userId]
 	);
 	if (!row) throw new Error('User not found');
 	return row;
+}
+
+function isAdminValue(value: boolean | number) {
+	return value === true || value === 1;
 }
 
 async function getUnlockedSourceKeys(userId: string): Promise<SourceKey[]> {
@@ -162,9 +167,26 @@ export async function getCurrentUser(userId: string | undefined) {
 		character_count: Number(characterCount?.count ?? 0),
 		homebrew_count: Number(homebrewCount?.count ?? 0),
 		homebrew_vault: parseVault(user.homebrew_vault),
+		is_admin: isAdminValue(user.is_admin),
 		name: user.name,
 		email: user.email,
 		image: user.image
+	};
+}
+
+export async function getAdminAccess(userId: string | undefined) {
+	const id = requireUserId(userId);
+	const user = await getUserRow(id);
+	if (!isAdminValue(user.is_admin)) throw new Error('Not authorized');
+
+	return {
+		is_admin: true,
+		user: {
+			_id: user.id,
+			name: user.name,
+			email: user.email,
+			image: user.image
+		}
 	};
 }
 

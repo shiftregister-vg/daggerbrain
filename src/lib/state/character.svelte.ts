@@ -1,8 +1,8 @@
-import type { Id } from '@convex/_generated/dataModel';
-import type { Character, CharacterCompendiumScope } from '@convex/schemas/characters';
-import type { CompendiumContent } from '@convex/schemas/compendium';
-import type { SourceKey } from '@convex/schemas/rules';
-import type { SourceMetadata } from '@convex/schemas/sources';
+import type { Id } from '@domain/ids';
+import type { Character, CharacterCompendiumScope } from '@domain/schemas/characters';
+import type { CompendiumContent } from '@domain/schemas/compendium';
+import type { SourceKey } from '@domain/schemas/rules';
+import type { SourceMetadata } from '@domain/schemas/sources';
 import { getContext, setContext } from 'svelte';
 import { merge_compendium_content } from '$lib/utils';
 import { derive_character_state, type DerivedCharacterData } from './derive_character';
@@ -13,7 +13,7 @@ import {
 } from '$lib/compendium/official-sources';
 import { createApiResource } from './api-resource.svelte';
 import { getApi, patchApi } from '$lib/api/client';
-import type { CharacterAccess } from '@convex/permissions';
+import type { CharacterAccess } from '@domain/permissions';
 
 const SYNC_DEBOUNCE_MS = 200;
 
@@ -69,8 +69,8 @@ function createCharacter() {
 		if (sourceKeySet.has('HAF')) {
 			sourceKeys.push('HAF');
 		}
-		if (activeCharacter?.settings.void_enabled && sourceKeySet.has('The Void 1.5')) {
-			sourceKeys.push('The Void 1.5');
+		if (activeCharacter?.settings.void_enabled && sourceKeySet.has('The Void')) {
+			sourceKeys.push('The Void');
 		}
 
 		return sourceKeys;

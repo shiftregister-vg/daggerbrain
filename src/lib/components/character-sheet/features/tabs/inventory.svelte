@@ -7,7 +7,7 @@
 		Consumable,
 		Loot,
 		AdventuringGear
-	} from '@convex/schemas/compendium';
+	} from '@domain/schemas/compendium';
 	import WeaponRow from './inventory/secondary-weapon-row.svelte';
 	import ArmorRow from './inventory/armor-row.svelte';
 	import ConsumableRow from './inventory/consumable-row.svelte';

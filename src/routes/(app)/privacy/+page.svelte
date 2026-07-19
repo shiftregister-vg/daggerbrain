@@ -7,16 +7,16 @@
 		<header class="space-y-4">
 			<h1 class="font-eveleth text-2xl">Privacy Policy</h1>
 			<p class="text-muted-foreground">
-				Welcome to Daggerbrain ("Daggerbrain," "we," "our," or "us"). We operate
+				Welcome to Daggerlore ("Daggerlore," "we," "our," or "us"). We operate
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="https://daggerbrain.com">https://daggerbrain.com</a
+					href="https://daggerlore.com">https://daggerlore.com</a
 				>, a set of rich digital tools for the Daggerheart TTRPG.
 			</p>
 			<p class="text-muted-foreground">
 				This Privacy Policy explains how we collect, use, disclose, and safeguard information when
-				you use Daggerbrain. By using the service, you agree to the collection and use of
-				information as described in this policy.
+				you use Daggerlore. By using the service, you agree to the collection and use of information
+				as described in this policy.
 			</p>
 		</header>
 
@@ -33,7 +33,7 @@
 				If you buy or sell marketplace content, we may collect order records, purchased item
 				metadata, entitlement records, creator payout-related identifiers, refund history, and
 				similar transaction records needed to operate the marketplace. Payment card details are
-				handled by Stripe and are not stored by Daggerbrain.
+				handled by Stripe and are not stored by Daggerlore.
 			</p>
 			<h3 class="text-base font-bold">Usage Data</h3>
 			<p class=" text-muted-foreground">
@@ -52,7 +52,7 @@
 		<section class="space-y-4">
 			<h2 class="border-b pb-3 text-xl font-bold">2. How We Use Information</h2>
 			<ul class="ml-5 grid list-outside gap-[0.35rem]">
-				<li class=" text-muted-foreground">To provide, maintain, and improve Daggerbrain.</li>
+				<li class=" text-muted-foreground">To provide, maintain, and improve Daggerlore.</li>
 				<li class=" text-muted-foreground">
 					To create and manage accounts, user content, and purchases.
 				</li>
@@ -92,7 +92,7 @@
 		<section class="space-y-4">
 			<h2 class="border-b pb-3 text-xl font-bold">4. Payments</h2>
 			<p class=" text-muted-foreground">
-				Daggerbrain may offer paid digital products and marketplace content. Payments are processed
+				Daggerlore may offer paid digital products and marketplace content. Payments are processed
 				by Stripe. We do not store full payment card numbers or sensitive payment credentials.
 				Stripe's use of your information is governed by Stripe's own privacy policy.
 			</p>
@@ -102,7 +102,7 @@
 			<h2 class="border-b pb-3 text-xl font-bold">5. Disclosure of Information</h2>
 			<p class=" text-muted-foreground">We may disclose information:</p>
 			<ul class="ml-5 grid list-outside gap-[0.35rem]">
-				<li class=" text-muted-foreground">To Service Providers that support Daggerbrain.</li>
+				<li class=" text-muted-foreground">To Service Providers that support Daggerlore.</li>
 				<li class=" text-muted-foreground">
 					To complete transactions, refunds, payouts, support, or marketplace operations.
 				</li>
@@ -110,7 +110,7 @@
 					When required by law, subpoena, court order, or valid governmental request.
 				</li>
 				<li class=" text-muted-foreground">
-					To protect the rights, safety, property, and security of Daggerbrain or others.
+					To protect the rights, safety, property, and security of Daggerlore or others.
 				</li>
 				<li class=" text-muted-foreground">
 					In connection with a merger, acquisition, reorganization, or sale of assets.
@@ -150,7 +150,7 @@
 				To make a privacy request, contact us at
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerbrain.com">scribe@daggerbrain.com</a
+					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
 				>. We may need to verify your identity before fulfilling a request.
 			</p>
 		</section>
@@ -169,7 +169,7 @@
 		<section>
 			<h2 class="mb-3 text-xl font-bold">10. Children's Privacy</h2>
 			<p class=" text-muted-foreground">
-				Daggerbrain is not intended for children under 13, and we do not knowingly collect Personal
+				Daggerlore is not intended for children under 13, and we do not knowingly collect Personal
 				Data from children under 13. If you believe a child has provided us with Personal Data,
 				contact us so we can take appropriate steps.
 			</p>
@@ -188,8 +188,8 @@
 			<h2 class="mb-3 text-xl font-bold">12. Changes to This Policy</h2>
 			<p class=" text-muted-foreground">
 				We may update this Privacy Policy from time to time. If we make material changes, we may
-				provide notice through the Service or by other reasonable means. Continued use of
-				Daggerbrain after changes are posted means you accept the updated policy.
+				provide notice through the Service or by other reasonable means. Continued use of Daggerlore
+				after changes are posted means you accept the updated policy.
 			</p>
 		</section>
 
@@ -199,7 +199,7 @@
 				Questions about this Privacy Policy can be sent to
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerbrain.com">scribe@daggerbrain.com</a
+					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
 				>.
 			</p>
 		</section>

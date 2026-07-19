@@ -1,4 +1,4 @@
-import { LootSchema, type Loot } from '@convex/schemas/compendium';
+import { LootSchema, type Loot } from '@domain/schemas/compendium';
 import DOMPurify from 'dompurify';
 
 function cloneFormValue<T>(value: T): T {

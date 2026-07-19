@@ -1,4 +1,4 @@
-import type { SecondaryWeapon } from '../../../../convex/schemas/compendium';
+import type { SecondaryWeapon } from '@domain/schemas/compendium';
 
 export const TIER_3_SECONDARY_WEAPONS = {
 	advanced_shortsword: {

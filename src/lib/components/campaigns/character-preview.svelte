@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Character } from '@convex/schemas/characters';
+	import type { Character } from '@domain/schemas/characters';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import ArmorSlots from '$lib/components/character-sheet/standalone/armor-slots.svelte';
 	import DamageThresholds from '$lib/components/character-sheet/standalone/damage-thresholds.svelte';

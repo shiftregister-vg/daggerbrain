@@ -5,9 +5,9 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import ConditionsRules from '$lib/components/rule-snippets/conditions-rules.svelte';
-	import type { Condition } from '@convex/schemas/characters';
-	import type { AdversaryInstance } from '@convex/schemas/encounters';
-	import { DEFAULT_CONDITIONS } from '@convex/constants/rules';
+	import type { Condition } from '@domain/schemas/characters';
+	import type { AdversaryInstance } from '@domain/schemas/encounters';
+	import { DEFAULT_CONDITIONS } from '@domain/constants/rules';
 	import { cn } from '$lib/utils';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import CircleMinus from '@lucide/svelte/icons/circle-minus';

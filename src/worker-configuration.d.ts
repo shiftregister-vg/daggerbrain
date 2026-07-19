@@ -7,8 +7,6 @@ declare namespace Cloudflare {
 		R2_USERCONTENT: R2Bucket;
 		ASSETS: Fetcher;
 		ADMIN_USER_ID: 'user_36tEhk4oHJUrgNQUk6CHAw3DypJ';
-		CONVEX_DEPLOYMENT: string;
-		PUBLIC_CONVEX_URL: string;
 		PUBLIC_CLERK_FRONTEND_API_URL: string;
 		PUBLIC_CLERK_PUBLISHABLE_KEY: string;
 		CLERK_SECRET_KEY: string;
@@ -20,7 +18,6 @@ declare namespace Cloudflare {
 		ADMIN_CLERK_ID: string;
 		CLOUDFLARE_ACCOUNT_ID: string;
 		CLOUDFLARE_API_TOKEN: string;
-		PUBLIC_CONVEX_SITE_URL: string;
 	}
 }
 interface Env extends Cloudflare.Env {}
@@ -32,8 +29,6 @@ declare namespace NodeJS {
 		Pick<
 			Cloudflare.Env,
 			| 'ADMIN_USER_ID'
-			| 'CONVEX_DEPLOYMENT'
-			| 'PUBLIC_CONVEX_URL'
 			| 'PUBLIC_CLERK_FRONTEND_API_URL'
 			| 'PUBLIC_CLERK_PUBLISHABLE_KEY'
 			| 'CLERK_SECRET_KEY'
@@ -45,7 +40,6 @@ declare namespace NodeJS {
 			| 'ADMIN_CLERK_ID'
 			| 'CLOUDFLARE_ACCOUNT_ID'
 			| 'CLOUDFLARE_API_TOKEN'
-			| 'PUBLIC_CONVEX_SITE_URL'
 		>
 	> {}
 }

@@ -2,12 +2,12 @@
 	import HeritageCardCatalog from '$lib/components/catalogs/heritage-card-catalog.svelte';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import type { AncestryCard, CommunityCard, TransformationCard } from '@convex/schemas/compendium';
+	import type { AncestryCard, CommunityCard, TransformationCard } from '@domain/schemas/compendium';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import CircleMinus from '@lucide/svelte/icons/circle-minus';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
-	import type { Card } from '@convex/schemas/rules';
+	import type { Card } from '@domain/schemas/rules';
 
 	const characterCtx = getCharacterContext();
 	const character = $derived(characterCtx.character);

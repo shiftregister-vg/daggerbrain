@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { AncestryCard } from '@convex/schemas/compendium';
+	import type { AncestryCard } from '@domain/schemas/compendium';
 	import AncestryCardComponent from '$lib/components/compendium-items/cards/ancestry-card.svelte';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { getSourcesContext } from '$lib/state/sources.svelte';

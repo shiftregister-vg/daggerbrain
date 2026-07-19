@@ -8,12 +8,12 @@ import {
 	index
 } from 'drizzle-orm/sqlite-core';
 import type { AdapterAccountType } from '@auth/core/adapters';
-import type { Campaign, CampaignCharacter, CampaignMember } from '@convex/schemas/campaigns';
-import type { Character } from '@convex/schemas/characters';
-import type { CompendiumContentIds } from '@convex/schemas/compendium';
-import type { DiceHistory } from '@convex/schemas/dice';
-import type { Encounter } from '@convex/schemas/encounters';
-import type { SourceKey } from '@convex/schemas/rules';
+import type { Campaign, CampaignCharacter, CampaignMember } from '@domain/schemas/campaigns';
+import type { Character } from '@domain/schemas/characters';
+import type { CompendiumContentIds } from '@domain/schemas/compendium';
+import type { DiceHistory } from '@domain/schemas/dice';
+import type { Encounter } from '@domain/schemas/encounters';
+import type { SourceKey } from '@domain/schemas/rules';
 
 const emptyHomebrewVault = JSON.stringify({
 	primary_weapons: [],
@@ -44,6 +44,7 @@ export const users = sqliteTable(
 		emailVerified: integer('email_verified', { mode: 'timestamp_ms' }),
 		image: text('image'),
 		legacyClerkId: text('legacy_clerk_id').unique(),
+		isAdmin: integer('is_admin', { mode: 'boolean' }).default(false).notNull(),
 		homebrewVault: text('homebrew_vault', { mode: 'json' })
 			.$type<CompendiumContentIds>()
 			.default(sql.raw(`'${emptyHomebrewVault}'`))
@@ -141,7 +142,7 @@ export const characters = sqliteTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		campaignId: text('campaign_id'),
 		character: text('character', { mode: 'json' }).$type<Character>().notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
 		updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(nowSql).notNull()
 	},
@@ -159,7 +160,7 @@ export const campaigns = sqliteTable(
 		campaign: text('campaign', { mode: 'json' }).$type<Campaign>().notNull(),
 		members: text('members', { mode: 'json' }).$type<CampaignMember[]>().notNull(),
 		characters: text('characters', { mode: 'json' }).$type<CampaignCharacter[]>().notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
 		updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(nowSql).notNull()
 	},
@@ -176,7 +177,7 @@ export const encounters = sqliteTable(
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		encounter: text('encounter', { mode: 'json' }).$type<Encounter>().notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
 		updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(nowSql).notNull()
 	},
@@ -227,7 +228,7 @@ export const homebrewItems = sqliteTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		type: text('type').notNull(),
 		item: text('item', { mode: 'json' }).notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
 		updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(nowSql).notNull()
 	},

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { CompendiumContent } from '@convex/schemas/compendium';
-	import type { SourceKey } from '@convex/schemas/rules';
+	import type { CompendiumContent } from '@domain/schemas/compendium';
+	import type { SourceKey } from '@domain/schemas/rules';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import EnvironmentCatalog from '$lib/components/catalogs/environment-catalog.svelte';

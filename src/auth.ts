@@ -6,11 +6,13 @@ import { env } from '$env/dynamic/private';
 import { databaseDialect, db } from '$lib/server/db/client';
 import * as pgSchema from '$lib/server/db/schema';
 import * as sqliteSchema from '$lib/server/db/schema.sqlite';
+import { pgAuthUsers, sqliteAuthUsers } from '$lib/server/db/auth-schema';
 
 const schema = databaseDialect === 'sqlite' ? sqliteSchema : pgSchema;
+const authUsersTable = databaseDialect === 'sqlite' ? sqliteAuthUsers : pgAuthUsers;
 
 const authTables = {
-	usersTable: schema.users,
+	usersTable: authUsersTable,
 	accountsTable: schema.accounts,
 	sessionsTable: schema.sessions,
 	verificationTokensTable: schema.verificationTokens,

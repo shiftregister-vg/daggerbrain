@@ -1,4 +1,4 @@
-import type { AncestryCard } from '../../../../convex/schemas/compendium';
+import type { AncestryCard } from '@domain/schemas/compendium';
 
 export const ANCESTRY_CARDS = {
 	// todo: verify everything below

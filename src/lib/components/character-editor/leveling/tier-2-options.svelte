@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { cn, renderMarkdown } from '$lib/utils';
-	import type { LevelUpChoice } from '@convex/schemas/rules';
+	import type { LevelUpChoice } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select/';
-	import { TIER_2_BASE_OPTIONS } from '@convex/constants/rules';
+	import { TIER_2_BASE_OPTIONS } from '@domain/constants/rules';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import Dropdown from '$lib/components/utility/dropdown.svelte';
 	import {

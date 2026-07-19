@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import CardCarousel from '$lib/components/utility/card-carousel.svelte';
-	import type { Card } from '@convex/schemas/rules';
+	import type { Card } from '@domain/schemas/rules';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Pencil from '@lucide/svelte/icons/pencil';

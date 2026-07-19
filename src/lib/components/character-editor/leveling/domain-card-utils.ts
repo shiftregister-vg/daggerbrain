@@ -1,7 +1,7 @@
 import type { getCharacterContext } from '$lib/state/character.svelte';
-import type { Character } from '@convex/schemas/characters';
-import type { DomainCard } from '@convex/schemas/compendium';
-import type { DomainCardId } from '@convex/schemas/rules';
+import type { Character } from '@domain/schemas/characters';
+import type { DomainCard } from '@domain/schemas/compendium';
+import type { DomainCardId } from '@domain/schemas/rules';
 
 type DerivedLoadoutState = {
 	domain_card_loadout: { id: string }[];

@@ -1,4 +1,4 @@
-import type { WeaponCondition } from '@convex/schemas/rules';
+import type { WeaponCondition } from '@domain/schemas/rules';
 
 export function defaultRangeWeaponCondition(): Extract<WeaponCondition, { type: 'range' }> {
 	return {

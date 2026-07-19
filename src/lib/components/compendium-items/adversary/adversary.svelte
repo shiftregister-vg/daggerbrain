@@ -2,8 +2,8 @@
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import { cn } from '$lib/utils';
 	import { renderMarkdown, addBonusDamageDie } from '$lib/utils';
-	import type { Adversary } from '@convex/schemas/compendium';
-	import type { AdversaryInstance } from '@convex/schemas/encounters';
+	import type { Adversary } from '@domain/schemas/compendium';
+	import type { AdversaryInstance } from '@domain/schemas/encounters';
 	import ConditionChip from '$lib/components/conditions/condition-chip.svelte';
 	import RollButton from '$lib/components/dice/roll-button.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';

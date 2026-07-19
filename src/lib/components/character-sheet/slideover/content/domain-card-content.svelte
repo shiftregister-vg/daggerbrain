@@ -10,8 +10,8 @@
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
-	import type { Card } from '@convex/schemas/rules';
-	import type { DomainCard } from '@convex/schemas/compendium';
+	import type { Card } from '@domain/schemas/rules';
+	import type { DomainCard } from '@domain/schemas/compendium';
 
 	const characterCtx = getCharacterContext();
 	const character = $derived(characterCtx.character);

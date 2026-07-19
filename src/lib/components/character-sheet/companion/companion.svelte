@@ -6,8 +6,8 @@
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import { Input } from '$lib/components/ui/input';
 	import * as Select from '$lib/components/ui/select/';
-	import { COMPANION_LEVEL_UP_OPTION_MAXES } from '@convex/constants/rules';
-	import type { CompanionLevelUpOptionId } from '@convex/schemas/rules';
+	import { COMPANION_LEVEL_UP_OPTION_MAXES } from '@domain/constants/rules';
+	import type { CompanionLevelUpOptionId } from '@domain/schemas/rules';
 	import CompanionEvasion from './companion-evasion.svelte';
 	import CompanionStress from './companion-stress.svelte';
 	import CompanionHope from './companion-hope.svelte';

@@ -11,12 +11,12 @@ import {
 	uuid
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from '@auth/core/adapters';
-import type { Character } from '@convex/schemas/characters';
-import type { Campaign, CampaignCharacter, CampaignMember } from '@convex/schemas/campaigns';
-import type { CompendiumContentIds } from '@convex/schemas/compendium';
-import type { DiceHistory } from '@convex/schemas/dice';
-import type { Encounter } from '@convex/schemas/encounters';
-import type { SourceKey } from '@convex/schemas/rules';
+import type { Character } from '@domain/schemas/characters';
+import type { Campaign, CampaignCharacter, CampaignMember } from '@domain/schemas/campaigns';
+import type { CompendiumContentIds } from '@domain/schemas/compendium';
+import type { DiceHistory } from '@domain/schemas/dice';
+import type { Encounter } from '@domain/schemas/encounters';
+import type { SourceKey } from '@domain/schemas/rules';
 
 const emptyHomebrewVaultSql = sql`'{
 	"primary_weapons": [],
@@ -45,6 +45,7 @@ export const users = pgTable(
 		emailVerified: timestamp('email_verified', { mode: 'date' }),
 		image: text('image'),
 		legacyClerkId: text('legacy_clerk_id').unique(),
+		isAdmin: boolean('is_admin').default(false).notNull(),
 		homebrewVault: jsonb('homebrew_vault')
 			.$type<CompendiumContentIds>()
 			.default(emptyHomebrewVaultSql)
@@ -145,7 +146,7 @@ export const characters = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		campaignId: uuid('campaign_id'),
 		character: jsonb('character').$type<Character>().notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 		updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull()
 	},
@@ -163,7 +164,7 @@ export const campaigns = pgTable(
 		campaign: jsonb('campaign').$type<Campaign>().notNull(),
 		members: jsonb('members').$type<CampaignMember[]>().notNull(),
 		characters: jsonb('characters').$type<CampaignCharacter[]>().notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 		updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull()
 	},
@@ -180,7 +181,7 @@ export const encounters = pgTable(
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		encounter: jsonb('encounter').$type<Encounter>().notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 		updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull()
 	},
@@ -231,7 +232,7 @@ export const homebrewItems = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		type: text('type').notNull(),
 		item: jsonb('item').notNull(),
-		legacyConvexId: text('legacy_convex_id').unique(),
+		legacyImportId: text('legacy_import_id').unique(),
 		createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 		updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull()
 	},

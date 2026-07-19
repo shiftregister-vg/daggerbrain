@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CharacterClass } from '@convex/schemas/compendium';
+	import type { CharacterClass } from '@domain/schemas/compendium';
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import ClassBanner from '$lib/components/decorations/class-banner.svelte';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';

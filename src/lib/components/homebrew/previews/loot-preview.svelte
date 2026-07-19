@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Loot } from '@convex/schemas/compendium';
+	import type { Loot } from '@domain/schemas/compendium';
 	import { renderMarkdown } from '$lib/utils';
 
 	let { loot }: { loot: Loot } = $props();

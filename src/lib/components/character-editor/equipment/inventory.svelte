@@ -8,7 +8,7 @@
 		Consumable,
 		AdventuringGear,
 		Loot
-	} from '@convex/schemas/compendium';
+	} from '@domain/schemas/compendium';
 	import Dropdown from '$lib/components/utility/dropdown.svelte';
 	import ArmorDetails from '$lib/components/compendium-items/equipment/armor-details.svelte';
 	import ConsumableDetails from '$lib/components/compendium-items/equipment/consumable-details.svelte';

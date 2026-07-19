@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CompendiumContentIds } from '@convex/schemas/compendium';
+	import type { CompendiumContentIds } from '@domain/schemas/compendium';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { getCampaignContext } from '$lib/state/campaign.svelte';

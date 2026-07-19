@@ -6,7 +6,7 @@
 	import LoadError from '$lib/components/utility/load-error.svelte';
 	import Loader from '$lib/components/utility/loader.svelte';
 	import { getUserContext } from '$lib/state/user.svelte';
-	import type { Id } from '@convex/_generated/dataModel';
+	import type { Id } from '@domain/ids';
 	import { onMount, onDestroy, untrack } from 'svelte';
 
 	let { children } = $props();

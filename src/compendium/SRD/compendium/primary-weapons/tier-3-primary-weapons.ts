@@ -1,4 +1,4 @@
-import type { PrimaryWeapon } from '../../../../convex/schemas/compendium';
+import type { PrimaryWeapon } from '@domain/schemas/compendium';
 
 export const TIER_3_PRIMARY_WEAPONS = {
 	advanced_broadsword: {

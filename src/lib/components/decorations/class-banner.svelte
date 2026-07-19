@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
-	import type { CharacterClass, CompendiumContent } from '@convex/schemas/compendium';
-	import type { CharacterClassBanner } from '@convex/schemas/characters';
+	import type { CharacterClass, CompendiumContent } from '@domain/schemas/compendium';
+	import type { CharacterClassBanner } from '@domain/schemas/characters';
 	import DomainIcon from './domain-icon.svelte';
 
 	let {

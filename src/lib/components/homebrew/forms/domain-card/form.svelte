@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DomainCardSchema, type DomainCard } from '@convex/schemas/compendium';
+	import { DomainCardSchema, type DomainCard } from '@domain/schemas/compendium';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte';

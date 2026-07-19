@@ -1,12 +1,12 @@
 ---
 title: Changelog
-description: Track product updates, shipped improvements, and notable changes across Daggerbrain.
+description: Track product updates, shipped improvements, and notable changes across Daggerlore.
 date: 1781536020000
 published: true
 updated: 1781536020000
 author:
   name: Author
-  role: Creator of Daggerbrain
+  role: Creator of Daggerlore
   avatar: /images/me.webp
 ---
 

@@ -35,26 +35,26 @@ CREATE TABLE `campaigns` (
 	`campaign` text NOT NULL,
 	`members` text NOT NULL,
 	`characters` text NOT NULL,
-	`legacy_convex_id` text,
+	`legacy_import_id` text,
 	`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `campaigns_invite_code_unique` ON `campaigns` (`invite_code`);--> statement-breakpoint
-CREATE UNIQUE INDEX `campaigns_legacy_convex_id_unique` ON `campaigns` (`legacy_convex_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `campaigns_legacy_import_id_unique` ON `campaigns` (`legacy_import_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `campaigns_invite_code_idx` ON `campaigns` (`invite_code`);--> statement-breakpoint
 CREATE TABLE `characters` (
 	`id` text PRIMARY KEY NOT NULL,
 	`owner_user_id` text NOT NULL,
 	`campaign_id` text,
 	`character` text NOT NULL,
-	`legacy_convex_id` text,
+	`legacy_import_id` text,
 	`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	FOREIGN KEY (`owner_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `characters_legacy_convex_id_unique` ON `characters` (`legacy_convex_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `characters_legacy_import_id_unique` ON `characters` (`legacy_import_id`);--> statement-breakpoint
 CREATE INDEX `characters_owner_user_id_idx` ON `characters` (`owner_user_id`);--> statement-breakpoint
 CREATE INDEX `characters_campaign_id_idx` ON `characters` (`campaign_id`);--> statement-breakpoint
 CREATE TABLE `dice_history` (
@@ -69,26 +69,26 @@ CREATE TABLE `encounters` (
 	`id` text PRIMARY KEY NOT NULL,
 	`owner_user_id` text NOT NULL,
 	`encounter` text NOT NULL,
-	`legacy_convex_id` text,
+	`legacy_import_id` text,
 	`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	FOREIGN KEY (`owner_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `encounters_legacy_convex_id_unique` ON `encounters` (`legacy_convex_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `encounters_legacy_import_id_unique` ON `encounters` (`legacy_import_id`);--> statement-breakpoint
 CREATE INDEX `encounters_owner_user_id_idx` ON `encounters` (`owner_user_id`);--> statement-breakpoint
 CREATE TABLE `homebrew_items` (
 	`id` text PRIMARY KEY NOT NULL,
 	`owner_user_id` text NOT NULL,
 	`type` text NOT NULL,
 	`item` text NOT NULL,
-	`legacy_convex_id` text,
+	`legacy_import_id` text,
 	`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	FOREIGN KEY (`owner_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `homebrew_items_legacy_convex_id_unique` ON `homebrew_items` (`legacy_convex_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `homebrew_items_legacy_import_id_unique` ON `homebrew_items` (`legacy_import_id`);--> statement-breakpoint
 CREATE INDEX `homebrew_items_owner_user_id_idx` ON `homebrew_items` (`owner_user_id`);--> statement-breakpoint
 CREATE INDEX `homebrew_items_owner_user_id_type_idx` ON `homebrew_items` (`owner_user_id`,`type`);--> statement-breakpoint
 CREATE TABLE `sessions` (
@@ -126,6 +126,7 @@ CREATE TABLE `users` (
 	`email_verified` integer,
 	`image` text,
 	`legacy_clerk_id` text,
+	`is_admin` integer DEFAULT false NOT NULL,
 	`homebrew_vault` text DEFAULT '{"primary_weapons":[],"secondary_weapons":[],"armor":[],"loot":[],"consumables":[],"beastforms":[],"classes":[],"subclasses":[],"domains":[],"domain_cards":[],"ancestry_cards":[],"community_cards":[],"transformation_cards":[],"adversaries":[],"environments":[]}' NOT NULL,
 	`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL

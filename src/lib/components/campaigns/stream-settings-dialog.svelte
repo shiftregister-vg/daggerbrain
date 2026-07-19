@@ -8,7 +8,7 @@
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 	import { cn } from '$lib/utils';
-	import type { Id } from '@convex/_generated/dataModel';
+	import type { Id } from '@domain/ids';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Eye from '@lucide/svelte/icons/eye';
 	import Loader2 from '@lucide/svelte/icons/loader-2';

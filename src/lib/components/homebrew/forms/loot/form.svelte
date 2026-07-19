@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { LootSchema, type Loot } from '@convex/schemas/compendium';
-	import type { CardOption } from '@convex/schemas/rules';
+	import { LootSchema, type Loot } from '@domain/schemas/compendium';
+	import type { CardOption } from '@domain/schemas/rules';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import CharacterModifierForm from '../shared/character-modifier/form.svelte';

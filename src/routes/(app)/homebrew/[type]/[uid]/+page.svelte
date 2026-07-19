@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Id } from '@convex/_generated/dataModel';
+	import type { Id } from '@domain/ids';
 	import type {
 		Adversary,
 		AncestryCard,
@@ -16,7 +16,7 @@
 		SecondaryWeapon,
 		Subclass,
 		TransformationCard
-	} from '@convex/schemas/compendium';
+	} from '@domain/schemas/compendium';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { page } from '$app/state';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';

@@ -1,4 +1,4 @@
-import { DomainSchema, type Domain } from '@convex/schemas/compendium';
+import { DomainSchema, type Domain } from '@domain/schemas/compendium';
 import DOMPurify from 'dompurify';
 
 function stripRawHtml(value: string): string {

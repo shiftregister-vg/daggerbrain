@@ -1,4 +1,4 @@
-import type { CommunityCard } from '../../../../convex/schemas/compendium';
+import type { CommunityCard } from '@domain/schemas/compendium';
 
 export const COMMUNITY_CARDS = {
 	highborne: {

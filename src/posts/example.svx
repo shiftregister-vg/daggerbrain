@@ -6,7 +6,7 @@ published: true
 coverImage: /images/art/mountains.webp
 author:
   name: Author Name
-  role: Creator of Daggerbrain
+  role: Creator of Daggerlore
   avatar: /images/me.webp
 ---
 

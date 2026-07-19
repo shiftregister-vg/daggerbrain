@@ -1,4 +1,4 @@
-import { ConsumableSchema, type Consumable } from '@convex/schemas/compendium';
+import { ConsumableSchema, type Consumable } from '@domain/schemas/compendium';
 import DOMPurify from 'dompurify';
 
 function stripRawHtml(value: string): string {

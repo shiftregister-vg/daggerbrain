@@ -1,10 +1,10 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { Range } from '@convex/schemas/rules';
+import type { Range } from '@domain/schemas/rules';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import type { DiceType } from '@convex/schemas/dice';
-import type { CompendiumContent } from '@convex/schemas/compendium';
+import type { DiceType } from '@domain/schemas/dice';
+import type { CompendiumContent } from '@domain/schemas/compendium';
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));

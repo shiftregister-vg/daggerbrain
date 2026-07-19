@@ -4,7 +4,7 @@
 	import ClassSummary from './class-summary.svelte';
 	import { renderMarkdown, sortEntriesByTitle } from '$lib/utils';
 	import { getCharacterContext } from '$lib/state/character.svelte';
-	import type { CharacterClass } from '@convex/schemas/compendium';
+	import type { CharacterClass } from '@domain/schemas/compendium';
 
 	const characterCtx = getCharacterContext();
 	const character = $derived(characterCtx.character);

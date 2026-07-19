@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
-	import type { DamageThresholds } from '@convex/schemas/rules';
+	import type { DamageThresholds } from '@domain/schemas/rules';
 
 	let {
 		class: className = '',

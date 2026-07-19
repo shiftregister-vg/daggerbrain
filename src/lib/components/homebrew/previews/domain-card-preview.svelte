@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DomainCard } from '@convex/schemas/compendium';
+	import type { DomainCard } from '@domain/schemas/compendium';
 	import DomainCardComponent from '$lib/components/compendium-items/cards/domain-card.svelte';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { getSourcesContext } from '$lib/state/sources.svelte';

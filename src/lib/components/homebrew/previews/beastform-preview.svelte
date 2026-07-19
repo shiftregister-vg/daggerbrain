@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Beastform } from '@convex/schemas/compendium';
+	import type { Beastform } from '@domain/schemas/compendium';
 	import BeastformComponent from '$lib/components/compendium-items/beastform.svelte';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { getSourcesContext } from '$lib/state/sources.svelte';

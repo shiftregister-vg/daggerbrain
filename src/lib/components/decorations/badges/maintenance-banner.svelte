@@ -46,7 +46,7 @@
 			)}
 		>
 			<span
-				>Daggerbrain.com will be down <b>Thursday, March 26th 6am - 4pm EST</b> while we make some upgrades.</span
+				>Daggerlore.com will be down <b>Thursday, March 26th 6am - 4pm EST</b> while we make some upgrades.</span
 			>
 			<Button
 				onclick={acknowledgeMaintenance}

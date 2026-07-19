@@ -104,8 +104,8 @@
 					onpointerdown={(e) => e.preventDefault()}
 					class="flex items-center gap-2 px-2 text-base font-semibold hover:no-underline"
 				>
-					<img src="/images/daggerbrain.svg" alt="Daggerbrain" class="size-6" />
-					<span class="hidden inline">Daggerbrain</span>
+					<img src="/images/daggerlore.svg" alt="Daggerlore" class="size-6" />
+					<span class="hidden inline">Daggerlore</span>
 				</Button>
 			</div>
 

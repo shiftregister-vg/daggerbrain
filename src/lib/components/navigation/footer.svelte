@@ -14,11 +14,11 @@
 				<a href="/terms" class="text-muted-foreground underline hover:text-accent">Terms</a>
 				<a href="/privacy" class="text-muted-foreground underline hover:text-accent">Privacy</a>
 			</nav>
-			<p class="mb-2 text-muted-foreground">© Daggerbrain, LLC. All rights reserved.</p>
+			<p class="mb-2 text-muted-foreground">© Daggerlore, LLC. All rights reserved.</p>
 			<p class=" text-muted-foreground">
-				Daggerbrain includes materials from the Daggerheart System Reference Document 1.0, ©
-				Critical Role, LLC. under the terms of the Darrington Press Community Gaming (DPCGL)
-				License. More information can be found at
+				Daggerlore includes materials from the Daggerheart System Reference Document 1.0, © Critical
+				Role, LLC. under the terms of the Darrington Press Community Gaming (DPCGL) License. More
+				information can be found at
 				<a
 					href="https://www.daggerheart.com"
 					target="_blank"
@@ -31,7 +31,7 @@
 		<div class="flex flex-col-reverse gap-6 sm:flex-row">
 			<!-- Support section -->
 			<div class="flex grow flex-col gap-2 pr-6 pl-6 sm:pt-4 sm:pr-0 md:w-[250px] md:pl-0">
-				<h3 class=" font-medium text-foreground">Want to support Daggerbrain?</h3>
+				<h3 class=" font-medium text-foreground">Want to support Daggerlore?</h3>
 
 				<a
 					aria-label="button"
@@ -127,7 +127,6 @@
 						/>
 					</svg>
 				</a>
-
 			</div>
 
 			<!-- Contact Us Section -->
@@ -136,7 +135,7 @@
 			>
 				<!-- Background Image -->
 				<img
-					src="/images/daggerbrain.svg"
+					src="/images/daggerlore.svg"
 					alt=""
 					class="absolute inset-0 size-full object-contain object-right opacity-10"
 				/>

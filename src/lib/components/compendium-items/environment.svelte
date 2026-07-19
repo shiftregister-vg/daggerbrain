@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Collapsible from '$lib/components/ui/collapsible';
-	import type { Environment } from '@convex/schemas/compendium';
+	import type { Environment } from '@domain/schemas/compendium';
 	import { cn } from '$lib/utils';
 	import { renderMarkdown } from '$lib/utils';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';

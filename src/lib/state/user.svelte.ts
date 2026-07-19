@@ -1,9 +1,9 @@
-import type { Id } from '@convex/_generated/dataModel';
-import { CHARACTER_DEFAULTS } from '@convex/constants/constants';
+import type { Id } from '@domain/ids';
+import { CHARACTER_DEFAULTS } from '@domain/constants/constants';
 import { getContext, setContext } from 'svelte';
 import { upload_user_image } from '$lib/remote/images.remote';
 import { page } from '$app/state';
-import { createEmptyCompendiumContentIds } from '@convex/lib/characterCompendium';
+import { createEmptyCompendiumContentIds } from '@domain/character-compendium';
 import { createApiResource } from './api-resource.svelte';
 import { deleteApi, getApi, postApi } from '$lib/api/client';
 
@@ -13,6 +13,7 @@ type AppUser = {
 	campaign_ids: Id<'campaigns'>[];
 	character_count: number;
 	homebrew_count: number;
+	is_admin: boolean;
 	homebrew_vault: ReturnType<typeof createEmptyCompendiumContentIds>;
 	name?: string | null;
 	email?: string | null;
@@ -33,6 +34,7 @@ function userContext() {
 					campaign_ids: [],
 					character_count: 0,
 					homebrew_count: 0,
+					is_admin: false,
 					homebrew_vault: createEmptyCompendiumContentIds(),
 					name: sessionUser.name,
 					email: sessionUser.email,

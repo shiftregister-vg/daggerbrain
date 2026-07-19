@@ -5,13 +5,13 @@
 		TransformationCard,
 		SubclassCard,
 		CommunityCard
-	} from '@convex/schemas/compendium';
+	} from '@domain/schemas/compendium';
 	import { cn } from '$lib/utils';
 	import DomainBanner from '$lib/components/decorations/domain-banner.svelte';
 	import ChoiceSelect from '$lib/components/utility/choice-select.svelte';
 	import ExperienceSelect from '$lib/components/utility/experience-select.svelte';
 
-	import type { CardChoices } from '@convex/schemas/rules';
+	import type { CardChoices } from '@domain/schemas/rules';
 
 	let {
 		card,

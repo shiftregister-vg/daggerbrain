@@ -1,3 +1,3 @@
-import type { TransformationCard } from '../../../../convex/schemas/compendium';
+import type { TransformationCard } from '@domain/schemas/compendium';
 
 export const TRANSFORMATION_CARDS = {} as const satisfies Record<string, TransformationCard>;

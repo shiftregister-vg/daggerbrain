@@ -1,5 +1,5 @@
 
-import type { CompendiumContent } from '../../../convex/schemas/compendium';
+import type { CompendiumContent } from '@domain/schemas/compendium';
 import { ADVERSARIES } from './adversaries';
 import { ANCESTRY_CARDS } from './ancestry-cards';
 import { ARMOR } from './armor';

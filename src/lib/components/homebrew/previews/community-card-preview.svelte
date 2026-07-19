@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CommunityCard } from '@convex/schemas/compendium';
+	import type { CommunityCard } from '@domain/schemas/compendium';
 	import CommunityCardComponent from '$lib/components/compendium-items/cards/community-card.svelte';
 
 	let { card }: { card: CommunityCard } = $props();

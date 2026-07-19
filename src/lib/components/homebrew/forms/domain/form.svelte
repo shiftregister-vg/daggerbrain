@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DomainSchema, type Domain } from '@convex/schemas/compendium';
+	import { DomainSchema, type Domain } from '@domain/schemas/compendium';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';

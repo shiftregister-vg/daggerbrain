@@ -2,8 +2,8 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Select from '$lib/components/ui/select';
-	import type { Beastform, CompendiumContent } from '@convex/schemas/compendium';
-	import type { SourceKey } from '@convex/schemas/rules';
+	import type { Beastform, CompendiumContent } from '@domain/schemas/compendium';
+	import type { SourceKey } from '@domain/schemas/rules';
 	import BeastformComponent from '$lib/components/compendium-items/beastform.svelte';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import Search from '@lucide/svelte/icons/search';

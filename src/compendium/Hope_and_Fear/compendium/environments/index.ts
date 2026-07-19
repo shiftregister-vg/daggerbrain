@@ -1,4 +1,4 @@
-import type { Environment } from '../../../../convex/schemas/compendium';
+import type { Environment } from '@domain/schemas/compendium';
 
 export const ENVIRONMENTS = {
 } as const satisfies Record<string, Environment>;

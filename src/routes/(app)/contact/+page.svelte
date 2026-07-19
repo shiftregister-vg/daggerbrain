@@ -8,7 +8,7 @@
 	let subject = $state('');
 	let message = $state('');
 
-	const email = 'scribe@daggerbrain.com';
+	const email = 'scribe@daggerlore.com';
 
 	const mailtoLink = $derived(() => {
 		const encodedSubject = encodeURIComponent(subject);
@@ -44,7 +44,7 @@
 				</div>
 				<div class="space-y-2">
 					<p class="text-muted- text-sm italic">
-						Hey, I'm _____! <span class="text-muted-foreground">The creator of Daggerbrain</span>
+						Hey, I'm _____! <span class="text-muted-foreground">The creator of Daggerlore</span>
 					</p>
 					<p class="text-xs text-muted-foreground italic">
 						Forever GM turned turned player (yes, it can happen!)

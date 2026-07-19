@@ -1,4 +1,4 @@
-import type { DomainCard } from '../../../../convex/schemas/compendium';
+import type { DomainCard } from '@domain/schemas/compendium';
 
 export const VALOR_DOMAIN_CARDS = {
 	bare_bones: {

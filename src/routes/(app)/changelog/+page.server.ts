@@ -29,7 +29,7 @@ export const load: PageServerLoad = async () => {
 		metadata: metadataModule.metadata,
 		rawSource,
 		canonicalPath: '/changelog',
-		seoTitle: `${metadataModule.metadata.title} | Daggerbrain`,
+		seoTitle: `${metadataModule.metadata.title} | Daggerlore`,
 		notFoundMessage: 'Changelog not found'
 	});
 };

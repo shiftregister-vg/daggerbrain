@@ -2,8 +2,8 @@ import {
 	SubclassSchema,
 	type Subclass,
 	type SubclassLevelUpOption
-} from '@convex/schemas/compendium';
-import type { CardOption, Feature } from '@convex/schemas/rules';
+} from '@domain/schemas/compendium';
+import type { CardOption, Feature } from '@domain/schemas/rules';
 import DOMPurify from 'dompurify';
 
 type SubclassCardKey = 'foundation_card' | 'specialization_card' | 'mastery_card';

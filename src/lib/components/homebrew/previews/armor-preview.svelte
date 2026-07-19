@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Armor } from '@convex/schemas/compendium';
+	import type { Armor } from '@domain/schemas/compendium';
 	import ArmorDetails from '$lib/components/compendium-items/equipment/armor-details.svelte';
 	import { level_to_tier } from '$lib/utils';
 

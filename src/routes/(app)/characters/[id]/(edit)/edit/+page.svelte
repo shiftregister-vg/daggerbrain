@@ -35,16 +35,14 @@
 		}
 	});
 
-	// function handleVoidCheckboxChange(checked: boolean) {
-	// 	if (!checked && character?.settings.void_enabled) {
-	// 		// User is trying to disable void - show warning and prevent change
-	// 		voidCheckboxState = true; // Keep it checked until confirmed
-	// 		showVoidDisableDialog = true;
-	// 	} else if (character) {
-	// 		// User is enabling void - allow it directly
-	// 		character.settings.void_enabled = checked;
-	// 	}
-	// }
+	function handleVoidCheckboxChange(checked: boolean) {
+		if (!checked && character?.settings.void_enabled) {
+			voidCheckboxState = true;
+			showVoidDisableDialog = true;
+		} else if (character) {
+			character.settings.void_enabled = checked;
+		}
+	}
 
 	function confirmDisableVoid() {
 		if (character) {
@@ -114,20 +112,18 @@
 				Enable Homebrew
 			</Label>
 
-			<!-- The Void -->
-			<!-- <Label class="cursor-pointer items-start">
+			<Label class="cursor-pointer items-start">
 				<Checkbox
 					bind:checked={voidCheckboxState}
 					onCheckedChange={(checked) => handleVoidCheckboxChange(checked ?? false)}
 				/>
-								<div class="space-y-1">
-					<p class="whitespace-nowrap">The Void:</p>
+				<div class="space-y-1">
+					<p class="whitespace-nowrap">The Void</p>
 					<ul class="text-xs font-normal text-muted-foreground">
-						<li>Transformation Cards</li>
-						<li>More coming soon...</li>
+						<li>Blood Hunter, Summoner, and Blood domain content</li>
 					</ul>
 				</div>
-			</Label> -->
+			</Label>
 
 			<!-- Show Campaign Information - only visible when character is in a campaign -->
 			{#if campaignId}

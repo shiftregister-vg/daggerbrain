@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { CompendiumContent, DomainCard } from '@convex/schemas/compendium';
-	import type { Card } from '@convex/schemas/rules';
+	import type { CompendiumContent, DomainCard } from '@domain/schemas/compendium';
+	import type { Card } from '@domain/schemas/rules';
 	import { cn, compareAlpha, renderMarkdown } from '$lib/utils';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -9,7 +9,7 @@
 	import CardCarousel from '$lib/components/utility/card-carousel.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import CircleMinus from '@lucide/svelte/icons/circle-minus';
-	import type { DomainCardId } from '@convex/schemas/rules';
+	import type { DomainCardId } from '@domain/schemas/rules';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import { auto_add_level_up_domain_card_to_loadout } from '../domain-card-utils';
 

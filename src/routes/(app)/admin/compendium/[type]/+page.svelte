@@ -288,6 +288,13 @@
 		return [...select.selectedOptions].map((option) => option.value);
 	}
 
+	function toggleArrayValue(target: MutableItem, key: string, value: string, checked: boolean) {
+		const current = Array.isArray(target[key]) ? target[key] : [];
+		target[key] = checked
+			? [...new Set([...current, value])]
+			: current.filter((entry: string) => entry !== value);
+	}
+
 	function clearFilters() {
 		listFilters = {
 			sources: [],
@@ -422,6 +429,9 @@
 		}
 		if (itemType === 'subclasses') {
 			return removeEmptyOptionalFields(item, ['class_id', 'spellcast_trait']);
+		}
+		if (itemType === 'beastforms') {
+			return removeEmptyOptionalFields(item, ['special_case']);
 		}
 		return item;
 	}
@@ -563,7 +573,8 @@
 				attack: { range: 'Melee', trait: 'agility', damage_dice: 'd6', damage_bonus: 0, damage_type: 'phy' },
 				advantages: [],
 				evasion_bonus: 0,
-				features: []
+				features: [],
+				special_case: undefined
 			};
 		}
 		if (itemType === 'classes') {
@@ -659,6 +670,7 @@
 			artist_name: '',
 			type: 'Exploration',
 			impulses: '',
+			relative_strength: undefined,
 			difficulty: 10,
 			potential_adversaries: '',
 			potential_adversaries_ids: [],
@@ -683,6 +695,65 @@
 	function removeSubclassCardFeature(target: MutableItem, key: string, index: number) {
 		ensureSubclassCard(target, key);
 		removeArrayItem(target[key], 'features', index);
+	}
+
+	function addSubclassCardChoice(target: MutableItem, key: string, type: 'arbitrary' | 'experience') {
+		ensureSubclassCard(target, key);
+		target[key].options ??= [];
+		const nextChoice =
+			type === 'arbitrary'
+				? {
+						type,
+						choice_id: `choice_${target[key].options.length + 1}`,
+						max: 1,
+						conditional_choice: null,
+						options: [{ selection_id: 'option_1', title: '', short_title: '' }]
+					}
+				: {
+						type,
+						choice_id: `choice_${target[key].options.length + 1}`,
+						max: 1,
+						conditional_choice: null
+					};
+		target[key].options = [...target[key].options, nextChoice];
+	}
+
+	function updateCardChoiceType(choice: MutableItem, type: string) {
+		choice.type = type;
+		if (type === 'arbitrary') {
+			choice.options = choice.options?.length
+				? choice.options
+				: [{ selection_id: 'option_1', title: '', short_title: '' }];
+		} else {
+			delete choice.options;
+		}
+	}
+
+	function addCardChoiceSelection(choice: MutableItem) {
+		choice.options = [
+			...(choice.options ?? []),
+			{ selection_id: `option_${(choice.options ?? []).length + 1}`, title: '', short_title: '' }
+		];
+	}
+
+	function removeCardChoiceSelection(choice: MutableItem, index: number) {
+		choice.options = (choice.options ?? []).filter(
+			(_: unknown, itemIndex: number) => itemIndex !== index
+		);
+	}
+
+	function addSubclassLevelUpOption(target: MutableItem, key: string) {
+		ensureSubclassCard(target, key);
+		target[key].level_up_options = [
+			...(target[key].level_up_options ?? []),
+			{
+				type: 'domain_card',
+				option_id: `domain_card_${(target[key].level_up_options ?? []).length + 1}`,
+				title: '',
+				short_title: '',
+				max: 1
+			}
+		];
 	}
 
 	function addAdversaryFeature(target: MutableItem) {
@@ -717,6 +788,13 @@
 		const next = [...(target[key] ?? [])];
 		next[index] = Number(value);
 		target[key] = next;
+	}
+
+	function ensureCharacterDescriptionSuggestions(target: MutableItem) {
+		target.character_description_suggestions ??= {};
+		for (const key of ['clothes', 'eyes', 'body', 'skin', 'attitude']) {
+			target.character_description_suggestions[key] ??= '';
+		}
 	}
 
 	function ensureStartingInventory(target: MutableItem) {
@@ -1125,6 +1203,26 @@
 							</section>
 						{/if}
 
+						{#if selectedItemType === 'ancestry_cards'}
+							<section class="admin-panel">
+								<h2>Ancestry Settings</h2>
+								<label class="check-field">
+									<input type="checkbox" bind:checked={editorItem.is_mixed_ancestry} />
+									<span>Mixed ancestry</span>
+								</label>
+							</section>
+						{/if}
+
+						{#if selectedItemType === 'ancestry_cards' || selectedItemType === 'community_cards' || selectedItemType === 'transformation_cards'}
+							<section class="admin-panel">
+								<h2>Card Settings</h2>
+								<label class="check-field">
+									<input type="checkbox" bind:checked={editorItem.tokens_enabled} />
+									<span>Enable tokens</span>
+								</label>
+							</section>
+						{/if}
+
 						{#if selectedItemType === 'classes'}
 							<section class="admin-panel">
 								<h2>Class Setup</h2>
@@ -1493,6 +1591,10 @@
 												</Button>
 											</div>
 											<div class="grid gap-3">
+												<label class="check-field">
+													<input type="checkbox" bind:checked={editorItem[card.key].tokens_enabled} />
+													<span>Enable tokens</span>
+												</label>
 												{#if (editorItem[card.key]?.features ?? []).length === 0}
 													<p class="text-sm text-muted-foreground">No features configured.</p>
 												{:else}
@@ -1518,6 +1620,116 @@
 																placeholder="Feature text"
 																bind:value={feature.description_html}
 															></textarea>
+														</div>
+													{/each}
+												{/if}
+											</div>
+											<div class="mt-4 grid gap-3 border-t border-border/70 pt-4">
+												<div class="flex items-center justify-between gap-3">
+													<p class="text-sm font-medium text-foreground">{card.label} Choices</p>
+													<div class="flex gap-2">
+														<Button
+															size="sm"
+															variant="outline"
+															onclick={() => addSubclassCardChoice(editorItem!, card.key, 'arbitrary')}
+														>
+															Choice
+														</Button>
+														<Button
+															size="sm"
+															variant="outline"
+															onclick={() => addSubclassCardChoice(editorItem!, card.key, 'experience')}
+														>
+															Experience
+														</Button>
+													</div>
+												</div>
+												{#if (editorItem[card.key]?.options ?? []).length === 0}
+													<p class="text-sm text-muted-foreground">No choices configured.</p>
+												{:else}
+													{#each editorItem[card.key]?.options ?? [] as choice, choiceIndex}
+														<div class="rounded-md border border-border/70 bg-card/60 p-3">
+															<div class="grid gap-3 md:grid-cols-[1fr_9rem_6rem_auto]">
+																<label class="admin-field">
+																	<span>Choice ID</span>
+																	<input class="admin-input" bind:value={choice.choice_id} />
+																</label>
+																<label class="admin-field">
+																	<span>Type</span>
+																	<select
+																		class="admin-input"
+																		value={choice.type}
+																		onchange={(event) => updateCardChoiceType(choice, event.currentTarget.value)}
+																	>
+																		<option value="arbitrary">arbitrary</option>
+																		<option value="experience">experience</option>
+																	</select>
+																</label>
+																<label class="admin-field">
+																	<span>Max</span>
+																	<input class="admin-input" type="number" min="1" bind:value={choice.max} />
+																</label>
+																<Button
+																	size="sm"
+																	variant="outline"
+																	onclick={() => removeArrayItem(editorItem![card.key], 'options', choiceIndex)}
+																>
+																	Remove
+																</Button>
+															</div>
+															{#if choice.type === 'arbitrary'}
+																<div class="mt-3 grid gap-2">
+																	<div class="flex items-center justify-between">
+																		<p class="text-sm font-medium text-foreground">Selections</p>
+																		<Button size="sm" variant="outline" onclick={() => addCardChoiceSelection(choice)}>Add</Button>
+																	</div>
+																	{#each choice.options ?? [] as selection, selectionIndex}
+																		<div class="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto]">
+																			<input class="admin-input" placeholder="selection_id" bind:value={selection.selection_id} />
+																			<input class="admin-input" placeholder="Title" bind:value={selection.title} />
+																			<input class="admin-input" placeholder="Short title" bind:value={selection.short_title} />
+																			<Button
+																				size="sm"
+																				variant="outline"
+																				onclick={() => removeCardChoiceSelection(choice, selectionIndex)}
+																			>
+																				Remove
+																			</Button>
+																		</div>
+																	{/each}
+																</div>
+															{/if}
+														</div>
+													{/each}
+												{/if}
+											</div>
+											<div class="mt-4 grid gap-3 border-t border-border/70 pt-4">
+												<div class="flex items-center justify-between gap-3">
+													<p class="text-sm font-medium text-foreground">{card.label} Level-Up Options</p>
+													<Button
+														size="sm"
+														variant="outline"
+														onclick={() => addSubclassLevelUpOption(editorItem!, card.key)}
+													>
+														Add
+													</Button>
+												</div>
+												{#if (editorItem[card.key]?.level_up_options ?? []).length === 0}
+													<p class="text-sm text-muted-foreground">No level-up options configured.</p>
+												{:else}
+													{#each editorItem[card.key]?.level_up_options ?? [] as option, optionIndex}
+														<div class="grid gap-2 rounded-md border border-border/70 bg-card/60 p-3 md:grid-cols-[1fr_1fr_1fr_5rem_auto]">
+															<input class="admin-input" placeholder="option_id" bind:value={option.option_id} />
+															<input class="admin-input" placeholder="Title" bind:value={option.title} />
+															<input class="admin-input" placeholder="Short title" bind:value={option.short_title} />
+															<input class="admin-input" type="number" min="1" bind:value={option.max} />
+															<Button
+																size="sm"
+																variant="outline"
+																onclick={() => removeArrayItem(editorItem![card.key], 'level_up_options', optionIndex)}
+															>
+																Remove
+															</Button>
 														</div>
 													{/each}
 												{/if}
@@ -1564,6 +1776,53 @@
 										<span>Damage Bonus</span>
 										<input class="admin-input" type="number" bind:value={editorItem.damage_bonus} />
 									</label>
+									<label class="admin-field">
+										<span>Burden</span>
+										<select class="admin-input" bind:value={editorItem.burden}>
+											<option value={0}>0</option>
+											<option value={1}>1</option>
+											<option value={2}>2</option>
+										</select>
+									</label>
+								</div>
+								<div class="grid gap-3 md:grid-cols-2">
+									<div class="grid gap-2">
+										<p class="text-sm font-medium text-foreground">Available Traits</p>
+										<div class="grid gap-2 md:grid-cols-2">
+											{#each TRAITS as trait}
+												<label class="check-field">
+													<input
+														type="checkbox"
+														checked={(editorItem.available_traits ?? []).includes(trait)}
+														onchange={(event) =>
+															toggleArrayValue(editorItem!, 'available_traits', trait, event.currentTarget.checked)}
+													/>
+													<span>{trait}</span>
+												</label>
+											{/each}
+										</div>
+									</div>
+									<div class="grid gap-2">
+										<p class="text-sm font-medium text-foreground">Damage Types</p>
+										<div class="grid gap-2">
+											{#each DAMAGE_TYPES as damageType}
+												<label class="check-field">
+													<input
+														type="checkbox"
+														checked={(editorItem.available_damage_types ?? []).includes(damageType)}
+														onchange={(event) =>
+															toggleArrayValue(
+																editorItem!,
+																'available_damage_types',
+																damageType,
+																event.currentTarget.checked
+															)}
+													/>
+													<span>{damageType}</span>
+												</label>
+											{/each}
+										</div>
+									</div>
 								</div>
 							</section>
 						{/if}
@@ -1624,11 +1883,52 @@
 										<span>Attack Modifier</span>
 										<input class="admin-input" type="number" bind:value={editorItem.attack_modifier} />
 									</label>
+									<label class="admin-field">
+										<span>Major Threshold</span>
+										<input class="admin-input" type="number" bind:value={editorItem.thresholds.major} />
+									</label>
+									<label class="admin-field">
+										<span>Severe Threshold</span>
+										<input class="admin-input" type="number" bind:value={editorItem.thresholds.severe} />
+									</label>
 								</div>
 								<label class="admin-field">
 									<span>Motives & Tactics</span>
 									<textarea class="admin-textarea" bind:value={editorItem.motives_tactics}></textarea>
 								</label>
+								<div class="grid gap-3">
+									<p class="text-sm font-medium text-foreground">Standard Attack</p>
+									<div class="grid gap-4 md:grid-cols-3">
+										<label class="admin-field">
+											<span>Name</span>
+											<input class="admin-input" bind:value={editorItem.standard_attack.name} />
+										</label>
+										<label class="admin-field">
+											<span>Range</span>
+											<select class="admin-input" bind:value={editorItem.standard_attack.range}>
+												{#each RANGES as range}
+													<option value={range}>{range}</option>
+												{/each}
+											</select>
+										</label>
+										<label class="admin-field">
+											<span>Damage Dice</span>
+											<input class="admin-input" bind:value={editorItem.standard_attack.damage_dice} />
+										</label>
+										<label class="admin-field">
+											<span>Damage Bonus</span>
+											<input class="admin-input" type="number" bind:value={editorItem.standard_attack.damage_bonus} />
+										</label>
+										<label class="admin-field">
+											<span>Damage Type</span>
+											<select class="admin-input" bind:value={editorItem.standard_attack.damage_type}>
+												{#each DAMAGE_TYPES as damageType}
+													<option value={damageType}>{damageType}</option>
+												{/each}
+											</select>
+										</label>
+									</div>
+								</div>
 							</section>
 						{/if}
 
@@ -1653,6 +1953,10 @@
 										<input class="admin-input" type="number" bind:value={editorItem.difficulty} />
 									</label>
 								</div>
+								<label class="check-field">
+									<input type="checkbox" bind:checked={editorItem.relative_strength} />
+									<span>Uses relative strength</span>
+								</label>
 								<label class="admin-field">
 									<span>Impulses</span>
 									<textarea class="admin-textarea" bind:value={editorItem.impulses}></textarea>
@@ -1660,6 +1964,24 @@
 								<label class="admin-field">
 									<span>Potential Adversaries</span>
 									<textarea class="admin-textarea" bind:value={editorItem.potential_adversaries}></textarea>
+								</label>
+								<label class="admin-field">
+									<span>Linked Potential Adversaries</span>
+									<select
+										class="admin-input min-h-32"
+										multiple
+										value={editorItem?.potential_adversaries_ids ?? []}
+										onchange={(event) => (editorItem!.potential_adversaries_ids = selectValues(event))}
+									>
+										{#each optionItems('adversaries') as adversary}
+											<option
+												value={adversary.item_id}
+												selected={(editorItem.potential_adversaries_ids ?? []).includes(adversary.item_id)}
+											>
+												{referenceLabel(adversary)}
+											</option>
+										{/each}
+									</select>
 								</label>
 							</section>
 						{/if}
@@ -1680,6 +2002,84 @@
 										<span>Evasion Bonus</span>
 										<input class="admin-input" type="number" bind:value={editorItem.evasion_bonus} />
 									</label>
+									<label class="admin-field">
+										<span>Special Case</span>
+										<select class="admin-input" bind:value={editorItem.special_case}>
+											<option value="">None</option>
+											<option value="legendary_beast">Legendary Beast</option>
+											<option value="legendary_hybrid">Legendary Hybrid</option>
+											<option value="mythic_beast">Mythic Beast</option>
+											<option value="mythic_hybrid">Mythic Hybrid</option>
+										</select>
+									</label>
+								</div>
+								<div class="grid gap-4 md:grid-cols-2">
+									<div class="grid gap-3">
+										<p class="text-sm font-medium text-foreground">Character Trait</p>
+										<div class="grid gap-3 md:grid-cols-2">
+											<label class="admin-field">
+												<span>Trait</span>
+												<select class="admin-input" bind:value={editorItem.character_trait.trait}>
+													{#each TRAITS as trait}
+														<option value={trait}>{trait}</option>
+													{/each}
+												</select>
+											</label>
+											<label class="admin-field">
+												<span>Bonus</span>
+												<input class="admin-input" type="number" bind:value={editorItem.character_trait.bonus} />
+											</label>
+										</div>
+									</div>
+									<div class="grid gap-3">
+										<p class="text-sm font-medium text-foreground">Attack</p>
+										<div class="grid gap-3 md:grid-cols-2">
+											<label class="admin-field">
+												<span>Range</span>
+												<select class="admin-input" bind:value={editorItem.attack.range}>
+													{#each RANGES as range}
+														<option value={range}>{range}</option>
+													{/each}
+												</select>
+											</label>
+											<label class="admin-field">
+												<span>Trait</span>
+												<select class="admin-input" bind:value={editorItem.attack.trait}>
+													{#each TRAITS as trait}
+														<option value={trait}>{trait}</option>
+													{/each}
+												</select>
+											</label>
+											<label class="admin-field">
+												<span>Damage Dice</span>
+												<input class="admin-input" bind:value={editorItem.attack.damage_dice} />
+											</label>
+											<label class="admin-field">
+												<span>Damage Bonus</span>
+												<input class="admin-input" type="number" bind:value={editorItem.attack.damage_bonus} />
+											</label>
+											<label class="admin-field">
+												<span>Damage Type</span>
+												<select class="admin-input" bind:value={editorItem.attack.damage_type}>
+													{#each DAMAGE_TYPES as damageType}
+														<option value={damageType}>{damageType}</option>
+													{/each}
+												</select>
+											</label>
+										</div>
+									</div>
+								</div>
+								<div class="grid gap-3">
+									<div class="flex items-center justify-between">
+										<p class="text-sm font-medium text-foreground">Advantages</p>
+										<Button size="sm" variant="outline" onclick={() => addString(editorItem!, 'advantages')}>Add</Button>
+									</div>
+									{#each editorItem.advantages ?? [] as advantage, index}
+										<div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+											<input class="admin-input" value={advantage} onchange={(event) => updateString(editorItem!, 'advantages', index, event.currentTarget.value)} />
+											<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'advantages', index)}>Remove</Button>
+										</div>
+									{/each}
 								</div>
 							</section>
 						{/if}
@@ -1830,6 +2230,25 @@
 											</div>
 										{/each}
 									</div>
+									<div class="grid gap-3">
+										<p class="text-sm font-medium text-foreground">Character Description Suggestions</p>
+										<div class="grid gap-4 md:grid-cols-2">
+											{#each ['clothes', 'eyes', 'body', 'skin', 'attitude'] as suggestionKey}
+												<label class="admin-field">
+													<span>{suggestionKey}</span>
+													<textarea
+														class="admin-textarea question-input"
+														value={editorItem.character_description_suggestions?.[suggestionKey] ?? ''}
+														onchange={(event) => {
+															ensureCharacterDescriptionSuggestions(editorItem!);
+															editorItem!.character_description_suggestions[suggestionKey] =
+																event.currentTarget.value;
+														}}
+													></textarea>
+												</label>
+											{/each}
+										</div>
+									</div>
 								</div>
 							</section>
 						{/if}
@@ -1964,6 +2383,14 @@
 		border-color: #bca4ff;
 		box-shadow: 0 0 0 2px rgb(188 164 255 / 0.22);
 		outline: none;
+	}
+
+	.check-field {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: hsl(var(--muted-foreground));
+		font-size: 0.875rem;
 	}
 
 	.admin-panel {

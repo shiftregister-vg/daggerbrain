@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { zid } from '../ids';
-import { CountdownSchema, FearSchema } from './rules';
+import { CountdownSchema, FearSchema, SourceKeySchema } from './rules';
 import { CompendiumContentIdsSchema } from './compendium';
 
 export const CampaignMemberRoleSchema = z.enum(['GM', 'Player']);
@@ -28,6 +28,7 @@ export const CampaignSchema = z.object({
 	fear_track: FearSchema,
 	countdowns: z.array(CountdownSchema),
 	homebrew_vault: CompendiumContentIdsSchema,
+	enabled_source_keys: z.array(SourceKeySchema).optional(),
 	fear_visible_to_players: z.boolean().optional(),
 	public_notes: z.string().optional(),
 	private_notes: z.string().optional(),

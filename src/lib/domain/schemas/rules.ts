@@ -8,7 +8,7 @@ import type {
 } from './compendium';
 import type { TableNames } from '../ids';
 
-export const SourceKeySchema = z.enum(['SRD', 'HAF', 'The Void', 'Campaign', 'Homebrew']);
+export const SourceKeySchema = z.string().trim().min(1, 'Source key is required');
 export type SourceKey = z.infer<typeof SourceKeySchema>;
 
 export const DomainCardIdSchema = z.object({

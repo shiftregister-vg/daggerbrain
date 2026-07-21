@@ -35,6 +35,7 @@ export const CHARACTER_DEFAULTS: Character = {
 	},
 	level: 1,
 	experiences: ['', ''],
+	official_source_versions: {},
 
 	// derived descriptors
 	derived_descriptors: {

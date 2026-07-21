@@ -17,6 +17,7 @@ import type { CompendiumContentIds } from '@domain/schemas/compendium';
 import type { DiceHistory } from '@domain/schemas/dice';
 import type { Encounter } from '@domain/schemas/encounters';
 import type { SourceKey } from '@domain/schemas/rules';
+import type { SourceMetadata } from '@domain/schemas/sources';
 
 const emptyHomebrewVaultSql = sql`'{
 	"primary_weapons": [],
@@ -135,6 +136,72 @@ export const userUnlockedSources = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		unlockedSourceKeys: jsonb('unlocked_source_keys').$type<SourceKey[]>().notNull()
 	}
+);
+
+export const officialSources = pgTable('official_sources', {
+	sourceKey: text('source_key').primaryKey().$type<SourceKey>(),
+	metadata: jsonb('metadata').$type<SourceMetadata>().notNull(),
+	enabled: boolean('enabled').default(true).notNull(),
+	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+	updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+	deletedAt: timestamp('deleted_at', { mode: 'date' })
+});
+
+export const officialCompendiumItems = pgTable(
+	'official_compendium_items',
+	{
+		itemType: text('item_type').notNull(),
+		itemId: text('item_id').notNull(),
+		sourceKey: text('source_key')
+			.$type<SourceKey>()
+			.notNull()
+			.references(() => officialSources.sourceKey, { onDelete: 'cascade' }),
+		currentVersion: integer('current_version').default(1).notNull(),
+		createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+		updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+		deletedAt: timestamp('deleted_at', { mode: 'date' })
+	},
+	(table) => ({
+		pk: primaryKey({ columns: [table.sourceKey, table.itemType, table.itemId] }),
+		sourceItemTypeIdx: index('official_compendium_items_source_item_type_idx').on(
+			table.sourceKey,
+			table.itemType
+		)
+	})
+);
+
+export const officialCompendiumItemVersions = pgTable(
+	'official_compendium_item_versions',
+	{
+		itemType: text('item_type').notNull(),
+		itemId: text('item_id').notNull(),
+		sourceKey: text('source_key')
+			.$type<SourceKey>()
+			.notNull()
+			.references(() => officialSources.sourceKey, { onDelete: 'cascade' }),
+		itemVersion: integer('item_version').default(1).notNull(),
+		label: text('label').notNull(),
+		changelog: text('changelog').default('').notNull(),
+		item: jsonb('item').notNull(),
+		createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+		publishedAt: timestamp('published_at', { mode: 'date' }).defaultNow().notNull(),
+		deletedAt: timestamp('deleted_at', { mode: 'date' })
+	},
+	(table) => ({
+		pk: primaryKey({
+			columns: [table.sourceKey, table.itemType, table.itemId, table.itemVersion]
+		}),
+		sourceItemTypeIdx: index('official_compendium_item_versions_source_item_type_idx').on(
+			table.sourceKey,
+			table.itemType
+		),
+		itemVersionIdx: index('official_compendium_item_versions_item_version_idx').on(
+			table.sourceKey,
+			table.itemType,
+			table.itemId,
+			table.itemVersion
+		)
+	})
 );
 
 export const characters = pgTable(

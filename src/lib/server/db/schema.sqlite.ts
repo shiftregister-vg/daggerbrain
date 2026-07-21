@@ -14,6 +14,7 @@ import type { CompendiumContentIds } from '@domain/schemas/compendium';
 import type { DiceHistory } from '@domain/schemas/dice';
 import type { Encounter } from '@domain/schemas/encounters';
 import type { SourceKey } from '@domain/schemas/rules';
+import type { SourceMetadata } from '@domain/schemas/sources';
 
 const emptyHomebrewVault = JSON.stringify({
 	primary_weapons: [],
@@ -132,6 +133,72 @@ export const userUnlockedSources = sqliteTable('user_unlocked_sources', {
 		.references(() => users.id, { onDelete: 'cascade' }),
 	unlockedSourceKeys: text('unlocked_source_keys', { mode: 'json' }).$type<SourceKey[]>().notNull()
 });
+
+export const officialSources = sqliteTable('official_sources', {
+	sourceKey: text('source_key').primaryKey().$type<SourceKey>(),
+	metadata: text('metadata', { mode: 'json' }).$type<SourceMetadata>().notNull(),
+	enabled: integer('enabled', { mode: 'boolean' }).default(true).notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
+	updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
+	deletedAt: integer('deleted_at', { mode: 'timestamp_ms' })
+});
+
+export const officialCompendiumItems = sqliteTable(
+	'official_compendium_items',
+	{
+		itemType: text('item_type').notNull(),
+		itemId: text('item_id').notNull(),
+		sourceKey: text('source_key')
+			.$type<SourceKey>()
+			.notNull()
+			.references(() => officialSources.sourceKey, { onDelete: 'cascade' }),
+		currentVersion: integer('current_version').default(1).notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
+		deletedAt: integer('deleted_at', { mode: 'timestamp_ms' })
+	},
+	(table) => ({
+		pk: primaryKey({ columns: [table.sourceKey, table.itemType, table.itemId] }),
+		sourceItemTypeIdx: index('official_compendium_items_source_item_type_idx').on(
+			table.sourceKey,
+			table.itemType
+		)
+	})
+);
+
+export const officialCompendiumItemVersions = sqliteTable(
+	'official_compendium_item_versions',
+	{
+		itemType: text('item_type').notNull(),
+		itemId: text('item_id').notNull(),
+		sourceKey: text('source_key')
+			.$type<SourceKey>()
+			.notNull()
+			.references(() => officialSources.sourceKey, { onDelete: 'cascade' }),
+		itemVersion: integer('item_version').default(1).notNull(),
+		label: text('label').notNull(),
+		changelog: text('changelog').default('').notNull(),
+		item: text('item', { mode: 'json' }).notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
+		publishedAt: integer('published_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
+		deletedAt: integer('deleted_at', { mode: 'timestamp_ms' })
+	},
+	(table) => ({
+		pk: primaryKey({
+			columns: [table.sourceKey, table.itemType, table.itemId, table.itemVersion]
+		}),
+		sourceItemTypeIdx: index('official_compendium_item_versions_source_item_type_idx').on(
+			table.sourceKey,
+			table.itemType
+		),
+		itemVersionIdx: index('official_compendium_item_versions_item_version_idx').on(
+			table.sourceKey,
+			table.itemType,
+			table.itemId,
+			table.itemVersion
+		)
+	})
+);
 
 export const characters = sqliteTable(
 	'characters',

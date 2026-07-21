@@ -110,7 +110,7 @@
 				</div>
 			</Dropdown>
 
-			{#if character.settings.void_enabled}
+			{#if Object.keys(characterCtx.character_compendium.transformation_cards).length > 0}
 				<Dropdown
 					title="Transformation"
 					subtitle={derived_character_data.transformation_card?.title

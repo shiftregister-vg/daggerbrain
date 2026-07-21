@@ -4,7 +4,7 @@ import type { Adversary, CompendiumContent } from '@domain/schemas/compendium';
 import type { Encounter } from '@domain/schemas/encounters';
 import type { AdversaryType, SourceKey } from '@domain/schemas/rules';
 import { merge_compendium_content } from '$lib/utils';
-import { getContext, setContext } from 'svelte';
+import { getContext, setContext, untrack } from 'svelte';
 import { getHomebrewContext } from './homebrew.svelte';
 import { getSourcesContext } from './sources.svelte';
 import { getUserContext } from './user.svelte';
@@ -88,6 +88,11 @@ function createEncounter() {
 	});
 
 	const encounter_compendium = $derived(ready_encounter_compendium ?? merge_compendium_content());
+
+	$effect(() => {
+		if (!serverEncounter) return;
+		untrack(() => void sourcesCtx.loadCompendium());
+	});
 
 	const derived_battle_points = $derived.by((): DerivedBattlePoints | null => {
 		if (!encounter || !ready_encounter_compendium) return null;

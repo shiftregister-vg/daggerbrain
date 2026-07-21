@@ -3,14 +3,10 @@ import type { Character, CharacterCompendiumScope } from '@domain/schemas/charac
 import type { CompendiumContent } from '@domain/schemas/compendium';
 import type { SourceKey } from '@domain/schemas/rules';
 import type { SourceMetadata } from '@domain/schemas/sources';
-import { getContext, setContext } from 'svelte';
+import { getContext, setContext, untrack } from 'svelte';
 import { merge_compendium_content } from '$lib/utils';
 import { derive_character_state, type DerivedCharacterData } from './derive_character';
 import { createVaultCompendiumSubscription, hasAnyVaultItems } from './compendium-vault.svelte';
-import {
-	getOfficialCompendiumFromSourceKeys,
-	getOfficialSourcesFromKeys
-} from '$lib/compendium/official-sources';
 import { createApiResource } from './api-resource.svelte';
 import { getApi, patchApi } from '$lib/api/client';
 import type { CharacterAccess } from '@domain/permissions';
@@ -29,6 +25,24 @@ function stableSnapshot(value: unknown): string {
 			)
 		);
 	});
+}
+
+function sourceQuery(sourceKeys: SourceKey[]) {
+	const params = new URLSearchParams();
+	for (const sourceKey of sourceKeys) params.append('source_key', sourceKey);
+	const query = params.toString();
+	return query ? `?${query}` : '';
+}
+
+function sourceVersionQuery(sourceKeys: SourceKey[], sourceVersions: Partial<Record<SourceKey, number>>) {
+	const params = new URLSearchParams();
+	for (const sourceKey of sourceKeys) {
+		params.append('source_key', sourceKey);
+		const version = sourceVersions[sourceKey];
+		if (version) params.append('source_version', `${sourceKey}:${version}`);
+	}
+	const query = params.toString();
+	return query ? `?${query}` : '';
 }
 
 function createCharacter() {
@@ -58,22 +72,40 @@ function createCharacter() {
 		!!id && compendiumScopeQuery.data === undefined && !compendiumScopeQuery.error
 	);
 	const sourceKeys: SourceKey[] = $derived.by(() => compendiumScope?.source_keys ?? []);
-	const sources: SourceMetadata[] = $derived.by(() => getOfficialSourcesFromKeys(sourceKeys));
-	const sourceKeySet = $derived.by(() => new Set(sources.map((source) => source.source_key)));
+	const campaignSourceKeys: SourceKey[] | null = $derived.by(
+		() => compendiumScope?.campaign_source_keys ?? null
+	);
+	const pinnedSourceVersions = $derived.by(() => compendiumScope?.source_versions ?? {});
+	const sourceKeySignature = $derived(sourceKeys.join('|'));
+	const officialSourcesQuery = createApiResource<SourceMetadata[]>(async () => {
+		if (!activeCharacterId || sourceKeys.length === 0) return [];
+		return await getApi<SourceMetadata[]>(`/official-sources${sourceQuery(sourceKeys)}`);
+	});
+	const sources: SourceMetadata[] = $derived.by(() => officialSourcesQuery.data ?? []);
+	const sourceKeySet = $derived.by(() => new Set(sourceKeys));
+	const selectedOfficialSourceKeys: SourceKey[] = $derived.by(() => {
+		if (!activeCharacter) return [];
+		const campaignSourceKeySet = campaignSourceKeys ? new Set(campaignSourceKeys) : null;
+		const isAllowed = (sourceKey: SourceKey) =>
+			sourceKeySet.has(sourceKey) && (!campaignSourceKeySet || campaignSourceKeySet.has(sourceKey));
+		const configured = activeCharacter.settings.enabled_source_keys;
+		if (configured) return configured.filter(isAllowed);
+		return sourceKeys.filter(isAllowed);
+	});
 	const enabledOfficialSourceKeys: SourceKey[] = $derived.by(() => {
-		const sourceKeys: SourceKey[] = [];
-
-		if (sourceKeySet.has('SRD')) {
-			sourceKeys.push('SRD');
+		return selectedOfficialSourceKeys;
+	});
+	const enabledOfficialSourceKeySignature = $derived(enabledOfficialSourceKeys.join('|'));
+	const enabledOfficialSourceVersionSignature = $derived(
+		enabledOfficialSourceKeys.map((sourceKey) => `${sourceKey}:${pinnedSourceVersions[sourceKey] ?? ''}`).join('|')
+	);
+	const officialCompendiumQuery = createApiResource<CompendiumContent>(async () => {
+		if (!activeCharacterId || enabledOfficialSourceKeys.length === 0) {
+			return merge_compendium_content();
 		}
-		if (sourceKeySet.has('HAF')) {
-			sourceKeys.push('HAF');
-		}
-		if (activeCharacter?.settings.void_enabled && sourceKeySet.has('The Void')) {
-			sourceKeys.push('The Void');
-		}
-
-		return sourceKeys;
+		return await getApi<CompendiumContent>(
+			`/official-compendium${sourceVersionQuery(enabledOfficialSourceKeys, pinnedSourceVersions)}`
+		);
 	});
 	const ownerHomebrewVaultState = createVaultCompendiumSubscription({
 		getVault: () => (homebrewEnabled ? (compendiumScope?.homebrew_vault ?? null) : null),
@@ -102,6 +134,8 @@ function createCharacter() {
 		if (!serverCharacter) return false;
 		if (scopeQueryPending) return false;
 		if (!compendiumScope) return false;
+		if (officialSourcesQuery.isLoading || officialCompendiumQuery.isLoading) return false;
+		if (officialSourcesQuery.error || officialCompendiumQuery.error) return false;
 		if (homebrewEnabled && ownerHomebrewVaultState.isLoading) return false;
 		if (characterCampaignId && campaignVaultState.isLoading) return false;
 		return true;
@@ -123,6 +157,8 @@ function createCharacter() {
 		return (
 			compendiumScopeQuery.error ??
 			scopeUnavailableError ??
+			officialSourcesQuery.error ??
+			officialCompendiumQuery.error ??
 			ownerHomebrewVaultState.error ??
 			campaignVaultState.error
 		);
@@ -138,7 +174,7 @@ function createCharacter() {
 	});
 
 	const official_source_compendium = $derived.by((): CompendiumContent => {
-		return getOfficialCompendiumFromSourceKeys(enabledOfficialSourceKeys);
+		return officialCompendiumQuery.data ?? merge_compendium_content();
 	});
 
 	const full_character_compendium = $derived.by((): CompendiumContent | null => {
@@ -196,9 +232,22 @@ function createCharacter() {
 		lastReadyCharacterCompendiumId = undefined;
 
 		if (activeCharacterId) {
-			void characterQuery.refresh();
-			void compendiumScopeQuery.refresh();
+			untrack(() => {
+				void characterQuery.refresh();
+				void compendiumScopeQuery.refresh();
+			});
 		}
+	});
+
+	$effect(() => {
+		sourceKeySignature;
+		untrack(() => void officialSourcesQuery.refresh());
+	});
+
+	$effect(() => {
+		enabledOfficialSourceKeySignature;
+		enabledOfficialSourceVersionSignature;
+		untrack(() => void officialCompendiumQuery.refresh());
 	});
 
 	$effect(() => {

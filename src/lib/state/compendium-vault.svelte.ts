@@ -1,7 +1,7 @@
 import type { Id } from '@domain/ids';
 import type { CompendiumContent, CompendiumContentIds } from '@domain/schemas/compendium';
 import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@domain/permissions';
-import { onDestroy } from 'svelte';
+import { onDestroy, untrack } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { merge_compendium_content } from '$lib/utils';
 import { getApi } from '$lib/api/client';
@@ -116,7 +116,7 @@ export function createVaultCompendiumSubscription(options: {
 	}
 
 	$effect(() => {
-		void refresh();
+		untrack(() => void refresh());
 	});
 
 	const isReady = $derived.by(() => {

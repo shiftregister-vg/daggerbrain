@@ -14,6 +14,9 @@ import {
 } from './rules';
 import { AdventuringGearSchema, CompendiumContentIdsSchema } from './compendium';
 
+export const OfficialSourceVersionsSchema = z.record(SourceKeySchema, z.number().int().min(1));
+export type OfficialSourceVersions = z.infer<typeof OfficialSourceVersionsSchema>;
+
 // ============================================================================
 // Inventory Items
 // ============================================================================
@@ -170,10 +173,12 @@ export const CharacterSchema = z.object({
 		use_gold_coins: z.boolean(),
 		homebrew_enabled: z.boolean(),
 		show_campaign_info: z.boolean(),
+		enabled_source_keys: z.array(SourceKeySchema).optional(),
 		massive_damage: z.boolean().optional()
 	}),
 	level: z.number().int().min(1).max(10),
 	experiences: z.array(z.string()),
+	official_source_versions: OfficialSourceVersionsSchema.optional(),
 
 	// derived descriptors
 	derived_descriptors: z.object({
@@ -296,6 +301,9 @@ export type Character = z.infer<typeof CharacterSchema>;
 
 export const CharacterCompendiumScopeSchema = z.object({
 	source_keys: z.array(SourceKeySchema),
+	source_versions: OfficialSourceVersionsSchema,
+	latest_source_versions: OfficialSourceVersionsSchema,
+	campaign_source_keys: z.array(SourceKeySchema).optional(),
 	homebrew_vault: CompendiumContentIdsSchema,
 	campaign_id: zid('campaigns').nullable(),
 	campaign_vault: CompendiumContentIdsSchema

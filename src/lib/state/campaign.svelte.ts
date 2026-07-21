@@ -9,7 +9,7 @@ import type { Campaign, CampaignCharacter, CampaignMember } from '@domain/schema
 import type { Character } from '@domain/schemas/characters';
 import type { CompendiumContent, CompendiumContentIds } from '@domain/schemas/compendium';
 import type { Roll } from '@domain/schemas/dice';
-import { getContext, onDestroy, setContext } from 'svelte';
+import { getContext, onDestroy, setContext, untrack } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { getUserContext } from './user.svelte';
 import { createApiResource } from './api-resource.svelte';
@@ -174,8 +174,10 @@ function createCampaign() {
 		bootstrapCompleted = false;
 
 		if (currentCampaignId) {
-			void campaignQuery.refresh();
-			void diceHistoryQuery.refresh();
+			untrack(() => {
+				void campaignQuery.refresh();
+				void diceHistoryQuery.refresh();
+			});
 		}
 	});
 

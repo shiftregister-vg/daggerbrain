@@ -1,6 +1,10 @@
 import { json, text, type RequestEvent } from '@sveltejs/kit';
 import * as repo from '$lib/server/app/repository';
 import { eventStream } from '$lib/server/app/events';
+import { SourceKeySchema, type SourceKey } from '@domain/schemas/rules';
+import { OFFICIAL_COMPENDIUM_TABLES } from '$lib/server/compendium/official-seed';
+import type { HomebrewTable } from '@domain/permissions';
+import type { OfficialSourceVersions } from '@domain/schemas/characters';
 
 async function userId(event: RequestEvent) {
 	const session = await event.locals.auth();
@@ -33,6 +37,43 @@ async function handleError(error: unknown) {
 	return text(message, { status });
 }
 
+function sourceKeys(event: RequestEvent): SourceKey[] | undefined {
+	const rawKeys = event.url.searchParams.getAll('source_key').filter(Boolean);
+	if (!rawKeys.length) return undefined;
+	return rawKeys.map((sourceKey) => SourceKeySchema.parse(sourceKey));
+}
+
+function homebrewTable(event: RequestEvent): HomebrewTable | undefined {
+	const value = event.url.searchParams.get('item_type');
+	if (!value) return undefined;
+	if (!OFFICIAL_COMPENDIUM_TABLES.includes(value as HomebrewTable)) {
+		throw new Error('Invalid item type');
+	}
+	return value as HomebrewTable;
+}
+
+function sourceVersionMap(event: RequestEvent): OfficialSourceVersions | undefined {
+	const rawVersions = event.url.searchParams.getAll('source_version').filter(Boolean);
+	if (!rawVersions.length) return undefined;
+	const versions: OfficialSourceVersions = {};
+	for (const rawVersion of rawVersions) {
+		const [rawSourceKey, rawVersionNumber] = rawVersion.split(':');
+		const sourceKey = SourceKeySchema.parse(rawSourceKey);
+		const version = Number(rawVersionNumber);
+		if (!Number.isInteger(version) || version < 1) throw new Error('Invalid source version');
+		versions[sourceKey] = version;
+	}
+	return versions;
+}
+
+function version(event: RequestEvent): number | undefined {
+	const value = event.url.searchParams.get('version');
+	if (!value) return undefined;
+	const parsed = Number(value);
+	if (!Number.isInteger(parsed) || parsed < 1) throw new Error('Invalid version');
+	return parsed;
+}
+
 export async function GET(event) {
 	try {
 		const parts = pathParts(event);
@@ -40,6 +81,28 @@ export async function GET(event) {
 
 		if (parts[0] === 'me') return ok(await repo.getCurrentUser(uid));
 		if (parts[0] === 'sources') return ok(await repo.listSources(uid));
+		if (parts[0] === 'official-sources') {
+			return ok(await repo.listOfficialSources(uid, sourceKeys(event)));
+		}
+		if (parts[0] === 'official-compendium') {
+			return ok(
+				await repo.getOfficialCompendiumFromSourceKeys(uid, sourceKeys(event), sourceVersionMap(event))
+			);
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'export') {
+			return ok(await repo.exportAdminCompendium(uid));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts.length === 2) {
+			return ok(await repo.getAdminCompendiumDashboard(uid));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'items') {
+			return ok(
+				await repo.listAdminCompendiumItems(uid, {
+					sourceKey: sourceKeys(event)?.[0],
+					itemType: homebrewTable(event)
+				})
+			);
+		}
 		if (parts[0] === 'characters' && parts.length === 1) return ok(await repo.listCharacters(uid));
 		if (parts[0] === 'characters' && parts[2] === 'scope') {
 			return ok(await repo.getCharacterCompendiumScope(uid, parts[1]));
@@ -104,6 +167,20 @@ export async function POST(event) {
 		if (parts[0] === 'campaigns' && parts[2] === 'invite-code') {
 			return ok({ inviteCode: await repo.rotateInviteCode(uid, parts[1]) });
 		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'import') {
+			return ok(await repo.importAdminCompendium(uid, await body(event)));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'versions') {
+			return ok(await repo.createAdminCompendiumVersion(uid, await body(event)));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'items') {
+			await repo.createAdminCompendiumItem(uid, await body(event));
+			return noContent();
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'sources') {
+			await repo.createAdminOfficialSource(uid, await body(event));
+			return noContent();
+		}
 
 		return notFound();
 	} catch (error) {
@@ -157,6 +234,14 @@ export async function PATCH(event) {
 		if (parts[0] === 'campaigns' && parts[2] === 'stream') {
 			return ok(await repo.upsertStreamOverlay(uid, parts[1], await body(event)));
 		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'items') {
+			await repo.updateAdminCompendiumItem(uid, await body(event));
+			return noContent();
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'sources') {
+			await repo.updateAdminOfficialSource(uid, await body(event));
+			return noContent();
+		}
 		if (parts[0] === 'campaigns' && parts[1]) {
 			await repo.updateCampaign(uid, parts[1], await body(event));
 			return noContent();
@@ -191,6 +276,10 @@ export async function DELETE(event) {
 				return noContent();
 			}
 			await repo.deleteCampaign(uid, parts[1]);
+			return noContent();
+		}
+		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'items') {
+			await repo.deleteAdminCompendiumItem(uid, await body(event));
 			return noContent();
 		}
 

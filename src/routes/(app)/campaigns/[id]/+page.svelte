@@ -14,13 +14,19 @@
 	import StreamSettingsDialog from '$lib/components/campaigns/stream-settings-dialog.svelte';
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { getCampaignContext } from '$lib/state/campaign.svelte';
+	import { getSourcesContext } from '$lib/state/sources.svelte';
 	import { cn } from '$lib/utils';
+	import type { SourceKey } from '@domain/schemas/rules';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import { toast } from 'svelte-sonner';
 	import { deleteApi, patchApi } from '$lib/api/client';
 
 	const campaignCtx = getCampaignContext();
+	const sourcesCtx = getSourcesContext();
 	const isGM = $derived(campaignCtx.isGm);
+	const officialSources = $derived(
+		sourcesCtx.sources.filter((source) => source.source_key !== 'Homebrew' && source.source_key !== 'Campaign')
+	);
 
 	let showSettingsDialog = $state(false);
 	let showPlayerSettingsDialog = $state(false);
@@ -29,6 +35,7 @@
 	let campaignName = $state('');
 	let displayName = $state('');
 	let fearVisibleToPlayers = $state(false);
+	let campaignSourceKeys = $state<SourceKey[]>([]);
 	let isLeaving = $state(false);
 	let isSaving = $state(false);
 
@@ -37,6 +44,7 @@
 			campaignName = campaignCtx.campaign.name;
 			displayName = campaignCtx.userMembership?.display_name ?? '';
 			fearVisibleToPlayers = !!campaignCtx.campaign.fear_visible_to_players;
+			campaignSourceKeys = campaignCtx.campaign.enabled_source_keys ?? defaultCampaignSourceKeys();
 		}
 
 		if (showPlayerSettingsDialog) {
@@ -48,7 +56,9 @@
 		!!campaignCtx.campaign &&
 			(campaignName.trim() !== campaignCtx.campaign.name ||
 				displayName.trim() !== (campaignCtx.userMembership?.display_name ?? '') ||
-				fearVisibleToPlayers !== !!campaignCtx.campaign.fear_visible_to_players)
+				fearVisibleToPlayers !== !!campaignCtx.campaign.fear_visible_to_players ||
+				campaignSourceKeys.join('|') !==
+					(campaignCtx.campaign.enabled_source_keys ?? defaultCampaignSourceKeys()).join('|'))
 	);
 
 	const hasPlayerChanges = $derived(
@@ -62,6 +72,7 @@
 		try {
 			campaignCtx.campaign.name = campaignName.trim();
 			campaignCtx.campaign.fear_visible_to_players = fearVisibleToPlayers;
+			campaignCtx.campaign.enabled_source_keys = campaignSourceKeys;
 
 			if (displayName.trim() !== (campaignCtx.userMembership?.display_name ?? '')) {
 				await patchApi<void>(`/campaigns/${campaignCtx.id}/display-name`, {
@@ -120,6 +131,21 @@
 			toast.error('Failed to leave campaign');
 			isLeaving = false;
 		}
+	}
+
+	function sourceSelected(sourceKey: SourceKey) {
+		return campaignSourceKeys.includes(sourceKey);
+	}
+
+	function defaultCampaignSourceKeys() {
+		return officialSources.map((source) => source.source_key);
+	}
+
+	function toggleSource(sourceKey: SourceKey, checked: boolean) {
+		const nextKeys = new Set(campaignSourceKeys);
+		if (checked) nextKeys.add(sourceKey);
+		else nextKeys.delete(sourceKey);
+		campaignSourceKeys = [...nextKeys];
 	}
 </script>
 
@@ -217,6 +243,25 @@
 							If enabled, players can see the Fear tracker on their character sheets.
 						</p>
 					</label>
+				</div>
+
+				<div class="flex flex-col gap-3">
+					<p class="text-sm font-medium">Official Sources</p>
+					<div class="grid gap-3">
+						{#each officialSources as source}
+							<label class="flex cursor-pointer items-start gap-3 rounded-md border border-border/70 bg-card/40 p-3">
+								<input
+									type="checkbox"
+									checked={sourceSelected(source.source_key)}
+									onchange={(event) => toggleSource(source.source_key, event.currentTarget.checked)}
+								/>
+								<span class="grid gap-1">
+									<span>{source.short_title}</span>
+									<span class="text-xs text-muted-foreground">{source.name}</span>
+								</span>
+							</label>
+						{/each}
+					</div>
 				</div>
 			</form>
 

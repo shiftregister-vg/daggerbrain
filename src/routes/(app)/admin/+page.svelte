@@ -4,6 +4,7 @@
 	import Users from '@lucide/svelte/icons/users';
 	import Settings from '@lucide/svelte/icons/settings';
 	import Footer from '$lib/components/navigation/footer.svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	const { data } = $props();
 </script>
@@ -33,8 +34,9 @@
 			<Database class="size-5 text-accent" />
 			<h2 class="mt-4 text-lg font-semibold text-foreground">Compendium Data</h2>
 			<p class="mt-2 text-sm text-muted-foreground">
-				Placeholder for managing official classes, domains, heritages, adversaries, and equipment.
+				Manage official sources, versions, classes, domains, heritages, adversaries, and equipment.
 			</p>
+			<Button href="/admin/compendium" size="sm" class="mt-4 w-fit">Open Manager</Button>
 		</div>
 
 		<div class="border-border/70 bg-card/50 rounded-lg border p-5">

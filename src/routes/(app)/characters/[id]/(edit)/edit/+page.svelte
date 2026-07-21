@@ -8,6 +8,7 @@
 	import { cn } from '$lib/utils';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import { getUserContext } from '$lib/state/user.svelte';
+	import type { SourceKey } from '@domain/schemas/rules';
 
 	let {} = $props();
 
@@ -16,54 +17,22 @@
 	const character = $derived(characterCtx.character);
 	const campaignId = $derived(character?.campaign_id);
 	const isOwner = $derived(characterCtx.isOwner);
-
-	let showVoidDisableDialog = $state(false);
-	let voidCheckboxState = $state(false);
+	const officialSources = $derived(characterCtx.sources.filter((source) => source.source_key !== 'Homebrew' && source.source_key !== 'Campaign'));
 
 	let showHomebrewDisableDialog = $state(false);
 	let homebrewCheckboxState = $state(false);
 
-	// Sync checkbox state with character's void_enabled, homebrew_enabled, and visibility
-	$effect(() => {
-		if (character) {
-			voidCheckboxState = character.settings.void_enabled;
-		}
-	});
 	$effect(() => {
 		if (character) {
 			homebrewCheckboxState = character.settings.homebrew_enabled;
 		}
 	});
 
-	function handleVoidCheckboxChange(checked: boolean) {
-		if (!checked && character?.settings.void_enabled) {
-			voidCheckboxState = true;
-			showVoidDisableDialog = true;
-		} else if (character) {
-			character.settings.void_enabled = checked;
-		}
-	}
-
-	function confirmDisableVoid() {
-		if (character) {
-			character.settings.void_enabled = false;
-		}
-		showVoidDisableDialog = false;
-	}
-
-	function cancelDisableVoid() {
-		// Reset checkbox to previous state
-		voidCheckboxState = character?.settings.void_enabled ?? false;
-		showVoidDisableDialog = false;
-	}
-
 	function handleHomebrewCheckboxChange(checked: boolean) {
 		if (!checked && character?.settings.homebrew_enabled) {
-			// User is trying to disable void - show warning and prevent change
-			homebrewCheckboxState = true; // Keep it checked until confirmed
+			homebrewCheckboxState = true;
 			showHomebrewDisableDialog = true;
 		} else if (character) {
-			// User is enabling homebrew - allow it directly
 			character.settings.homebrew_enabled = checked;
 		}
 	}
@@ -76,9 +45,26 @@
 	}
 
 	function cancelDisableHomebrew() {
-		// Reset checkbox to previous state
 		homebrewCheckboxState = character?.settings.homebrew_enabled ?? false;
 		showHomebrewDisableDialog = false;
+	}
+
+	function selectedOfficialSourceKeys() {
+		if (!character) return [];
+		if (character.settings.enabled_source_keys) return character.settings.enabled_source_keys;
+		return officialSources.map((source) => source.source_key);
+	}
+
+	function sourceSelected(sourceKey: SourceKey) {
+		return selectedOfficialSourceKeys().includes(sourceKey);
+	}
+
+	function toggleOfficialSource(sourceKey: SourceKey, checked: boolean) {
+		if (!character) return;
+		const nextKeys = new Set(selectedOfficialSourceKeys());
+		if (checked) nextKeys.add(sourceKey);
+		else nextKeys.delete(sourceKey);
+		character.settings.enabled_source_keys = [...nextKeys];
 	}
 
 	async function confirmDeleteCharacter() {
@@ -112,18 +98,21 @@
 				Enable Homebrew
 			</Label>
 
-			<Label class="cursor-pointer items-start">
-				<Checkbox
-					bind:checked={voidCheckboxState}
-					onCheckedChange={(checked) => handleVoidCheckboxChange(checked ?? false)}
-				/>
-				<div class="space-y-1">
-					<p class="whitespace-nowrap">The Void</p>
-					<ul class="text-xs font-normal text-muted-foreground">
-						<li>Blood Hunter, Summoner, and Blood domain content</li>
-					</ul>
-				</div>
-			</Label>
+			<div class="space-y-2">
+				<p class="text-sm font-bold">Official Sources</p>
+				{#each officialSources as source}
+					<Label class="cursor-pointer items-start">
+						<Checkbox
+							checked={sourceSelected(source.source_key)}
+							onCheckedChange={(checked) => toggleOfficialSource(source.source_key, checked ?? false)}
+						/>
+						<div class="space-y-1">
+							<p class="whitespace-nowrap">{source.short_title}</p>
+							<p class="text-xs font-normal text-muted-foreground">{source.name}</p>
+						</div>
+					</Label>
+				{/each}
+			</div>
 
 			<!-- Show Campaign Information - only visible when character is in a campaign -->
 			{#if campaignId}
@@ -187,29 +176,6 @@
 			{/if}
 		</div>
 	</div>
-
-	<!-- Void Disable Confirmation Dialog -->
-	<Dialog.Root bind:open={showVoidDisableDialog}>
-		<Dialog.Content class="sm:max-w-md">
-			<Dialog.Header>
-				<Dialog.Title>Disable The Void</Dialog.Title>
-				<Dialog.Description>
-					Are you sure you want to disable The Void? This will remove any void content on this
-					character. This action cannot be undone.
-				</Dialog.Description>
-			</Dialog.Header>
-			<Dialog.Footer class="flex gap-3 pt-4">
-				<Dialog.Close
-					class={cn(buttonVariants({ variant: 'link' }), 'text-muted-foreground')}
-					onclick={cancelDisableVoid}>Cancel</Dialog.Close
-				>
-				<Dialog.Close
-					class={buttonVariants({ variant: 'destructive' })}
-					onclick={confirmDisableVoid}>Disable The Void</Dialog.Close
-				>
-			</Dialog.Footer>
-		</Dialog.Content>
-	</Dialog.Root>
 
 	<!-- Homebrew Disable Confirmation Dialog -->
 	<Dialog.Root bind:open={showHomebrewDisableDialog}>

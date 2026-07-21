@@ -1,6 +1,9 @@
 import { onDestroy } from 'svelte';
 
-export function createApiResource<T>(load: () => Promise<T>, options: { intervalMs?: number } = {}) {
+export function createApiResource<T>(
+	load: () => Promise<T>,
+	options: { intervalMs?: number; immediate?: boolean } = {}
+) {
 	let data: T | undefined = $state();
 	let error: Error | null = $state(null);
 	let isLoading = $state(false);
@@ -40,7 +43,9 @@ export function createApiResource<T>(load: () => Promise<T>, options: { interval
 		if (interval) clearInterval(interval);
 	});
 
-	void refresh();
+	if (options.immediate !== false) {
+		void refresh();
+	}
 
 	return {
 		get data() {

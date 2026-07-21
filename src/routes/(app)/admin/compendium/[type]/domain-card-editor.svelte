@@ -5,6 +5,7 @@
 	import DomainCardComponent from '$lib/components/compendium-items/cards/domain-card.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import MarkdownTextarea from './markdown-textarea.svelte';
 	import type { CompendiumContent, Domain, DomainCard } from '@domain/schemas/compendium';
 	import type { SourceMetadata } from '@domain/schemas/sources';
 	import type { SourceKey } from '@domain/schemas/rules';
@@ -351,7 +352,7 @@
 						<input class="admin-input" placeholder="Feature title" bind:value={feature.title} />
 						<Button size="sm" variant="outline" onclick={() => removeFeature(index)}>Remove</Button>
 					</div>
-					<textarea class="admin-textarea" placeholder="Feature text" bind:value={feature.description_html}></textarea>
+					<MarkdownTextarea placeholder="Feature text" bind:value={feature.description_html} />
 				</div>
 			{/each}
 		</div>
@@ -408,8 +409,7 @@
 		color: hsl(var(--foreground));
 	}
 
-	.admin-input,
-	.admin-textarea {
+	.admin-input {
 		width: 100%;
 		border-radius: 0.375rem;
 		border: 1px solid #5a4b78;
@@ -421,13 +421,6 @@
 	.admin-input {
 		height: 2.5rem;
 		padding: 0 0.75rem;
-	}
-
-	.admin-textarea {
-		min-height: 7rem;
-		resize: vertical;
-		padding: 0.75rem;
-		line-height: 1.45;
 	}
 
 	.check-field {

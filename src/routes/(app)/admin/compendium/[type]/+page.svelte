@@ -11,6 +11,7 @@
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import DomainCardEditor from './domain-card-editor.svelte';
+	import MarkdownTextarea from './markdown-textarea.svelte';
 	import type { HomebrewTable } from '@domain/permissions';
 	import type { SourceKey } from '@domain/schemas/rules';
 	import type { SourceMetadata } from '@domain/schemas/sources';
@@ -42,6 +43,10 @@
 		label: string;
 		fields: string[];
 		prefix?: string;
+	};
+	type RelatedGroup = {
+		label: string;
+		items: AdminCompendiumItem[];
 	};
 
 	let { data }: { data: any } = $props();
@@ -81,6 +86,7 @@
 	let selectedItemKey = $state('');
 	let sectionsExpanded = $state(false);
 	let filtersExpanded = $state(false);
+	let relatedExpanded = $state(false);
 	let filtersReady = $state(false);
 	let listFilters = $state<Record<FilterKey, string[]>>(emptyFilters());
 	let editorItem = $state<MutableItem | null>(null);
@@ -128,6 +134,7 @@
 	const activeFilterCount = $derived(
 		Object.values(listFilters).reduce((total, values) => total + values.length, 0)
 	);
+	const relatedGroups = $derived(buildRelatedGroups());
 
 	function itemKey(item: AdminCompendiumItem) {
 		return `${item.source_key}:${item.item_type}:${item.item_id}`;
@@ -166,6 +173,118 @@
 		return [...items, ...referenceItems]
 			.filter((item) => item.item_type === itemType)
 			.sort((a, b) => a.title.localeCompare(b.title) || a.item_id.localeCompare(b.item_id));
+	}
+
+	function uniqueItems(items: AdminCompendiumItem[]) {
+		const seen = new Set<string>();
+		return items.filter((item) => {
+			const key = itemKey(item);
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+	}
+
+	function itemMatchesAny(item: AdminCompendiumItem, fields: string[], ids: string[]) {
+		const allowed = new Set(ids.filter(Boolean));
+		if (allowed.size === 0) return false;
+		return fields.some((field) => {
+			const value = item.item?.[field];
+			return typeof value === 'string' && allowed.has(value);
+		});
+	}
+
+	function relatedByIds(itemType: HomebrewTable, ids: string[]) {
+		const allowed = new Set(ids.filter(Boolean));
+		if (allowed.size === 0) return [];
+		return optionItems(itemType).filter((item) => allowed.has(item.item_id));
+	}
+
+	function relatedByFields(itemType: HomebrewTable, fields: string[], ids: string[]) {
+		return optionItems(itemType).filter((item) => itemMatchesAny(item, fields, ids));
+	}
+
+	function addRelatedGroup(groups: RelatedGroup[], label: string, items: AdminCompendiumItem[]) {
+		const relatedItems = uniqueItems(items).filter((item) => itemKey(item) !== selectedItemKey);
+		if (relatedItems.length > 0) groups.push({ label, items: relatedItems });
+	}
+
+	function buildRelatedGroups(): RelatedGroup[] {
+		if (!selectedItem || !editorItem || createMode) return [];
+		const currentEditorItem = editorItem;
+		const groups: RelatedGroup[] = [];
+		const currentId = selectedItem.item_id;
+
+		if (selectedItemType === 'classes') {
+			const domainIds = [currentEditorItem.primary_domain_id, currentEditorItem.secondary_domain_id].filter(
+				(value): value is string => typeof value === 'string' && value.length > 0
+			);
+			const subclassIds = Array.isArray(currentEditorItem.subclass_ids) ? currentEditorItem.subclass_ids : [];
+			addRelatedGroup(groups, 'Domains', relatedByIds('domains', domainIds));
+			addRelatedGroup(groups, 'Subclasses', [
+				...relatedByIds('subclasses', subclassIds),
+				...relatedByFields('subclasses', ['class_id'], [currentId])
+			]);
+			addRelatedGroup(groups, 'Domain Cards', relatedByFields('domain_cards', ['domain_id'], domainIds));
+			addRelatedGroup(groups, 'Suggested Equipment', [
+				...relatedByIds('primary_weapons', [currentEditorItem.suggested_primary_weapon_id]),
+				...relatedByIds('secondary_weapons', [currentEditorItem.suggested_secondary_weapon_id]),
+				...relatedByIds('armor', [currentEditorItem.suggested_armor_id])
+			]);
+		} else if (selectedItemType === 'domains') {
+			addRelatedGroup(
+				groups,
+				'Classes',
+				relatedByFields('classes', ['primary_domain_id', 'secondary_domain_id'], [currentId])
+			);
+			addRelatedGroup(groups, 'Domain Cards', relatedByFields('domain_cards', ['domain_id'], [currentId]));
+		} else if (selectedItemType === 'subclasses') {
+			const parentClass = optionItems('classes').find((item) => item.item_id === currentEditorItem.class_id);
+			addRelatedGroup(groups, 'Class', parentClass ? [parentClass] : []);
+			if (parentClass) {
+				const domainIds = [parentClass.item?.primary_domain_id, parentClass.item?.secondary_domain_id].filter(
+					(value): value is string => typeof value === 'string' && value.length > 0
+				);
+				addRelatedGroup(groups, 'Class Domain Cards', relatedByFields('domain_cards', ['domain_id'], domainIds));
+			}
+			addRelatedGroup(groups, 'Suggested Equipment', [
+				...relatedByIds('primary_weapons', [currentEditorItem.suggested_primary_weapon_id]),
+				...relatedByIds('secondary_weapons', [currentEditorItem.suggested_secondary_weapon_id]),
+				...relatedByIds('armor', [currentEditorItem.suggested_armor_id])
+			]);
+		} else if (selectedItemType === 'domain_cards') {
+			addRelatedGroup(groups, 'Domain', relatedByIds('domains', [currentEditorItem.domain_id]));
+			addRelatedGroup(
+				groups,
+				'Classes',
+				relatedByFields('classes', ['primary_domain_id', 'secondary_domain_id'], [currentEditorItem.domain_id])
+			);
+		} else if (selectedItemType === 'primary_weapons') {
+			addRelatedGroup(groups, 'Suggested For Classes', relatedByFields('classes', ['suggested_primary_weapon_id'], [currentId]));
+			addRelatedGroup(groups, 'Suggested For Subclasses', relatedByFields('subclasses', ['suggested_primary_weapon_id'], [currentId]));
+		} else if (selectedItemType === 'secondary_weapons') {
+			addRelatedGroup(groups, 'Suggested For Classes', relatedByFields('classes', ['suggested_secondary_weapon_id'], [currentId]));
+			addRelatedGroup(groups, 'Suggested For Subclasses', relatedByFields('subclasses', ['suggested_secondary_weapon_id'], [currentId]));
+		} else if (selectedItemType === 'armor') {
+			addRelatedGroup(groups, 'Suggested For Classes', relatedByFields('classes', ['suggested_armor_id'], [currentId]));
+			addRelatedGroup(groups, 'Suggested For Subclasses', relatedByFields('subclasses', ['suggested_armor_id'], [currentId]));
+		} else if (selectedItemType === 'adversaries') {
+			addRelatedGroup(
+				groups,
+				'Environments',
+				optionItems('environments').filter((item) =>
+					Array.isArray(item.item?.potential_adversaries_ids) &&
+					item.item.potential_adversaries_ids.includes(currentId)
+				)
+			);
+		} else if (selectedItemType === 'environments') {
+			const adversaryIds = Array.isArray(currentEditorItem.potential_adversaries_ids)
+				? currentEditorItem.potential_adversaries_ids
+				: [];
+			addRelatedGroup(groups, 'Potential Adversaries', relatedByIds('adversaries', adversaryIds));
+		}
+
+		return groups;
 	}
 
 	function sourceLabel(sourceKey: SourceKey | string | undefined) {
@@ -344,6 +463,7 @@
 			return [
 				'domains',
 				'subclasses',
+				'domain_cards',
 				'primary_weapons',
 				'secondary_weapons',
 				'armor',
@@ -354,7 +474,12 @@
 		if (itemType === 'subclasses') {
 			return ['classes', 'domain_cards', 'primary_weapons', 'secondary_weapons', 'armor'];
 		}
-		if (itemType === 'domain_cards') return ['domains'];
+		if (itemType === 'domains') return ['classes', 'domain_cards'];
+		if (itemType === 'domain_cards') return ['domains', 'classes'];
+		if (itemType === 'primary_weapons' || itemType === 'secondary_weapons' || itemType === 'armor') {
+			return ['classes', 'subclasses'];
+		}
+		if (itemType === 'adversaries') return ['environments'];
 		if (itemType === 'environments') return ['adversaries'];
 		return [];
 	}
@@ -971,6 +1096,7 @@
 			selectedItemKey = '';
 			editorItem = null;
 			createMode = false;
+			relatedExpanded = false;
 			listFilters = storedFilters(type);
 			filtersReady = true;
 			filtersExpanded = false;
@@ -1193,8 +1319,8 @@
 			</div>
 		</aside>
 
-		<section class="border-border/70 bg-card/40 flex min-h-0 flex-col rounded-lg border">
-			<div class="border-border/70 flex flex-col gap-3 border-b p-4 md:flex-row md:items-center md:justify-between">
+		<section class="border-border/70 bg-card/40 flex min-h-0 flex-col overflow-hidden rounded-lg border">
+			<div class="border-border/70 bg-card/95 sticky top-0 z-10 flex flex-col gap-3 border-b p-4 backdrop-blur md:flex-row md:items-center md:justify-between">
 				<div class="min-w-0">
 					<p class="truncate text-lg font-semibold text-foreground">
 						{createMode ? `New ${selectedItemType ? itemTypeLabel(selectedItemType) : 'Item'}` : (selectedItem?.title ?? 'Select an item')}
@@ -1272,13 +1398,13 @@
 							{#if 'description_html' in editorItem}
 								<label class="admin-field">
 									<span>Description</span>
-									<textarea class="admin-textarea" bind:value={editorItem.description_html}></textarea>
+									<MarkdownTextarea bind:value={editorItem.description_html} />
 								</label>
 							{/if}
 							{#if 'description' in editorItem}
 								<label class="admin-field">
 									<span>Description</span>
-									<textarea class="admin-textarea" bind:value={editorItem.description}></textarea>
+									<MarkdownTextarea bind:value={editorItem.description} />
 								</label>
 							{/if}
 						</section>
@@ -1711,11 +1837,10 @@
 																	Remove
 																</Button>
 															</div>
-															<textarea
-																class="admin-textarea"
+															<MarkdownTextarea
 																placeholder="Feature text"
 																bind:value={feature.description_html}
-															></textarea>
+															/>
 														</div>
 													{/each}
 												{/if}
@@ -1990,7 +2115,7 @@
 								</div>
 								<label class="admin-field">
 									<span>Motives & Tactics</span>
-									<textarea class="admin-textarea" bind:value={editorItem.motives_tactics}></textarea>
+									<MarkdownTextarea bind:value={editorItem.motives_tactics} />
 								</label>
 								<div class="grid gap-3">
 									<p class="text-sm font-medium text-foreground">Standard Attack</p>
@@ -2055,11 +2180,11 @@
 								</label>
 								<label class="admin-field">
 									<span>Impulses</span>
-									<textarea class="admin-textarea" bind:value={editorItem.impulses}></textarea>
+									<MarkdownTextarea bind:value={editorItem.impulses} />
 								</label>
 								<label class="admin-field">
 									<span>Potential Adversaries</span>
-									<textarea class="admin-textarea" bind:value={editorItem.potential_adversaries}></textarea>
+									<MarkdownTextarea bind:value={editorItem.potential_adversaries} />
 								</label>
 								<label class="admin-field">
 									<span>Linked Potential Adversaries</span>
@@ -2203,7 +2328,7 @@
 												<input class="admin-input" placeholder="Feature title" bind:value={feature.title} />
 												<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'features', index)}>Remove</Button>
 											</div>
-											<textarea class="admin-textarea" placeholder="Feature text" bind:value={feature.description_html}></textarea>
+											<MarkdownTextarea placeholder="Feature text" bind:value={feature.description_html} />
 										</div>
 									{/each}
 								</div>
@@ -2238,7 +2363,7 @@
 												/>
 												<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'features', index)}>Remove</Button>
 											</div>
-											<textarea class="admin-textarea" placeholder="Feature text" bind:value={feature.description_html}></textarea>
+											<MarkdownTextarea placeholder="Feature text" bind:value={feature.description_html} />
 										</div>
 									{/each}
 								</div>
@@ -2263,8 +2388,8 @@
 												</select>
 												<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'features', index)}>Remove</Button>
 											</div>
-											<textarea class="admin-textarea" placeholder="Feature text" bind:value={feature.description_html}></textarea>
-											<textarea class="admin-textarea mt-3" placeholder="Questions" bind:value={feature.questions}></textarea>
+											<MarkdownTextarea placeholder="Feature text" bind:value={feature.description_html} />
+											<MarkdownTextarea class="mt-3" placeholder="Questions" bind:value={feature.questions} />
 										</div>
 									{/each}
 								</div>
@@ -2280,7 +2405,7 @@
 								</label>
 								<label class="admin-field">
 									<span>Hope Feature Text</span>
-									<textarea class="admin-textarea" bind:value={editorItem.hope_feature.description_html}></textarea>
+									<MarkdownTextarea bind:value={editorItem.hope_feature.description_html} />
 								</label>
 								<div class="grid gap-3">
 									<div class="flex items-center justify-between">
@@ -2296,7 +2421,7 @@
 													<input class="admin-input" placeholder="Feature title" bind:value={feature.title} />
 													<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'class_features', index)}>Remove</Button>
 												</div>
-												<textarea class="admin-textarea" placeholder="Feature text" bind:value={feature.description_html}></textarea>
+												<MarkdownTextarea placeholder="Feature text" bind:value={feature.description_html} />
 											</div>
 										{/each}
 									{/if}
@@ -2309,7 +2434,12 @@
 										</div>
 										{#each editorItem.background_questions ?? [] as question, index}
 											<div class="question-row">
-												<textarea class="admin-textarea question-input" value={question} onchange={(event) => updateString(editorItem!, 'background_questions', index, event.currentTarget.value)}></textarea>
+												<MarkdownTextarea
+													class="question-input"
+													value={question}
+													ariaLabel="Background question"
+													onchangeValue={(value) => updateString(editorItem!, 'background_questions', index, value)}
+												/>
 												<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'background_questions', index)}>Remove</Button>
 											</div>
 										{/each}
@@ -2321,7 +2451,12 @@
 										</div>
 										{#each editorItem.connection_questions ?? [] as question, index}
 											<div class="question-row">
-												<textarea class="admin-textarea question-input" value={question} onchange={(event) => updateString(editorItem!, 'connection_questions', index, event.currentTarget.value)}></textarea>
+												<MarkdownTextarea
+													class="question-input"
+													value={question}
+													ariaLabel="Connection question"
+													onchangeValue={(value) => updateString(editorItem!, 'connection_questions', index, value)}
+												/>
 												<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'connection_questions', index)}>Remove</Button>
 											</div>
 										{/each}
@@ -2332,15 +2467,15 @@
 											{#each ['clothes', 'eyes', 'body', 'skin', 'attitude'] as suggestionKey}
 												<label class="admin-field">
 													<span>{suggestionKey}</span>
-													<textarea
-														class="admin-textarea question-input"
+													<MarkdownTextarea
+														class="question-input"
 														value={editorItem.character_description_suggestions?.[suggestionKey] ?? ''}
-														onchange={(event) => {
+														ariaLabel={`${suggestionKey} suggestion`}
+														onchangeValue={(value) => {
 															ensureCharacterDescriptionSuggestions(editorItem!);
-															editorItem!.character_description_suggestions[suggestionKey] =
-																event.currentTarget.value;
+															editorItem!.character_description_suggestions[suggestionKey] = value;
 														}}
-													></textarea>
+													/>
 												</label>
 											{/each}
 										</div>
@@ -2372,19 +2507,60 @@
 						{/if}
 						</div>
 					{/if}
-				{/if}
-			</div>
+					{/if}
+				</div>
+			{#if editorItem && selectedItemType && relatedGroups.length > 0}
+				<section class="related-panel">
+					<button
+						type="button"
+						class="related-toggle"
+						aria-expanded={relatedExpanded}
+						onclick={() => (relatedExpanded = !relatedExpanded)}
+					>
+						<span>
+							<strong>Related</strong>
+							<small>{relatedGroups.reduce((total, group) => total + group.items.length, 0)} links</small>
+						</span>
+						<span>{relatedExpanded ? 'Hide' : 'Show'}</span>
+					</button>
+					{#if relatedExpanded}
+						<div class="related-groups">
+							{#each relatedGroups as group}
+								<div class="related-group">
+									<p>{group.label}</p>
+									<div class="related-links">
+										{#each group.items as item}
+											<a
+												href={entityHref(item)}
+												onclick={(event) => {
+													event.preventDefault();
+													void navigateToItem(item);
+												}}
+											>
+												<span>{item.title}</span>
+												<small>{sourceLabel(item.source_key)} / {itemTypeLabel(item.item_type)}</small>
+											</a>
+										{/each}
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</section>
+			{/if}
+			</section>
 		</section>
-	</section>
-</main>
+	</main>
 
 <Footer />
 
 <style>
 	.editor-layout {
 		display: grid;
-		min-height: 42rem;
+		height: calc(100vh - 25rem);
+		min-height: 34rem;
 		gap: 1.25rem;
+		overflow: hidden;
 	}
 
 	.editor-layout.sections-closed {
@@ -2397,7 +2573,7 @@
 
 	.sections-rail {
 		display: flex;
-		min-height: 42rem;
+		min-height: 0;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.75rem;
@@ -2429,29 +2605,11 @@
 		width: 100%;
 	}
 
-	.admin-textarea {
-		min-height: 7rem;
-		resize: vertical;
-		border-radius: 0.375rem;
-		border: 1px solid #5a4b78;
-		background: #16121f;
-		box-shadow:
-			inset 0 0 0 1px rgb(255 255 255 / 0.04),
-			0 1px 0 rgb(255 255 255 / 0.03);
-		padding: 0.75rem;
-		color: #f4f0ff;
-		font-size: 0.875rem;
-		line-height: 1.45;
-		width: 100%;
-	}
-
-	.admin-input:hover,
-	.admin-textarea:hover {
+	.admin-input:hover {
 		border-color: #8f74c7;
 	}
 
-	.admin-input:focus,
-	.admin-textarea:focus {
+	.admin-input:focus {
 		border-color: #bca4ff;
 		box-shadow:
 			0 0 0 2px rgb(188 164 255 / 0.28),
@@ -2459,8 +2617,7 @@
 		outline: none;
 	}
 
-	.admin-input:disabled,
-	.admin-textarea:disabled {
+	.admin-input:disabled {
 		border-style: solid;
 		border-color: #3e344f;
 		background: #211b2a;
@@ -2468,8 +2625,7 @@
 		opacity: 1;
 	}
 
-	.admin-input::placeholder,
-	.admin-textarea::placeholder {
+	.admin-input::placeholder {
 		color: hsl(var(--muted-foreground) / 0.75);
 	}
 
@@ -2515,6 +2671,107 @@
 		outline: none;
 	}
 
+	.related-panel {
+		display: grid;
+		gap: 0;
+		border-top: 1px solid hsl(var(--border) / 0.7);
+		background: hsl(var(--card) / 0.55);
+	}
+
+	.related-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.75rem 1rem;
+		text-align: left;
+	}
+
+	.related-toggle span:first-child {
+		display: grid;
+		gap: 0.125rem;
+	}
+
+	.related-toggle strong {
+		color: hsl(var(--foreground));
+		font-size: 0.9rem;
+		font-weight: 800;
+	}
+
+	.related-toggle small,
+	.related-toggle > span:last-child {
+		color: hsl(var(--muted-foreground));
+		font-size: 0.8rem;
+	}
+
+	.related-toggle:hover {
+		background: hsl(var(--muted) / 0.45);
+	}
+
+	.related-groups {
+		display: grid;
+		gap: 0.875rem;
+		max-height: 14rem;
+		overflow: auto;
+		border-top: 1px solid hsl(var(--border) / 0.55);
+		padding: 1rem;
+	}
+
+	.related-group {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.related-group > p {
+		color: hsl(var(--foreground));
+		font-size: 0.75rem;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+
+	.related-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.related-links a {
+		display: grid;
+		max-width: 16rem;
+		border-radius: 0.375rem;
+		border: 1px solid hsl(var(--border) / 0.7);
+		background: hsl(var(--background) / 0.45);
+		padding: 0.5rem 0.625rem;
+		text-decoration: none;
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease;
+	}
+
+	.related-links a:hover {
+		border-color: hsl(var(--primary) / 0.75);
+		background: hsl(var(--primary) / 0.18);
+	}
+
+	.related-links span,
+	.related-links small {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.related-links span {
+		color: hsl(var(--foreground));
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+
+	.related-links small {
+		color: hsl(var(--muted-foreground));
+		font-size: 0.72rem;
+	}
+
 	.check-field {
 		display: flex;
 		align-items: center;
@@ -2549,11 +2806,6 @@
 		grid-template-columns: minmax(0, 1fr) auto;
 		gap: 0.75rem;
 		align-items: start;
-	}
-
-	.question-input {
-		min-height: 4.75rem;
-		resize: vertical;
 	}
 
 	@media (max-width: 900px) {

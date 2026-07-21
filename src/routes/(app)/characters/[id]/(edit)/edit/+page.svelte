@@ -107,8 +107,7 @@
 							onCheckedChange={(checked) => toggleOfficialSource(source.source_key, checked ?? false)}
 						/>
 						<div class="space-y-1">
-							<p class="whitespace-nowrap">{source.short_title}</p>
-							<p class="text-xs font-normal text-muted-foreground">{source.name}</p>
+							<p class="whitespace-nowrap">{source.name}</p>
 						</div>
 					</Label>
 				{/each}

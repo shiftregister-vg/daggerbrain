@@ -200,6 +200,7 @@ export const COMPENDIUM_DEFAULTS = {
 		description_html: '',
 		starting_evasion: 0,
 		starting_max_hp: 0,
+		spellcast_trait: undefined,
 		hope_feature: DEFAULT_FEATURE,
 		primary_domain_id: undefined,
 		secondary_domain_id: undefined,
@@ -241,6 +242,10 @@ export const COMPENDIUM_DEFAULTS = {
 		image_url: '',
 		artist_name: '',
 		spellcast_trait: undefined,
+		suggested_traits: undefined,
+		suggested_primary_weapon_id: undefined,
+		suggested_secondary_weapon_id: undefined,
+		suggested_armor_id: undefined,
 		foundation_card: {
 			options: [],
 			features: [],

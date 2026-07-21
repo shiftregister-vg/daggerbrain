@@ -517,7 +517,11 @@ function fillSubclassSlot(
 
 	setText(form, `subclass_name_${index}`, slot.subclass.title);
 	setText(form, `subclass_class_${index}`, slot.characterClass?.title ?? '');
-	setText(form, `subclass_trait_${index}`, capitalize(slot.subclass.spellcast_trait));
+	setText(
+		form,
+		`subclass_trait_${index}`,
+		capitalize(slot.subclass.spellcast_trait ?? slot.characterClass?.spellcast_trait)
+	);
 	setText(form, `subclass_feature_${index}`, featuresText(slot.features));
 	setCheck(form, `subclass_foundation_${index}`, slot.cardType === 'foundation');
 	setCheck(form, `subclass_specialization_${index}`, slot.cardType === 'specialization');

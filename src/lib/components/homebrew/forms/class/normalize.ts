@@ -1,6 +1,8 @@
 import { CharacterClassSchema, type CharacterClass } from '@domain/schemas/compendium';
-import type { Feature } from '@domain/schemas/rules';
+import type { Feature, TraitId } from '@domain/schemas/rules';
 import DOMPurify from 'dompurify';
+
+const TRAIT_IDS = ['agility', 'strength', 'finesse', 'instinct', 'presence', 'knowledge'] as const;
 
 function cloneFormValue<T>(value: T): T {
 	if (Array.isArray(value)) {
@@ -20,6 +22,10 @@ function optionalTrimmedString(value: string | undefined): string | undefined {
 	if (value === undefined) return undefined;
 	const trimmed = value.trim();
 	return trimmed === '' ? undefined : trimmed;
+}
+
+function optionalTraitId(value: string | undefined): TraitId | undefined {
+	return TRAIT_IDS.includes(value as TraitId) ? (value as TraitId) : undefined;
 }
 
 function trimString(value: string): string {
@@ -79,6 +85,7 @@ export function characterClassFormDataToItem(formData: CharacterClass): Characte
 		artist_name: formData.artist_name.trim(),
 		starting_evasion: toInteger(formData.starting_evasion),
 		starting_max_hp: toInteger(formData.starting_max_hp),
+		spellcast_trait: optionalTraitId(formData.spellcast_trait),
 		hope_feature: normalizeFeature(formData.hope_feature),
 		primary_domain_id: optionalTrimmedString(formData.primary_domain_id),
 		secondary_domain_id: optionalTrimmedString(formData.secondary_domain_id),

@@ -11,6 +11,12 @@
 	const derived_character_data = $derived(characterCtx.derived_character_data);
 	const primary_class = $derived(derived_character_data?.primary_class);
 	const secondary_class = $derived(derived_character_data?.secondary_class);
+	const primarySpellcastTrait = $derived(
+		derived_character_data?.primary_subclass?.spellcast_trait ?? primary_class?.spellcast_trait
+	);
+	const secondarySpellcastTrait = $derived(
+		derived_character_data?.secondary_subclass?.spellcast_trait ?? secondary_class?.spellcast_trait
+	);
 </script>
 
 {#if derived_character_data}
@@ -49,13 +55,13 @@
 			</div>
 		{/each}
 
-		{#if (derived_character_data.primary_subclass && derived_character_data.primary_subclass.spellcast_trait) || (derived_character_data.secondary_subclass && derived_character_data.secondary_subclass.spellcast_trait)}
+		{#if primarySpellcastTrait || secondarySpellcastTrait}
 			<div class="relative flex items-center gap-1 text-xs">
 				<p class="font-medium">Spellcast Trait:</p>
 				<p class="text-xs text-muted-foreground">
 					{[
-						capitalize(derived_character_data.primary_subclass?.spellcast_trait ?? ''),
-						capitalize(derived_character_data.secondary_subclass?.spellcast_trait ?? '')
+						capitalize(primarySpellcastTrait ?? ''),
+						capitalize(secondarySpellcastTrait ?? '')
 					]
 						.filter((str) => !!str?.trim())
 						.join(', ')}

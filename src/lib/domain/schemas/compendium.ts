@@ -137,6 +137,7 @@ export const CharacterClassSchema = z
 		description_html: z.string(),
 		starting_evasion: z.number().int().min(0),
 		starting_max_hp: z.number().int().min(0),
+		spellcast_trait: TraitIdSchema.optional(),
 		hope_feature: FeatureSchema,
 		primary_domain_id: z.string().trim().min(1, 'Invalid Primary domain').optional(),
 		secondary_domain_id: z.string().trim().min(1, 'Invalid Secondary domain').optional(),
@@ -232,6 +233,10 @@ export const SubclassSchema = z
 		image_url: z.string(),
 		artist_name: z.string(),
 		spellcast_trait: TraitIdSchema.optional(),
+		suggested_traits: TraitsSchema.optional(),
+		suggested_primary_weapon_id: z.string().nullable().optional(),
+		suggested_secondary_weapon_id: z.string().nullable().optional(),
+		suggested_armor_id: z.string().nullable().optional(),
 		foundation_card: BaseCardSchema.extend({
 			level_up_options: z.array(SubclassLevelUpOptionSchema).optional()
 		}),

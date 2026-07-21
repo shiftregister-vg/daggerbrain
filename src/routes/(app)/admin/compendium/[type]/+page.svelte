@@ -316,7 +316,9 @@
 				'consumables'
 			];
 		}
-		if (itemType === 'subclasses') return ['classes', 'domain_cards'];
+		if (itemType === 'subclasses') {
+			return ['classes', 'domain_cards', 'primary_weapons', 'secondary_weapons', 'armor'];
+		}
 		if (itemType === 'domain_cards') return ['domains'];
 		if (itemType === 'environments') return ['adversaries'];
 		return [];
@@ -399,6 +401,31 @@
 		saveError = '';
 	}
 
+	function removeEmptyOptionalFields(item: MutableItem, keys: string[]) {
+		const next = { ...item };
+		for (const key of keys) {
+			if (next[key] === '') delete next[key];
+		}
+		return next;
+	}
+
+	function itemForSave(item: MutableItem, itemType: HomebrewTable) {
+		if (itemType === 'classes') {
+			return removeEmptyOptionalFields(item, [
+				'primary_domain_id',
+				'secondary_domain_id',
+				'spellcast_trait',
+				'suggested_primary_weapon_id',
+				'suggested_secondary_weapon_id',
+				'suggested_armor_id'
+			]);
+		}
+		if (itemType === 'subclasses') {
+			return removeEmptyOptionalFields(item, ['class_id', 'spellcast_trait']);
+		}
+		return item;
+	}
+
 	async function saveItem() {
 		if (!editorItem || !selectedItemType) return;
 		saveError = '';
@@ -408,12 +435,13 @@
 			if (!sourceKey) throw new Error('Source is required');
 			const itemId = createMode ? slugId(editorItem.title) : selectedItem?.item_id;
 			if (createMode && !itemId) throw new Error('Title is required to derive an item ID');
+			const item = itemForSave(editorItem, selectedItemType);
 			const payload = {
 				item_type: selectedItemType,
 				item_id: itemId,
 				source_key: sourceKey,
 				original_source_key: selectedItem?.source_key,
-				item: { ...editorItem, source_key: sourceKey }
+				item: { ...item, source_key: sourceKey }
 			};
 			if (!payload.item_id) throw new Error('Item ID is required');
 			if (createMode) await postApi<void>('/admin/compendium/items', payload);
@@ -642,6 +670,21 @@
 		target[key] = [...(target[key] ?? []), defaultFeature()];
 	}
 
+	function ensureSubclassCard(target: MutableItem, key: string) {
+		target[key] ??= { features: [], options: [] };
+		target[key].features ??= [];
+	}
+
+	function addSubclassCardFeature(target: MutableItem, key: string) {
+		ensureSubclassCard(target, key);
+		addFeature(target[key]);
+	}
+
+	function removeSubclassCardFeature(target: MutableItem, key: string, index: number) {
+		ensureSubclassCard(target, key);
+		removeArrayItem(target[key], 'features', index);
+	}
+
 	function addAdversaryFeature(target: MutableItem) {
 		target.features = [
 			...(target.features ?? []),
@@ -674,6 +717,108 @@
 		const next = [...(target[key] ?? [])];
 		next[index] = Number(value);
 		target[key] = next;
+	}
+
+	function ensureStartingInventory(target: MutableItem) {
+		target.starting_inventory ??= {};
+		target.starting_inventory.gold_coins ??= 0;
+		target.starting_inventory.free_gear ??= [];
+		target.starting_inventory.loot_or_consumable_options ??= [];
+		target.starting_inventory.class_gear_options ??= [];
+	}
+
+	function addStartingInventoryString(target: MutableItem, key: 'free_gear' | 'class_gear_options') {
+		ensureStartingInventory(target);
+		target.starting_inventory[key] = [...target.starting_inventory[key], ''];
+	}
+
+	function updateStartingInventoryString(
+		target: MutableItem,
+		key: 'free_gear' | 'class_gear_options',
+		index: number,
+		value: string
+	) {
+		ensureStartingInventory(target);
+		const next = [...target.starting_inventory[key]];
+		next[index] = value;
+		target.starting_inventory[key] = next;
+	}
+
+	function removeStartingInventoryString(
+		target: MutableItem,
+		key: 'free_gear' | 'class_gear_options',
+		index: number
+	) {
+		ensureStartingInventory(target);
+		target.starting_inventory[key] = target.starting_inventory[key].filter(
+			(_: unknown, itemIndex: number) => itemIndex !== index
+		);
+	}
+
+	function addStartingInventoryChoice(target: MutableItem) {
+		ensureStartingInventory(target);
+		target.starting_inventory.loot_or_consumable_options = [
+			...target.starting_inventory.loot_or_consumable_options,
+			{ type: 'consumable', id: '' }
+		];
+	}
+
+	function updateStartingInventoryChoiceType(
+		target: MutableItem,
+		index: number,
+		value: 'loot' | 'consumable'
+	) {
+		ensureStartingInventory(target);
+		const next = [...target.starting_inventory.loot_or_consumable_options];
+		next[index] = { type: value, id: '' };
+		target.starting_inventory.loot_or_consumable_options = next;
+	}
+
+	function updateStartingInventoryChoiceId(target: MutableItem, index: number, value: string) {
+		ensureStartingInventory(target);
+		const next = [...target.starting_inventory.loot_or_consumable_options];
+		next[index] = { ...next[index], id: value };
+		target.starting_inventory.loot_or_consumable_options = next;
+	}
+
+	function removeStartingInventoryChoice(target: MutableItem, index: number) {
+		ensureStartingInventory(target);
+		target.starting_inventory.loot_or_consumable_options =
+			target.starting_inventory.loot_or_consumable_options.filter(
+				(_: unknown, itemIndex: number) => itemIndex !== index
+			);
+	}
+
+	function traitValue(target: MutableItem | null, key: string, trait: string) {
+		const value = target?.[key]?.[trait];
+		return typeof value === 'number' ? String(value) : '';
+	}
+
+	function updateTraitValue(target: MutableItem, key: string, trait: string, value: string) {
+		const next = { ...(target[key] ?? {}) };
+		if (value === '') {
+			delete next[trait];
+		} else {
+			next[trait] = Number(value);
+		}
+		target[key] = next;
+	}
+
+	function clearTraitValues(target: MutableItem, key: string) {
+		target[key] = {};
+	}
+
+	function subclassOverrideValue(target: MutableItem | null, key: string) {
+		if (!target || !(key in target)) return '__inherit';
+		return target[key] ?? '';
+	}
+
+	function updateSubclassOverride(target: MutableItem, key: string, value: string) {
+		if (value === '__inherit') {
+			delete target[key];
+			return;
+		}
+		target[key] = value === '' ? null : value;
 	}
 
 	onMount(() => {
@@ -1010,6 +1155,190 @@
 										<span>Starting HP</span>
 										<input class="admin-input" type="number" bind:value={editorItem.starting_max_hp} />
 									</label>
+									<label class="admin-field">
+										<span>Default Spellcast Trait</span>
+										<select class="admin-input" bind:value={editorItem.spellcast_trait}>
+											<option value="">None</option>
+											{#each TRAITS as trait}
+												<option value={trait}>{trait}</option>
+											{/each}
+										</select>
+									</label>
+								</div>
+								<div class="grid gap-3">
+									<p class="text-sm font-medium text-foreground">Suggested Stats</p>
+									<div class="grid gap-3 md:grid-cols-3">
+										{#each TRAITS as trait}
+											<label class="admin-field">
+												<span>{trait}</span>
+												<input
+													class="admin-input"
+													type="number"
+													value={traitValue(editorItem, 'suggested_traits', trait)}
+													onchange={(event) =>
+														updateTraitValue(editorItem!, 'suggested_traits', trait, event.currentTarget.value)}
+												/>
+											</label>
+										{/each}
+									</div>
+								</div>
+								<div class="grid gap-3">
+									<p class="text-sm font-medium text-foreground">Suggested Equipment</p>
+									<div class="grid gap-4 md:grid-cols-3">
+										<label class="admin-field">
+											<span>Primary Weapon</span>
+											<select class="admin-input" bind:value={editorItem.suggested_primary_weapon_id}>
+												<option value="">None</option>
+												{#each optionItems('primary_weapons') as weapon}
+													<option value={weapon.item_id}>{referenceLabel(weapon)}</option>
+												{/each}
+											</select>
+										</label>
+										<label class="admin-field">
+											<span>Secondary Weapon</span>
+											<select class="admin-input" bind:value={editorItem.suggested_secondary_weapon_id}>
+												<option value="">None</option>
+												{#each optionItems('secondary_weapons') as weapon}
+													<option value={weapon.item_id}>{referenceLabel(weapon)}</option>
+												{/each}
+											</select>
+										</label>
+										<label class="admin-field">
+											<span>Armor</span>
+											<select class="admin-input" bind:value={editorItem.suggested_armor_id}>
+												<option value="">None</option>
+												{#each optionItems('armor') as armor}
+													<option value={armor.item_id}>{referenceLabel(armor)}</option>
+												{/each}
+											</select>
+										</label>
+									</div>
+								</div>
+								<div class="grid gap-4">
+									<div>
+										<p class="text-sm font-medium text-foreground">Starting Inventory</p>
+										<p class="text-xs text-muted-foreground">
+											Items offered during character creation for this class.
+										</p>
+									</div>
+									<label class="admin-field md:w-48">
+										<span>Gold Coins</span>
+										<input
+											class="admin-input"
+											type="number"
+											value={editorItem.starting_inventory?.gold_coins ?? 0}
+											onchange={(event) => {
+												ensureStartingInventory(editorItem!);
+												editorItem!.starting_inventory.gold_coins = Number(event.currentTarget.value);
+											}}
+										/>
+									</label>
+									<div class="grid gap-3">
+										<div class="flex items-center justify-between gap-3">
+											<p class="text-sm font-medium text-foreground">Free Gear</p>
+											<Button size="sm" variant="outline" onclick={() => addStartingInventoryString(editorItem!, 'free_gear')}>Add</Button>
+										</div>
+										{#if (editorItem.starting_inventory?.free_gear ?? []).length === 0}
+											<p class="text-sm text-muted-foreground">No free gear configured.</p>
+										{:else}
+											{#each editorItem.starting_inventory?.free_gear ?? [] as entry, index}
+												<div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+													<input
+														class="admin-input"
+														value={entry}
+														placeholder="Free gear item"
+														onchange={(event) =>
+															updateStartingInventoryString(
+																editorItem!,
+																'free_gear',
+																index,
+																event.currentTarget.value
+															)}
+													/>
+													<Button size="sm" variant="outline" onclick={() => removeStartingInventoryString(editorItem!, 'free_gear', index)}>Remove</Button>
+												</div>
+											{/each}
+										{/if}
+									</div>
+									<div class="grid gap-3">
+										<div class="flex items-center justify-between gap-3">
+											<p class="text-sm font-medium text-foreground">Loot or Consumable Choices</p>
+											<Button size="sm" variant="outline" onclick={() => addStartingInventoryChoice(editorItem!)}>Add</Button>
+										</div>
+										{#if (editorItem.starting_inventory?.loot_or_consumable_options ?? []).length === 0}
+											<p class="text-sm text-muted-foreground">No loot or consumable choices configured.</p>
+										{:else}
+											{#each editorItem.starting_inventory?.loot_or_consumable_options ?? [] as option, index}
+												<div class="grid gap-2 md:grid-cols-[10rem_minmax(0,1fr)_auto]">
+													<select
+														class="admin-input"
+														value={option.type}
+														onchange={(event) =>
+															updateStartingInventoryChoiceType(
+																editorItem!,
+																index,
+																event.currentTarget.value as 'loot' | 'consumable'
+															)}
+													>
+														<option value="consumable">Consumable</option>
+														<option value="loot">Loot</option>
+													</select>
+													<select
+														class="admin-input"
+														value={option.id}
+														onchange={(event) =>
+															updateStartingInventoryChoiceId(editorItem!, index, event.currentTarget.value)}
+													>
+														<option value="">Select item</option>
+														{#each optionItems(option.type === 'loot' ? 'loot' : 'consumables') as item}
+															<option value={item.item_id}>{referenceLabel(item)}</option>
+														{/each}
+													</select>
+													<Button size="sm" variant="outline" onclick={() => removeStartingInventoryChoice(editorItem!, index)}>Remove</Button>
+												</div>
+											{/each}
+										{/if}
+									</div>
+									<div class="grid gap-3">
+										<div class="flex items-center justify-between gap-3">
+											<p class="text-sm font-medium text-foreground">Class Gear Choices</p>
+											<Button size="sm" variant="outline" onclick={() => addStartingInventoryString(editorItem!, 'class_gear_options')}>Add</Button>
+										</div>
+										{#if (editorItem.starting_inventory?.class_gear_options ?? []).length === 0}
+											<p class="text-sm text-muted-foreground">No class gear choices configured.</p>
+										{:else}
+											{#each editorItem.starting_inventory?.class_gear_options ?? [] as entry, index}
+												<div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+													<input
+														class="admin-input"
+														value={entry}
+														placeholder="Class gear choice"
+														onchange={(event) =>
+															updateStartingInventoryString(
+																editorItem!,
+																'class_gear_options',
+																index,
+																event.currentTarget.value
+															)}
+													/>
+													<Button size="sm" variant="outline" onclick={() => removeStartingInventoryString(editorItem!, 'class_gear_options', index)}>Remove</Button>
+												</div>
+											{/each}
+										{/if}
+									</div>
+									<label class="admin-field">
+										<span>Spellbook Prompt</span>
+										<input
+											class="admin-input"
+											value={editorItem.starting_inventory?.spellbook_prompt ?? ''}
+											placeholder="Optional prompt for spellbook-style items"
+											onchange={(event) => {
+												ensureStartingInventory(editorItem!);
+												editorItem!.starting_inventory.spellbook_prompt =
+													event.currentTarget.value || undefined;
+											}}
+										/>
+									</label>
 								</div>
 								<div class="grid gap-3">
 									<div class="flex items-center justify-between">
@@ -1049,7 +1378,7 @@
 										</select>
 									</label>
 									<label class="admin-field">
-										<span>Spellcast Trait</span>
+										<span>Spellcast Trait Override</span>
 										<select class="admin-input" bind:value={editorItem.spellcast_trait}>
 											<option value="">None</option>
 											{#each TRAITS as trait}
@@ -1057,6 +1386,144 @@
 											{/each}
 										</select>
 									</label>
+								</div>
+								<div class="grid gap-3">
+									<div class="flex items-center justify-between gap-3">
+										<div>
+											<p class="text-sm font-medium text-foreground">Suggested Stats Override</p>
+											<p class="text-xs text-muted-foreground">
+												Leave blank to use the selected class suggestions.
+											</p>
+										</div>
+										<Button size="sm" variant="outline" onclick={() => clearTraitValues(editorItem!, 'suggested_traits')}>Clear</Button>
+									</div>
+									<div class="grid gap-3 md:grid-cols-3">
+										{#each TRAITS as trait}
+											<label class="admin-field">
+												<span>{trait}</span>
+												<input
+													class="admin-input"
+													type="number"
+													value={traitValue(editorItem, 'suggested_traits', trait)}
+													onchange={(event) =>
+														updateTraitValue(editorItem!, 'suggested_traits', trait, event.currentTarget.value)}
+												/>
+											</label>
+										{/each}
+									</div>
+								</div>
+								<div class="grid gap-3">
+									<p class="text-sm font-medium text-foreground">Suggested Equipment Overrides</p>
+									<div class="grid gap-4 md:grid-cols-3">
+										<label class="admin-field">
+											<span>Primary Weapon</span>
+											<select
+												class="admin-input"
+												value={subclassOverrideValue(editorItem, 'suggested_primary_weapon_id')}
+												onchange={(event) =>
+													updateSubclassOverride(
+														editorItem!,
+														'suggested_primary_weapon_id',
+														event.currentTarget.value
+													)}
+											>
+												<option value="__inherit">Use class default</option>
+												<option value="">None</option>
+												{#each optionItems('primary_weapons') as weapon}
+													<option value={weapon.item_id}>{referenceLabel(weapon)}</option>
+												{/each}
+											</select>
+										</label>
+										<label class="admin-field">
+											<span>Secondary Weapon</span>
+											<select
+												class="admin-input"
+												value={subclassOverrideValue(editorItem, 'suggested_secondary_weapon_id')}
+												onchange={(event) =>
+													updateSubclassOverride(
+														editorItem!,
+														'suggested_secondary_weapon_id',
+														event.currentTarget.value
+													)}
+											>
+												<option value="__inherit">Use class default</option>
+												<option value="">None</option>
+												{#each optionItems('secondary_weapons') as weapon}
+													<option value={weapon.item_id}>{referenceLabel(weapon)}</option>
+												{/each}
+											</select>
+										</label>
+										<label class="admin-field">
+											<span>Armor</span>
+											<select
+												class="admin-input"
+												value={subclassOverrideValue(editorItem, 'suggested_armor_id')}
+												onchange={(event) =>
+													updateSubclassOverride(editorItem!, 'suggested_armor_id', event.currentTarget.value)}
+											>
+												<option value="__inherit">Use class default</option>
+												<option value="">None</option>
+												{#each optionItems('armor') as armor}
+													<option value={armor.item_id}>{referenceLabel(armor)}</option>
+												{/each}
+											</select>
+										</label>
+									</div>
+								</div>
+								<div class="grid gap-4">
+									{#each [
+										{ key: 'foundation_card', label: 'Foundation' },
+										{ key: 'specialization_card', label: 'Specialization' },
+										{ key: 'mastery_card', label: 'Mastery' }
+									] as card}
+										<div class="rounded-md border border-border/70 bg-background/50 p-3">
+											<div class="mb-3 flex items-center justify-between gap-3">
+												<div>
+													<p class="text-sm font-medium text-foreground">{card.label} Features</p>
+													<p class="text-xs text-muted-foreground">
+														Shown on the {card.label.toLowerCase()} subclass card.
+													</p>
+												</div>
+												<Button
+													size="sm"
+													variant="outline"
+													onclick={() => addSubclassCardFeature(editorItem!, card.key)}
+												>
+													Add Feature
+												</Button>
+											</div>
+											<div class="grid gap-3">
+												{#if (editorItem[card.key]?.features ?? []).length === 0}
+													<p class="text-sm text-muted-foreground">No features configured.</p>
+												{:else}
+													{#each editorItem[card.key]?.features ?? [] as feature, index}
+														<div class="rounded-md border border-border/70 bg-card/60 p-3">
+															<div class="mb-3 flex items-center justify-between gap-3">
+																<input
+																	class="admin-input"
+																	placeholder="Feature title"
+																	bind:value={feature.title}
+																/>
+																<Button
+																	size="sm"
+																	variant="outline"
+																	onclick={() =>
+																		removeSubclassCardFeature(editorItem!, card.key, index)}
+																>
+																	Remove
+																</Button>
+															</div>
+															<textarea
+																class="admin-textarea"
+																placeholder="Feature text"
+																bind:value={feature.description_html}
+															></textarea>
+														</div>
+													{/each}
+												{/if}
+											</div>
+										</div>
+									{/each}
 								</div>
 							</section>
 						{/if}
@@ -1319,6 +1786,25 @@
 									<span>Hope Feature Text</span>
 									<textarea class="admin-textarea" bind:value={editorItem.hope_feature.description_html}></textarea>
 								</label>
+								<div class="grid gap-3">
+									<div class="flex items-center justify-between">
+										<p class="text-sm font-medium text-foreground">Class Features</p>
+										<Button size="sm" variant="outline" onclick={() => addFeature(editorItem!, 'class_features')}>Add Feature</Button>
+									</div>
+									{#if (editorItem.class_features ?? []).length === 0}
+										<p class="text-sm text-muted-foreground">No class features configured.</p>
+									{:else}
+										{#each editorItem.class_features ?? [] as feature, index}
+											<div class="rounded-md border border-border/70 bg-background/60 p-3">
+												<div class="mb-3 flex items-center justify-between gap-3">
+													<input class="admin-input" placeholder="Feature title" bind:value={feature.title} />
+													<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'class_features', index)}>Remove</Button>
+												</div>
+												<textarea class="admin-textarea" placeholder="Feature text" bind:value={feature.description_html}></textarea>
+											</div>
+										{/each}
+									{/if}
+								</div>
 								<div class="grid gap-6">
 									<div class="question-group">
 										<div class="flex items-center justify-between">

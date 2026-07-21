@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getCharacterContext } from '$lib/state/character.svelte';
-	import type { TraitId } from '@domain/schemas/rules';
+	import type { TraitId, Traits } from '@domain/schemas/rules';
 	import * as Select from '$lib/components/ui/select';
 	import { capitalize } from '$lib/utils';
 	import { cn } from '$lib/utils';
@@ -11,6 +11,25 @@
 	const characterCtx = getCharacterContext();
 	const derived_character_data = $derived(characterCtx.derived_character_data);
 	const character = $derived(characterCtx.character);
+	const suggestedTraits = $derived.by(() => {
+		const subclassTraits = derived_character_data?.primary_subclass?.suggested_traits;
+		if (subclassTraits && Object.values(subclassTraits).some((value) => value !== undefined)) {
+			return subclassTraits;
+		}
+		return derived_character_data?.primary_class?.suggested_traits;
+	});
+	const suggestedTraitsLabel = $derived(
+		derived_character_data?.primary_subclass?.suggested_traits &&
+			Object.values(derived_character_data.primary_subclass.suggested_traits).some(
+				(value) => value !== undefined
+			)
+			? `${derived_character_data.primary_subclass.title} Suggested Traits`
+			: `${character?.derived_descriptors.primary_class_name ?? 'Class'} Suggested Traits`
+	);
+
+	function traitEntries(traits: Traits | undefined) {
+		return Object.entries(traits ?? {}).filter(([, modifier]) => modifier !== undefined);
+	}
 
 	// Map each trait to its selected option index
 	let traitIndices = $derived.by(() => {
@@ -60,7 +79,7 @@
 				<Button disabled={!hasSelectedTraits} variant="link" onclick={clearAllTraits}>
 					Reset?
 				</Button>
-				{#if derived_character_data.primary_class}
+				{#if suggestedTraits && traitEntries(suggestedTraits).length > 0}
 					<Dialog.Root>
 						<Dialog.Trigger class={cn(buttonVariants({ variant: 'link' }))}>
 							Suggested traits?
@@ -68,18 +87,16 @@
 						<Dialog.Content>
 							<Dialog.Header
 								><Dialog.Title
-									>Suggested Traits: {character.derived_descriptors
-										.primary_class_name}</Dialog.Title
+									>{suggestedTraitsLabel}</Dialog.Title
 								></Dialog.Header
 							>
 							<Dialog.Description>
 								<div class="flex flex-wrap gap-1">
-									{#each Object.entries(derived_character_data.primary_class.suggested_traits) as [trait, modifier], i}
+									{#each traitEntries(suggestedTraits) as [trait, modifier], i}
 										<p class="text-nowrap">
 											{modifier && modifier > 0 ? '+' + modifier : modifier}
 											{capitalize(trait)}{i <
-											Object.entries(derived_character_data.primary_class.suggested_traits).length -
-												1
+											traitEntries(suggestedTraits).length - 1
 												? ','
 												: ''}
 										</p>
@@ -91,9 +108,9 @@
 								<Dialog.Close
 									class={buttonVariants()}
 									onclick={() => {
-										if (!derived_character_data.primary_class) return;
+										if (!suggestedTraits) return;
 										character.selected_traits = {
-											...derived_character_data.primary_class.suggested_traits
+											...suggestedTraits
 										};
 									}}
 								>

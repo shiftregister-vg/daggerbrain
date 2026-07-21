@@ -13,6 +13,14 @@
 	const character = $derived(characterCtx.character);
 	const compendium = $derived(characterCtx.character_compendium);
 	const primary_class = $derived(derived_character_data?.primary_class);
+	const primary_subclass = $derived(derived_character_data?.primary_subclass);
+
+	function effectiveSuggestedId(
+		key: 'suggested_primary_weapon_id' | 'suggested_secondary_weapon_id' | 'suggested_armor_id'
+	) {
+		if (primary_subclass && key in primary_subclass) return primary_subclass[key] ?? undefined;
+		return primary_class?.[key];
+	}
 
 	// State for checkbox selections
 	let selectedPrimaryWeapon = $state(false);
@@ -28,19 +36,18 @@
 	let spellbookInput = $state('');
 
 	// Get suggested items
+	const suggestedPrimaryWeaponId = $derived(effectiveSuggestedId('suggested_primary_weapon_id'));
+	const suggestedSecondaryWeaponId = $derived(effectiveSuggestedId('suggested_secondary_weapon_id'));
+	const suggestedArmorId = $derived(effectiveSuggestedId('suggested_armor_id'));
 	const suggestedPrimaryWeapon = $derived(
-		primary_class?.suggested_primary_weapon_id &&
-			compendium.primary_weapons[primary_class.suggested_primary_weapon_id]
+		suggestedPrimaryWeaponId && compendium.primary_weapons[suggestedPrimaryWeaponId]
 	);
 
 	const suggestedSecondaryWeapon = $derived(
-		primary_class?.suggested_secondary_weapon_id &&
-			compendium.secondary_weapons[primary_class.suggested_secondary_weapon_id]
+		suggestedSecondaryWeaponId && compendium.secondary_weapons[suggestedSecondaryWeaponId]
 	);
 
-	const suggestedArmor = $derived(
-		primary_class?.suggested_armor_id && compendium.armor[primary_class.suggested_armor_id]
-	);
+	const suggestedArmor = $derived(suggestedArmorId && compendium.armor[suggestedArmorId]);
 
 	// Get loot options (can be either loot or consumables)
 	type LootOption =
@@ -125,24 +132,24 @@
 		if (!character || !primary_class) return;
 
 		// Add selected primary weapon
-		if (selectedPrimaryWeapon && primary_class.suggested_primary_weapon_id) {
+		if (selectedPrimaryWeapon && suggestedPrimaryWeaponId) {
 			characterCtx.addToInventory({
-				id: primary_class.suggested_primary_weapon_id,
+				id: suggestedPrimaryWeaponId,
 				type: 'primary_weapon'
 			});
 		}
 
 		// Add selected secondary weapon
-		if (selectedSecondaryWeapon && primary_class.suggested_secondary_weapon_id) {
+		if (selectedSecondaryWeapon && suggestedSecondaryWeaponId) {
 			characterCtx.addToInventory({
-				id: primary_class.suggested_secondary_weapon_id,
+				id: suggestedSecondaryWeaponId,
 				type: 'secondary_weapon'
 			});
 		}
 
 		// Add selected armor
-		if (selectedArmor && primary_class.suggested_armor_id) {
-			characterCtx.addToInventory({ id: primary_class.suggested_armor_id, type: 'armor' });
+		if (selectedArmor && suggestedArmorId) {
+			characterCtx.addToInventory({ id: suggestedArmorId, type: 'armor' });
 		}
 
 		// Add selected supplies (gold and free gear)

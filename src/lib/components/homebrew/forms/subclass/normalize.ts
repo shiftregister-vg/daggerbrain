@@ -3,10 +3,11 @@ import {
 	type Subclass,
 	type SubclassLevelUpOption
 } from '@domain/schemas/compendium';
-import type { CardOption, Feature } from '@domain/schemas/rules';
+import type { CardOption, Feature, TraitId } from '@domain/schemas/rules';
 import DOMPurify from 'dompurify';
 
 type SubclassCardKey = 'foundation_card' | 'specialization_card' | 'mastery_card';
+const TRAIT_IDS = ['agility', 'strength', 'finesse', 'instinct', 'presence', 'knowledge'] as const;
 
 function cloneFormValue<T>(value: T): T {
 	if (Array.isArray(value)) return value.map(cloneFormValue) as T;
@@ -22,6 +23,10 @@ function optionalTrimmedString(value: string | undefined): string | undefined {
 	if (value === undefined) return undefined;
 	const trimmed = value.trim();
 	return trimmed === '' ? undefined : trimmed;
+}
+
+function optionalTraitId(value: string | undefined): TraitId | undefined {
+	return TRAIT_IDS.includes(value as TraitId) ? (value as TraitId) : undefined;
 }
 
 function stripRawHtml(value: string): string {
@@ -114,7 +119,11 @@ export function subclassFormDataToItem(formData: Subclass): Subclass {
 		description_html: stripRawHtml(formData.description_html),
 		class_id: optionalTrimmedString(formData.class_id),
 		artist_name: formData.artist_name.trim(),
-		spellcast_trait: formData.spellcast_trait,
+		spellcast_trait: optionalTraitId(formData.spellcast_trait),
+		suggested_traits: formData.suggested_traits,
+		suggested_primary_weapon_id: formData.suggested_primary_weapon_id,
+		suggested_secondary_weapon_id: formData.suggested_secondary_weapon_id,
+		suggested_armor_id: formData.suggested_armor_id,
 		foundation_card: normalizeSubclassCard(formData.foundation_card),
 		specialization_card: normalizeSubclassCard(formData.specialization_card),
 		mastery_card: normalizeSubclassCard(formData.mastery_card)

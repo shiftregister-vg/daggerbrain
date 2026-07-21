@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Database from '@lucide/svelte/icons/database';
+	import ListTree from '@lucide/svelte/icons/list-tree';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Save from '@lucide/svelte/icons/save';
 	import ShieldCheck from '@lucide/svelte/icons/shield-check';
@@ -43,7 +44,7 @@
 		prefix?: string;
 	};
 
-	let { data } = $props();
+	let { data }: { data: any } = $props();
 
 	const TRAITS = ['agility', 'strength', 'finesse', 'instinct', 'presence', 'knowledge'];
 	const RANGES = ['Melee', 'Very Close', 'Close', 'Far', 'Very Far'];
@@ -71,22 +72,17 @@
 		{ key: 'types', label: 'Type', fields: ['type'] },
 		{ key: 'levels', label: 'Level', fields: ['level_requirement'], prefix: 'Level' }
 	];
+	const FILTER_STORAGE_PREFIX = 'daggerlore:admin-compendium:filters:';
 
 	let dashboard = $state<Dashboard | null>(null);
 	let items = $state<AdminCompendiumItem[]>([]);
 	let referenceItems = $state<AdminCompendiumItem[]>([]);
 	let selectedItemType = $state<HomebrewTable | ''>('');
 	let selectedItemKey = $state('');
+	let sectionsExpanded = $state(false);
 	let filtersExpanded = $state(false);
-	let listFilters = $state<Record<FilterKey, string[]>>({
-		sources: [],
-		domains: [],
-		classes: [],
-		categories: [],
-		tiers: [],
-		types: [],
-		levels: []
-	});
+	let filtersReady = $state(false);
+	let listFilters = $state<Record<FilterKey, string[]>>(emptyFilters());
 	let editorItem = $state<MutableItem | null>(null);
 	let createMode = $state(false);
 	let loadError = $state('');
@@ -279,6 +275,46 @@
 		return definition.prefix ? `${definition.prefix} ${label}` : label;
 	}
 
+	function emptyFilters(): Record<FilterKey, string[]> {
+		return {
+			sources: [],
+			domains: [],
+			classes: [],
+			categories: [],
+			tiers: [],
+			types: [],
+			levels: []
+		};
+	}
+
+	function filterStorageKey(itemType: HomebrewTable | '') {
+		return itemType ? `${FILTER_STORAGE_PREFIX}${itemType}` : '';
+	}
+
+	function storedFilters(itemType: HomebrewTable | '') {
+		const storageKey = filterStorageKey(itemType);
+		if (!storageKey || typeof localStorage === 'undefined') return emptyFilters();
+		try {
+			const parsed = JSON.parse(localStorage.getItem(storageKey) ?? '{}') as Partial<Record<FilterKey, unknown>>;
+			const next = emptyFilters();
+			for (const definition of FILTER_DEFINITIONS) {
+				const values = parsed[definition.key];
+				next[definition.key] = Array.isArray(values)
+					? values.filter((value): value is string => typeof value === 'string')
+					: [];
+			}
+			return next;
+		} catch {
+			return emptyFilters();
+		}
+	}
+
+	function persistFilters() {
+		const storageKey = filterStorageKey(selectedItemType);
+		if (!filtersReady || !storageKey || typeof localStorage === 'undefined') return;
+		localStorage.setItem(storageKey, JSON.stringify(listFilters));
+	}
+
 	function setFilter(key: FilterKey, values: string[]) {
 		listFilters = { ...listFilters, [key]: values };
 	}
@@ -296,15 +332,7 @@
 	}
 
 	function clearFilters() {
-		listFilters = {
-			sources: [],
-			domains: [],
-			classes: [],
-			categories: [],
-			tiers: [],
-			types: [],
-			levels: []
-		};
+		listFilters = emptyFilters();
 	}
 
 	function toggleFilters() {
@@ -342,6 +370,14 @@
 		return `/admin/compendium/${itemType}`;
 	}
 
+	function entityHref(item: AdminCompendiumItem) {
+		return `/admin/compendium/${item.item_type}/${encodeURIComponent(item.item_id)}`;
+	}
+
+	function routeItemId() {
+		return data.itemId ? String(data.itemId) : '';
+	}
+
 	function clearSelection() {
 		selectedItemKey = '';
 		editorItem = null;
@@ -351,6 +387,10 @@
 
 	async function navigateToType(itemType: HomebrewTable) {
 		await goto(editorHref(itemType), { noScroll: true });
+	}
+
+	async function navigateToItem(item: AdminCompendiumItem) {
+		await goto(entityHref(item), { noScroll: true });
 	}
 
 	async function loadDashboard() {
@@ -367,6 +407,7 @@
 		isLoading = true;
 		try {
 			items = await getApi<AdminCompendiumItem[]>(`/admin/compendium/items${itemQuery()}`);
+			applyRouteSelection();
 		} catch (error) {
 			loadError = error instanceof Error ? error.message : 'Unable to load compendium items';
 		} finally {
@@ -392,11 +433,25 @@
 		}
 	}
 
-	function selectItem(item: AdminCompendiumItem) {
+	function selectItemForEdit(item: AdminCompendiumItem) {
 		createMode = false;
 		selectedItemKey = itemKey(item);
 		editorItem = { ...cloneItem(item.item), source_key: item.source_key };
 		saveError = '';
+	}
+
+	function applyRouteSelection() {
+		const itemId = routeItemId();
+		if (!itemId) {
+			if (!createMode) clearSelection();
+			return;
+		}
+		const item = items.find((candidate) => candidate.item_type === selectedItemType && candidate.item_id === itemId);
+		if (item) {
+			selectItemForEdit(item);
+		} else if (!isLoading) {
+			clearSelection();
+		}
 	}
 
 	function startCreate(itemType: HomebrewTable) {
@@ -462,7 +517,7 @@
 			await loadDashboard();
 			await loadItems();
 			const savedItem = items.find((item) => itemKey(item) === savedItemKey);
-			if (savedItem) selectItem(savedItem);
+			if (savedItem) await navigateToItem(savedItem);
 		} catch (error) {
 			saveError = error instanceof Error ? error.message : 'Unable to save compendium item';
 		} finally {
@@ -472,6 +527,7 @@
 
 	async function deleteItem() {
 		if (!selectedItem || !confirm(`Delete ${selectedItem.title}?`)) return;
+		const deletedType = selectedItem.item_type;
 		saveError = '';
 		isSaving = true;
 		try {
@@ -484,6 +540,7 @@
 			editorItem = null;
 			await loadDashboard();
 			await loadItems();
+			await goto(editorHref(deletedType), { noScroll: true });
 		} catch (error) {
 			saveError = error instanceof Error ? error.message : 'Unable to delete compendium item';
 		} finally {
@@ -908,14 +965,28 @@
 		const nextRouteStateKey = type;
 		if (routeStateKey === nextRouteStateKey) return;
 		untrack(() => {
+			filtersReady = false;
 			routeStateKey = nextRouteStateKey;
 			selectedItemType = type;
 			selectedItemKey = '';
 			editorItem = null;
 			createMode = false;
-			clearFilters();
+			listFilters = storedFilters(type);
+			filtersReady = true;
 			filtersExpanded = false;
 		});
+	});
+
+	$effect(() => {
+		selectedItemType;
+		listFilters;
+		untrack(() => persistFilters());
+	});
+
+	$effect(() => {
+		data.itemId;
+		items;
+		untrack(() => applyRouteSelection());
 	});
 
 	$effect(() => {
@@ -982,31 +1053,56 @@
 		section before saving.
 	</section>
 
-	<section class="grid min-h-[42rem] gap-5 lg:grid-cols-[18rem_20rem_minmax(0,1fr)]">
-		<aside class="border-border/70 bg-card/40 overflow-hidden rounded-lg border">
-			<div class="border-border/70 border-b p-4">
-				<p class="font-semibold text-foreground">Entity Sections</p>
-				<p class="text-sm text-muted-foreground">Manage each data type independently.</p>
-			</div>
-			<div class="max-h-[38rem] overflow-auto p-2">
-				{#each entityTypes as itemType}
-					<a
-						href={editorHref(itemType)}
-						class="hover:bg-muted/70 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors {selectedItemType ===
-						itemType
-							? 'bg-muted text-foreground'
-							: 'text-muted-foreground'}"
-						onclick={(event) => {
-							event.preventDefault();
-							void navigateToType(itemType);
-						}}
+	<section class="editor-layout {sectionsExpanded ? 'sections-open' : 'sections-closed'}">
+		{#if sectionsExpanded}
+			<aside class="border-border/70 bg-card/40 overflow-hidden rounded-lg border">
+				<div class="border-border/70 flex items-start justify-between gap-3 border-b p-4">
+					<div>
+						<p class="font-semibold text-foreground">Entity Sections</p>
+						<p class="text-sm text-muted-foreground">Manage each data type independently.</p>
+					</div>
+					<Button
+						size="sm"
+						variant="ghost"
+						class="h-8 px-2 text-xs"
+						onclick={() => (sectionsExpanded = false)}
 					>
-						<span>{itemTypeLabel(itemType)}</span>
-						<span class="text-xs">{countFor(itemType)}</span>
-					</a>
-				{/each}
-			</div>
-		</aside>
+						Hide
+					</Button>
+				</div>
+				<div class="max-h-[38rem] overflow-auto p-2">
+					{#each entityTypes as itemType}
+						<a
+							href={editorHref(itemType)}
+							class="hover:bg-muted/70 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors {selectedItemType ===
+							itemType
+								? 'bg-muted text-foreground'
+								: 'text-muted-foreground'}"
+							onclick={(event) => {
+								event.preventDefault();
+								void navigateToType(itemType);
+							}}
+						>
+							<span>{itemTypeLabel(itemType)}</span>
+							<span class="text-xs">{countFor(itemType)}</span>
+						</a>
+					{/each}
+				</div>
+			</aside>
+		{:else}
+			<aside class="sections-rail">
+				<Button
+					variant="outline"
+					class="h-9 w-9 p-0"
+					title="Show entity sections"
+					aria-label="Show entity sections"
+					onclick={() => (sectionsExpanded = true)}
+				>
+					<ListTree class="size-4" />
+				</Button>
+				<span>Sections</span>
+			</aside>
+		{/if}
 
 		<aside class="border-border/70 bg-card/40 flex min-h-0 flex-col rounded-lg border">
 			<div class="border-border/70 flex items-center justify-between border-b p-4">
@@ -1087,7 +1183,7 @@
 							itemKey(item)
 								? 'bg-muted text-foreground'
 								: 'text-muted-foreground'}"
-							onclick={() => selectItem(item)}
+							onclick={() => navigateToItem(item)}
 					>
 						<span class="block truncate font-medium">{item.title}</span>
 						<span class="block truncate text-xs">{listSummary(item)}</span>
@@ -2285,6 +2381,40 @@
 <Footer />
 
 <style>
+	.editor-layout {
+		display: grid;
+		min-height: 42rem;
+		gap: 1.25rem;
+	}
+
+	.editor-layout.sections-closed {
+		grid-template-columns: 3.25rem minmax(17rem, 20rem) minmax(0, 1fr);
+	}
+
+	.editor-layout.sections-open {
+		grid-template-columns: 18rem minmax(16rem, 20rem) minmax(0, 1fr);
+	}
+
+	.sections-rail {
+		display: flex;
+		min-height: 42rem;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		border-radius: 0.5rem;
+		border: 1px solid hsl(var(--border) / 0.7);
+		background: hsl(var(--card) / 0.4);
+		padding: 0.75rem 0.5rem;
+	}
+
+	.sections-rail span {
+		color: hsl(var(--muted-foreground));
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0;
+		writing-mode: vertical-rl;
+	}
+
 	.admin-input {
 		height: 2.5rem;
 		border-radius: 0.375rem;
@@ -2428,6 +2558,13 @@
 
 	@media (max-width: 900px) {
 		.question-row {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (max-width: 1023px) {
+		.editor-layout.sections-closed,
+		.editor-layout.sections-open {
 			grid-template-columns: 1fr;
 		}
 	}

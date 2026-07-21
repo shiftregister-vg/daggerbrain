@@ -26,10 +26,55 @@
 		items_created: number;
 		items_updated: number;
 		versions_imported: number;
+		versions_replaced: number;
 		versions_skipped: number;
 		version_conflicts: number;
 		current_version_conflicts: number;
 	};
+	type ImportPreview = {
+		summary: {
+			sources_created: number;
+			sources_updated: number;
+			sources_unchanged: number;
+			items_created: number;
+			items_advanced: number;
+			items_unchanged: number;
+			versions_imported: number;
+			versions_skipped: number;
+			version_conflicts: number;
+			current_version_conflicts: number;
+		};
+		sources: Array<{
+			source_key: string;
+			name: string;
+			short_title: string;
+			action: string;
+			enabled: boolean;
+			deleted_at: string | number | null;
+		}>;
+		items: Array<{
+			key: string;
+			source_key: string;
+			item_type: HomebrewTable;
+			item_id: string;
+			current_version: number;
+			action: string;
+			deleted_at: string | number | null;
+		}>;
+		versions: Array<{
+			key: string;
+			source_key: string;
+			item_type: HomebrewTable;
+			item_id: string;
+			item_version: number;
+			title: string;
+			label: string;
+			action: string;
+			deleted_at: string | number | null;
+		}>;
+	};
+	type ConflictResolutionAction = 'skip' | 'replace' | 'next_version' | 'custom_version';
+	type ConflictResolution = { action: ConflictResolutionAction; version?: number };
 
 	let { data } = $props();
 
@@ -44,12 +89,29 @@
 	let isImporting = $state(false);
 	let savingSourceKey = $state('');
 	let importInput = $state<HTMLInputElement | null>(null);
+	let importDialogOpen = $state(false);
+	let pendingTransfer = $state<unknown>(null);
+	let importPreview = $state<ImportPreview | null>(null);
+	let importResult = $state<ImportResult | null>(null);
+	let conflictResolutions = $state<Record<string, ConflictResolution>>({});
 
 	const entityTypes = $derived(
 		[...(dashboard?.item_types ?? [])].sort((a, b) => itemTypeLabel(a).localeCompare(itemTypeLabel(b)))
 	);
 	const totalItems = $derived(
 		entityTypes.reduce((total, itemType) => total + countFor(itemType), 0)
+	);
+	const attentionVersions = $derived(
+		(importPreview?.versions ?? []).filter((version) => needsAttention(version.action))
+	);
+	const attentionItems = $derived(
+		(importPreview?.items ?? []).filter((item) => needsAttention(item.action))
+	);
+	const attentionSources = $derived(
+		(importPreview?.sources ?? []).filter((source) => needsAttention(source.action))
+	);
+	const attentionCount = $derived(
+		attentionVersions.length + attentionItems.length + attentionSources.length
 	);
 
 	function itemTypeLabel(itemType: string) {
@@ -155,26 +217,91 @@
 		if (!file) return;
 		loadError = '';
 		transferMessage = '';
+		importResult = null;
 		isImporting = true;
 		try {
 			const transfer = JSON.parse(await file.text()) as unknown;
-			const result = await postApi<ImportResult>('/admin/compendium/import', transfer);
-			await loadDashboard();
-			transferMessage = [
-				`Sources ${result.sources_upserted}`,
-				`items created ${result.items_created}`,
-				`items advanced ${result.items_updated}`,
-				`versions imported ${result.versions_imported}`,
-				`versions skipped ${result.versions_skipped}`,
-				`version conflicts ${result.version_conflicts}`,
-				`current version conflicts ${result.current_version_conflicts}`
-			].join(' / ');
+			pendingTransfer = transfer;
+			importPreview = await postApi<ImportPreview>('/admin/compendium/import/preview', transfer);
+			conflictResolutions = Object.fromEntries(
+				importPreview.versions
+					.filter((version) => version.action === 'conflict')
+					.map((version) => [version.key, { action: 'skip' as const }])
+			);
+			importDialogOpen = true;
 		} catch (error) {
-			loadError = error instanceof Error ? error.message : 'Unable to import compendium data';
+			loadError = error instanceof Error ? error.message : 'Unable to preview compendium import';
 		} finally {
 			isImporting = false;
 			input.value = '';
 		}
+	}
+
+	async function confirmImportCompendium() {
+		if (!pendingTransfer) return;
+		loadError = '';
+		transferMessage = '';
+		isImporting = true;
+		try {
+			importResult = await postApi<ImportResult>('/admin/compendium/import', {
+				transfer: pendingTransfer,
+				resolutions: { version_conflicts: conflictResolutions }
+			});
+			await loadDashboard();
+			pendingTransfer = null;
+			importPreview = null;
+			conflictResolutions = {};
+			transferMessage = 'Compendium import completed.';
+		} catch (error) {
+			loadError = error instanceof Error ? error.message : 'Unable to import compendium data';
+		} finally {
+			isImporting = false;
+		}
+	}
+
+	function cancelImportCompendium() {
+		pendingTransfer = null;
+		importPreview = null;
+		importResult = null;
+		conflictResolutions = {};
+		importDialogOpen = false;
+	}
+
+	function actionLabel(action: string) {
+		return action
+			.split('_')
+			.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+			.join(' ');
+	}
+
+	function needsAttention(action: string) {
+		return action === 'conflict' || action === 'delete' || action === 'restore';
+	}
+
+	function setConflictResolution(key: string, resolution: ConflictResolution) {
+		conflictResolutions = { ...conflictResolutions, [key]: resolution };
+	}
+
+	function conflictResolutionLabel(resolution: ConflictResolution | undefined) {
+		if (resolution?.action === 'replace') return 'Replace with import';
+		if (resolution?.action === 'next_version') return 'Import as next version';
+		if (resolution?.action === 'custom_version') {
+			return resolution.version ? `Import as v${resolution.version}` : 'Import as custom version';
+		}
+		return 'Keep existing';
+	}
+
+	function resultText(result: ImportResult) {
+		return [
+			`Sources ${result.sources_upserted}`,
+			`items created ${result.items_created}`,
+			`items advanced ${result.items_updated}`,
+			`versions imported ${result.versions_imported}`,
+			`versions replaced ${result.versions_replaced}`,
+			`versions skipped ${result.versions_skipped}`,
+			`version conflicts ${result.version_conflicts}`,
+			`current version conflicts ${result.current_version_conflicts}`
+		].join(' / ');
 	}
 
 	onMount(() => {
@@ -367,6 +494,217 @@
 	</section>
 </main>
 
+<Dialog.Root bind:open={importDialogOpen}>
+	<Dialog.Content class="max-h-[90vh] overflow-auto sm:max-w-4xl">
+		<Dialog.Header>
+			<Dialog.Title>{importResult ? 'Import Complete' : 'Preview Compendium Import'}</Dialog.Title>
+			<Dialog.Description>
+				{importResult
+					? 'Final import result from the confirmed transfer.'
+					: 'Review what will change and what will be ignored before applying this transfer.'}
+			</Dialog.Description>
+		</Dialog.Header>
+
+		{#if importResult}
+			<div class="import-summary">
+				<p>{resultText(importResult)}</p>
+			</div>
+			<Dialog.Footer>
+				<Button
+					onclick={() => {
+						importDialogOpen = false;
+						importResult = null;
+					}}
+				>
+					Done
+				</Button>
+			</Dialog.Footer>
+		{:else if importPreview}
+			<div class="grid gap-4">
+				<div class="preview-grid">
+					<div class="preview-stat">
+						<span>Sources</span>
+						<strong>{importPreview.summary.sources_created + importPreview.summary.sources_updated}</strong>
+						<small>{importPreview.summary.sources_unchanged} unchanged</small>
+					</div>
+					<div class="preview-stat">
+						<span>Items</span>
+						<strong>{importPreview.summary.items_created + importPreview.summary.items_advanced}</strong>
+						<small>{importPreview.summary.items_unchanged} unchanged</small>
+					</div>
+					<div class="preview-stat">
+						<span>Versions</span>
+						<strong>{importPreview.summary.versions_imported}</strong>
+						<small>{importPreview.summary.versions_skipped} skipped</small>
+					</div>
+					<div class="preview-stat {importPreview.summary.version_conflicts || importPreview.summary.current_version_conflicts ? 'preview-danger' : ''}">
+						<span>Conflicts</span>
+						<strong>{importPreview.summary.version_conflicts + importPreview.summary.current_version_conflicts}</strong>
+						<small>require review</small>
+					</div>
+				</div>
+
+				<section class="attention-panel {attentionCount > 0 ? 'has-attention' : ''}">
+					<div>
+						<h3>Needs Attention</h3>
+						<p>
+							{attentionCount > 0
+								? `${attentionCount} row${attentionCount === 1 ? '' : 's'} should be reviewed before confirming.`
+								: 'No conflicts, restores, or deletes were detected.'}
+						</p>
+					</div>
+					{#if attentionCount > 0}
+						<div class="attention-list">
+							{#each attentionVersions as version}
+								<div class="attention-row">
+									<div class="attention-detail">
+										<div class="attention-heading">
+											<span class="attention-action">{actionLabel(version.action)}</span>
+											<strong>{version.title}</strong>
+											<span>v{version.item_version}</span>
+										</div>
+										<div class="attention-meta">
+											<span>Version</span>
+											<span>{version.source_key}</span>
+											<span>{itemTypeLabel(version.item_type)}</span>
+										</div>
+									</div>
+									{#if version.action === 'conflict'}
+										<label class="resolution-control">
+											<span>Resolution</span>
+											<select
+												value={conflictResolutions[version.key]?.action ?? 'skip'}
+												onchange={(event) => {
+													const action = (event.currentTarget as HTMLSelectElement)
+														.value as ConflictResolutionAction;
+													setConflictResolution(version.key, {
+														action,
+														version:
+															action === 'custom_version'
+																? (conflictResolutions[version.key]?.version ?? version.item_version + 1)
+																: undefined
+													});
+												}}
+											>
+												<option value="skip">Keep existing</option>
+												<option value="replace">Replace with import</option>
+												<option value="next_version">Import as next version</option>
+												<option value="custom_version">Import as custom version</option>
+											</select>
+											{#if conflictResolutions[version.key]?.action === 'custom_version'}
+												<input
+													type="number"
+													min="1"
+													value={conflictResolutions[version.key]?.version ?? version.item_version + 1}
+													aria-label="Custom import version"
+													oninput={(event) => {
+														setConflictResolution(version.key, {
+															action: 'custom_version',
+															version: Number((event.currentTarget as HTMLInputElement).value)
+														});
+													}}
+												/>
+											{/if}
+										</label>
+									{/if}
+								</div>
+							{/each}
+							{#each attentionItems as item}
+								<div class="attention-row">
+									<div class="attention-detail">
+										<div class="attention-heading">
+											<span class="attention-action">{actionLabel(item.action)}</span>
+											<strong>{item.item_id}</strong>
+											<span>current v{item.current_version}</span>
+										</div>
+										<div class="attention-meta">
+											<span>Item</span>
+											<span>{item.source_key}</span>
+											<span>{itemTypeLabel(item.item_type)}</span>
+										</div>
+									</div>
+								</div>
+							{/each}
+							{#each attentionSources as source}
+								<div class="attention-row">
+									<div class="attention-detail">
+										<div class="attention-heading">
+											<span class="attention-action">{actionLabel(source.action)}</span>
+											<strong>{source.name}</strong>
+											<span>{source.deleted_at ? 'deleted' : 'active'}</span>
+										</div>
+										<div class="attention-meta">
+											<span>Source</span>
+											<span>{source.source_key}</span>
+											<span>{source.enabled ? 'enabled' : 'disabled'}</span>
+										</div>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</section>
+
+				<section class="preview-section">
+					<h3>Sources</h3>
+					<div class="preview-list">
+						{#each importPreview.sources as source}
+							<div class="preview-row">
+								<span class="preview-action">{actionLabel(source.action)}</span>
+								<span>{source.source_key}</span>
+								<span>{source.name}</span>
+								<span>{source.enabled ? 'enabled' : 'disabled'}</span>
+							</div>
+						{/each}
+					</div>
+				</section>
+
+				<section class="preview-section">
+					<h3>Versions</h3>
+					<div class="preview-list">
+						{#each importPreview.versions as version}
+							<div class="preview-row {needsAttention(version.action) ? 'preview-conflict' : ''}">
+								<span class="preview-action">{actionLabel(version.action)}</span>
+								<span>{version.source_key}</span>
+								<span>{itemTypeLabel(version.item_type)}</span>
+								<span>{version.title}</span>
+								<span>v{version.item_version}</span>
+								{#if version.action === 'conflict'}
+									<span class="preview-resolution">
+										{conflictResolutionLabel(conflictResolutions[version.key])}
+									</span>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</section>
+
+				<section class="preview-section">
+					<h3>Items</h3>
+					<div class="preview-list">
+						{#each importPreview.items as item}
+							<div class="preview-row {needsAttention(item.action) ? 'preview-conflict' : ''}">
+								<span class="preview-action">{actionLabel(item.action)}</span>
+								<span>{item.source_key}</span>
+								<span>{itemTypeLabel(item.item_type)}</span>
+								<span>{item.item_id}</span>
+								<span>current v{item.current_version}</span>
+							</div>
+						{/each}
+					</div>
+				</section>
+			</div>
+
+			<Dialog.Footer class="mt-4">
+				<Button variant="outline" onclick={cancelImportCompendium} disabled={isImporting}>Cancel</Button>
+				<Button onclick={confirmImportCompendium} disabled={isImporting}>
+					{isImporting ? 'Importing...' : 'Confirm Import'}
+				</Button>
+			</Dialog.Footer>
+		{/if}
+	</Dialog.Content>
+</Dialog.Root>
+
 <Dialog.Root bind:open={sourceEditorOpen}>
 	<Dialog.Content class="sm:max-w-lg">
 		<Dialog.Header>
@@ -536,6 +874,214 @@
 		justify-self: end;
 	}
 
+	.import-summary {
+		border-radius: 0.5rem;
+		border: 1px solid hsl(var(--border) / 0.7);
+		background: hsl(var(--card) / 0.5);
+		padding: 1rem;
+		color: hsl(var(--muted-foreground));
+		font-size: 0.875rem;
+	}
+
+	.preview-grid {
+		display: grid;
+		gap: 0.75rem;
+		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+	}
+
+	.preview-stat {
+		display: grid;
+		gap: 0.25rem;
+		border-radius: 0.5rem;
+		border: 1px solid hsl(var(--border) / 0.7);
+		background: hsl(var(--card) / 0.5);
+		padding: 0.875rem;
+	}
+
+	.preview-stat span,
+	.preview-stat small {
+		color: hsl(var(--muted-foreground));
+		font-size: 0.75rem;
+	}
+
+	.preview-stat strong {
+		color: hsl(var(--foreground));
+		font-size: 1.5rem;
+		line-height: 1;
+	}
+
+	.preview-danger {
+		border-color: rgb(245 158 11 / 0.75);
+		background: rgb(245 158 11 / 0.12);
+	}
+
+	.attention-panel {
+		display: grid;
+		gap: 0.75rem;
+		border-radius: 0.5rem;
+		border: 1px solid hsl(var(--border) / 0.7);
+		background: hsl(var(--card) / 0.45);
+		padding: 1rem;
+	}
+
+	.attention-panel.has-attention {
+		border-color: rgb(245 158 11 / 0.7);
+		background:
+			linear-gradient(90deg, rgb(245 158 11 / 0.14), transparent 45%),
+			hsl(var(--card) / 0.55);
+	}
+
+	.attention-panel h3 {
+		color: hsl(var(--foreground));
+		font-size: 1rem;
+		font-weight: 800;
+	}
+
+	.attention-panel p {
+		color: hsl(var(--muted-foreground));
+		font-size: 0.85rem;
+	}
+
+	.attention-list {
+		display: grid;
+		gap: 0.75rem;
+		max-height: 14rem;
+		overflow-y: auto;
+	}
+
+	.attention-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+		gap: 0.75rem;
+		align-items: start;
+		border-radius: 0.5rem;
+		border: 1px solid rgb(245 158 11 / 0.45);
+		background: rgb(245 158 11 / 0.09);
+		padding: 0.75rem;
+		color: hsl(var(--foreground));
+		font-size: 0.8rem;
+		box-shadow: inset 0.25rem 0 0 rgb(245 158 11 / 0.9);
+	}
+
+	.attention-detail {
+		display: grid;
+		gap: 0.375rem;
+		min-width: 0;
+	}
+
+	.attention-heading,
+	.attention-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 0.75rem;
+		align-items: center;
+		min-width: 0;
+	}
+
+	.attention-heading strong {
+		min-width: 0;
+		color: hsl(var(--foreground));
+		font-size: 0.95rem;
+		overflow-wrap: anywhere;
+	}
+
+	.attention-heading span:not(.attention-action),
+	.attention-meta span {
+		color: hsl(var(--muted-foreground));
+	}
+
+	.attention-meta span:not(:last-child)::after {
+		content: "/";
+		margin-left: 0.75rem;
+		color: hsl(var(--muted-foreground) / 0.7);
+	}
+
+	.attention-action {
+		color: rgb(251 191 36);
+		font-weight: 800;
+	}
+
+	.resolution-control {
+		display: grid;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+
+	.resolution-control span {
+		color: hsl(var(--muted-foreground));
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.resolution-control select,
+	.resolution-control input {
+		min-height: 2rem;
+		border-radius: 0.375rem;
+		border: 1px solid hsl(var(--border));
+		background: hsl(var(--background));
+		color: hsl(var(--foreground));
+		padding: 0.25rem 0.5rem;
+		font-size: 0.8rem;
+	}
+
+	.resolution-control input {
+		width: 100%;
+	}
+
+	.preview-section {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.preview-section h3 {
+		color: hsl(var(--foreground));
+		font-size: 0.95rem;
+		font-weight: 700;
+	}
+
+	.preview-list {
+		max-height: 16rem;
+		overflow-y: auto;
+		border-radius: 0.5rem;
+		border: 1px solid hsl(var(--border) / 0.7);
+	}
+
+	.preview-row {
+		display: grid;
+		grid-template-columns: 6.5rem 7rem minmax(8rem, 10rem) minmax(0, 1fr) 4rem minmax(8rem, 11rem);
+		gap: 0.75rem;
+		align-items: center;
+		border-bottom: 1px solid hsl(var(--border) / 0.45);
+		padding: 0.625rem 0.75rem;
+		color: hsl(var(--muted-foreground));
+		font-size: 0.8rem;
+	}
+
+	.preview-row > span {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.preview-row:last-child {
+		border-bottom: 0;
+	}
+
+	.preview-action {
+		color: hsl(var(--foreground));
+		font-weight: 700;
+	}
+
+	.preview-conflict {
+		background: rgb(245 158 11 / 0.1);
+		box-shadow: inset 0.2rem 0 0 rgb(245 158 11 / 0.85);
+	}
+
+	.preview-resolution {
+		color: rgb(251 191 36);
+		font-weight: 700;
+	}
+
 	@media (max-width: 900px) {
 		.source-grid {
 			grid-template-columns: 1fr 1fr;
@@ -544,6 +1090,14 @@
 		.source-meta,
 		.source-action {
 			justify-self: start;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.preview-row,
+		.attention-row {
+			grid-template-columns: 1fr;
+			gap: 0.25rem;
 		}
 	}
 </style>

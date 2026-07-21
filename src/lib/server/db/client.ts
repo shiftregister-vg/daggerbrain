@@ -57,9 +57,14 @@ function postgresSql(query: string) {
 	return query.replace(/\?/g, () => `$${++index}`);
 }
 
+function sqliteParam(value: unknown) {
+	if (typeof value === 'boolean') return value ? 1 : 0;
+	return value;
+}
+
 export async function queryRows<T>(query: string, params: unknown[] = []): Promise<T[]> {
 	if (databaseDialect === 'sqlite') {
-		return sqlite!.prepare(query).all(...params) as T[];
+		return sqlite!.prepare(query).all(...params.map(sqliteParam)) as T[];
 	}
 
 	const result = await pool!.query(postgresSql(query), params);
@@ -73,7 +78,7 @@ export async function queryOne<T>(query: string, params: unknown[] = []): Promis
 
 export async function execute(query: string, params: unknown[] = []) {
 	if (databaseDialect === 'sqlite') {
-		sqlite!.prepare(query).run(...params);
+		sqlite!.prepare(query).run(...params.map(sqliteParam));
 		return;
 	}
 

@@ -145,6 +145,30 @@ type CompendiumTransfer = {
 	versions: CompendiumTransferVersion[];
 };
 
+type CompendiumImportAction =
+	| 'create'
+	| 'update'
+	| 'restore'
+	| 'delete'
+	| 'import'
+	| 'advance'
+	| 'skip'
+	| 'conflict'
+	| 'unchanged';
+
+type CompendiumImportResolution =
+	| 'skip'
+	| 'replace'
+	| 'next_version'
+	| { action: 'skip' | 'replace' | 'next_version' | 'custom_version'; version?: number };
+
+type CompendiumImportRequest = {
+	transfer: CompendiumTransfer;
+	resolutions: {
+		version_conflicts: Record<string, CompendiumImportResolution>;
+	};
+};
+
 type StreamOverlayRow = {
 	id: string;
 	campaign_id: string;
@@ -490,6 +514,62 @@ function parseTransfer(data: unknown): CompendiumTransfer {
 	return transfer as CompendiumTransfer;
 }
 
+function parseImportRequest(data: unknown): CompendiumImportRequest {
+	if (
+		data &&
+		typeof data === 'object' &&
+		'transfer' in data &&
+		(data as { transfer?: unknown }).transfer
+	) {
+		const resolutions = (data as { resolutions?: unknown }).resolutions;
+		const versionConflicts =
+			resolutions && typeof resolutions === 'object' && 'version_conflicts' in resolutions
+				? (resolutions as { version_conflicts?: unknown }).version_conflicts
+				: {};
+		return {
+			transfer: parseTransfer((data as { transfer: unknown }).transfer),
+			resolutions: {
+				version_conflicts:
+					versionConflicts && typeof versionConflicts === 'object'
+						? Object.fromEntries(
+								Object.entries(versionConflicts as Record<string, unknown>)
+									.map(([key, value]) => [key, normalizeImportResolution(value)] as const)
+									.filter((entry): entry is [string, CompendiumImportResolution] => Boolean(entry[1]))
+							)
+						: {}
+			}
+		};
+	}
+	return { transfer: parseTransfer(data), resolutions: { version_conflicts: {} } };
+}
+
+function normalizeImportResolution(value: unknown): CompendiumImportResolution | null {
+	if (value === 'skip' || value === 'replace' || value === 'next_version') return value;
+	if (!value || typeof value !== 'object') return null;
+	const action = (value as { action?: unknown }).action;
+	if (action === 'skip' || action === 'replace' || action === 'next_version') return { action };
+	if (action === 'custom_version') {
+		const version = Number((value as { version?: unknown }).version);
+		return Number.isInteger(version) && version > 0 ? { action, version } : null;
+	}
+	return null;
+}
+
+function importResolutionAction(resolution: CompendiumImportResolution | undefined) {
+	return typeof resolution === 'string' ? resolution : resolution?.action;
+}
+
+function importResolutionVersion(resolution: CompendiumImportResolution | undefined) {
+	if (resolution && typeof resolution === 'object' && resolution.action === 'custom_version') {
+		return resolution.version;
+	}
+	return undefined;
+}
+
+function versionConflictKey(version: Pick<CompendiumTransferVersion, 'source_key' | 'item_type' | 'item_id' | 'item_version'>) {
+	return `${version.source_key}:${version.item_type}:${version.item_id}:${version.item_version}`;
+}
+
 function normalizeTransferSource(source: CompendiumTransferSource) {
 	const sourceKey = source.source_key.trim();
 	const name = source.name.trim();
@@ -593,22 +673,184 @@ export async function exportAdminCompendium(userId: string | undefined): Promise
 	};
 }
 
-export async function importAdminCompendium(userId: string | undefined, data: unknown) {
+export async function previewAdminCompendiumImport(userId: string | undefined, data: unknown) {
 	await getAdminAccess(userId);
 	await ensureOfficialCompendiumSeeded();
 
 	const transfer = parseTransfer(data);
+	const result = {
+		sources: [] as Array<{
+			source_key: SourceKey;
+			name: string;
+			short_title: string;
+			action: CompendiumImportAction;
+			enabled: boolean;
+			deleted_at: string | number | null;
+		}>,
+		versions: [] as Array<{
+			key: string;
+			source_key: SourceKey;
+			item_type: HomebrewTable;
+			item_id: string;
+			item_version: number;
+			title: string;
+			label: string;
+			action: CompendiumImportAction;
+			deleted_at: string | number | null;
+		}>,
+		items: [] as Array<{
+			key: string;
+			source_key: SourceKey;
+			item_type: HomebrewTable;
+			item_id: string;
+			current_version: number;
+			action: CompendiumImportAction;
+			deleted_at: string | number | null;
+		}>,
+		summary: {
+			sources_created: 0,
+			sources_updated: 0,
+			sources_unchanged: 0,
+			items_created: 0,
+			items_advanced: 0,
+			items_unchanged: 0,
+			versions_imported: 0,
+			versions_skipped: 0,
+			version_conflicts: 0,
+			current_version_conflicts: 0
+		}
+	};
+	const conflictingVersionKeys = new Set<string>();
+
+	for (const rawSource of transfer.sources) {
+		const source = normalizeTransferSource(rawSource);
+		const existing = await queryOne<OfficialSourceRow>(
+			'select source_key, metadata, enabled, deleted_at from official_sources where source_key = ?',
+			[source.source_key]
+		);
+		const metadata = existing ? parseOfficialSourceRow(existing) : null;
+		const deletedAt = rawSource.deleted_at ?? null;
+		let action: CompendiumImportAction = 'create';
+		if (existing) {
+			const changed =
+				metadata?.name !== source.name ||
+				metadata?.short_title !== source.short_title ||
+				isEnabledValue(existing.enabled) !== source.enabled ||
+				(existing.deleted_at ?? null) !== deletedAt;
+			action = changed ? (existing.deleted_at && !deletedAt ? 'restore' : 'update') : 'unchanged';
+		}
+		if (action === 'create') result.summary.sources_created += 1;
+		else if (action === 'unchanged') result.summary.sources_unchanged += 1;
+		else result.summary.sources_updated += 1;
+		result.sources.push({
+			source_key: source.source_key,
+			name: source.name,
+			short_title: source.short_title,
+			action,
+			enabled: source.enabled,
+			deleted_at: deletedAt
+		});
+	}
+
+	for (const rawVersion of transfer.versions) {
+		const version = normalizeTransferVersion(rawVersion);
+		const key = versionConflictKey(version);
+		const existing = await queryOne<OfficialCompendiumItemVersionRow>(
+			'select item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at from official_compendium_item_versions where source_key = ? and item_type = ? and item_id = ? and item_version = ?',
+			[version.source_key, version.item_type, version.item_id, version.item_version]
+		);
+		const deletedAt = rawVersion.deleted_at ?? null;
+		let action: CompendiumImportAction = 'import';
+		if (existing) {
+			const existingItem = JSON.stringify(parseJson(existing.item));
+			const importedItem = JSON.stringify(version.item);
+			if (
+				existingItem !== importedItem ||
+				existing.label !== version.label ||
+				existing.changelog !== version.changelog
+			) {
+				action = 'conflict';
+				result.summary.version_conflicts += 1;
+				conflictingVersionKeys.add(key);
+			} else {
+				action = (existing.deleted_at ?? null) !== deletedAt ? 'update' : 'skip';
+				result.summary.versions_skipped += 1;
+			}
+		} else {
+			result.summary.versions_imported += 1;
+		}
+		result.versions.push({
+			key,
+			source_key: version.source_key,
+			item_type: version.item_type,
+			item_id: version.item_id,
+			item_version: version.item_version,
+			title: itemTitle(version.item),
+			label: version.label,
+			action,
+			deleted_at: deletedAt
+		});
+	}
+
+	for (const rawItem of transfer.items) {
+		const item = normalizeTransferItem(rawItem);
+		const key = `${item.source_key}:${item.item_type}:${item.item_id}`;
+		const existing = await queryOne<OfficialCompendiumItemRow>(
+			'select item_type, item_id, source_key, current_version, updated_at, deleted_at from official_compendium_items where source_key = ? and item_type = ? and item_id = ?',
+			[item.source_key, item.item_type, item.item_id]
+		);
+		const deletedAt = rawItem.deleted_at ?? null;
+		let action: CompendiumImportAction = 'create';
+		if (!existing) {
+			result.summary.items_created += 1;
+		} else if (
+			Number(existing.current_version) < item.current_version &&
+			conflictingVersionKeys.has(`${item.source_key}:${item.item_type}:${item.item_id}:${item.current_version}`)
+		) {
+			action = 'conflict';
+			result.summary.current_version_conflicts += 1;
+		} else if (Number(existing.current_version) < item.current_version) {
+			action = 'advance';
+			result.summary.items_advanced += 1;
+		} else if ((existing.deleted_at ?? null) !== deletedAt) {
+			action = deletedAt ? 'delete' : 'restore';
+			result.summary.items_advanced += 1;
+		} else {
+			action = 'unchanged';
+			result.summary.items_unchanged += 1;
+		}
+		result.items.push({
+			key,
+			source_key: item.source_key,
+			item_type: item.item_type,
+			item_id: item.item_id,
+			current_version: item.current_version,
+			action,
+			deleted_at: deletedAt
+		});
+	}
+
+	return result;
+}
+
+export async function importAdminCompendium(userId: string | undefined, data: unknown) {
+	await getAdminAccess(userId);
+	await ensureOfficialCompendiumSeeded();
+
+	const { transfer, resolutions } = parseImportRequest(data);
 	const timestamp = nowIso();
 	const result = {
 		sources_upserted: 0,
 		items_created: 0,
 		items_updated: 0,
 		versions_imported: 0,
+		versions_replaced: 0,
 		versions_skipped: 0,
 		version_conflicts: 0,
 		current_version_conflicts: 0
 	};
 	const conflictingVersionKeys = new Set<string>();
+	const remappedVersionKeys = new Map<string, number>();
 
 	for (const rawSource of transfer.sources) {
 		const source = normalizeTransferSource(rawSource);
@@ -640,6 +882,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 
 	for (const rawVersion of transfer.versions) {
 		const version = normalizeTransferVersion(rawVersion);
+		const key = versionConflictKey(version);
 		const existing = await queryOne<OfficialCompendiumItemVersionRow>(
 			'select item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at from official_compendium_item_versions where source_key = ? and item_type = ? and item_id = ? and item_version = ?',
 			[version.source_key, version.item_type, version.item_id, version.item_version]
@@ -648,10 +891,76 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 			const existingItem = JSON.stringify(parseJson(existing.item));
 			const importedItem = JSON.stringify(version.item);
 			if (existingItem !== importedItem || existing.label !== version.label || existing.changelog !== version.changelog) {
+				const resolution = resolutions.version_conflicts[key];
+				const resolutionAction = importResolutionAction(resolution);
+				if (resolutionAction === 'replace') {
+					await execute(
+						[
+							'update official_compendium_item_versions set',
+							'label = ?, changelog = ?, item = ?, published_at = ?, deleted_at = ?',
+							'where source_key = ? and item_type = ? and item_id = ? and item_version = ?'
+						].join(' '),
+						[
+							version.label,
+							version.changelog,
+							jsonParam(version.item),
+							timestamp,
+							rawVersion.deleted_at ?? null,
+							version.source_key,
+							version.item_type,
+							version.item_id,
+							version.item_version
+						]
+					);
+					result.versions_replaced += 1;
+					continue;
+				}
+				if (resolutionAction === 'next_version' || resolutionAction === 'custom_version') {
+					const maxVersion = await queryOne<{ max_version: number | null }>(
+						'select max(item_version) as max_version from official_compendium_item_versions where source_key = ? and item_type = ? and item_id = ?',
+						[version.source_key, version.item_type, version.item_id]
+					);
+					const targetVersion =
+						resolutionAction === 'custom_version'
+							? importResolutionVersion(resolution)
+							: Number(maxVersion?.max_version ?? 0) + 1;
+					if (!targetVersion || !Number.isInteger(targetVersion) || targetVersion < 1) {
+						throw new Error(`Invalid import version for ${version.source_key}/${version.item_type}/${version.item_id}`);
+					}
+					const targetExisting = await queryOne<OfficialCompendiumItemVersionRow>(
+						'select item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at from official_compendium_item_versions where source_key = ? and item_type = ? and item_id = ? and item_version = ?',
+						[version.source_key, version.item_type, version.item_id, targetVersion]
+					);
+					if (targetExisting) {
+						throw new Error(
+							`Version v${targetVersion} already exists for ${version.source_key}/${version.item_type}/${version.item_id}`
+						);
+					}
+					await execute(
+						[
+							'insert into official_compendium_item_versions',
+							'(item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at)',
+							'values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+						].join(' '),
+						[
+							version.item_type,
+							version.item_id,
+							version.source_key,
+							targetVersion,
+							version.label,
+							version.changelog,
+							jsonParam(version.item),
+							timestamp,
+							timestamp,
+							rawVersion.deleted_at ?? null
+						]
+					);
+					remappedVersionKeys.set(key, targetVersion);
+					result.versions_imported += 1;
+					continue;
+				}
 				result.version_conflicts += 1;
-				conflictingVersionKeys.add(
-					`${version.source_key}:${version.item_type}:${version.item_id}:${version.item_version}`
-				);
+				conflictingVersionKeys.add(key);
 			}
 			await execute(
 				'update official_compendium_item_versions set deleted_at = ? where source_key = ? and item_type = ? and item_id = ? and item_version = ?',
@@ -690,6 +999,9 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 
 	for (const rawItem of transfer.items) {
 		const item = normalizeTransferItem(rawItem);
+		const currentVersionKey = `${item.source_key}:${item.item_type}:${item.item_id}:${item.current_version}`;
+		const remappedCurrentVersion = remappedVersionKeys.get(currentVersionKey);
+		const currentVersion = remappedCurrentVersion ?? item.current_version;
 		const existing = await queryOne<OfficialCompendiumItemRow>(
 			'select item_type, item_id, source_key, current_version, updated_at, deleted_at from official_compendium_items where source_key = ? and item_type = ? and item_id = ?',
 			[item.source_key, item.item_type, item.item_id]
@@ -705,7 +1017,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 					item.item_type,
 					item.item_id,
 					item.source_key,
-					item.current_version,
+					currentVersion,
 					timestamp,
 					timestamp,
 					rawItem.deleted_at ?? null
@@ -719,16 +1031,16 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 			[rawItem.deleted_at ?? null, timestamp, item.source_key, item.item_type, item.item_id]
 		);
 		if (
-			Number(existing.current_version) < item.current_version &&
-			conflictingVersionKeys.has(`${item.source_key}:${item.item_type}:${item.item_id}:${item.current_version}`)
+			Number(existing.current_version) < currentVersion &&
+			conflictingVersionKeys.has(currentVersionKey)
 		) {
 			result.current_version_conflicts += 1;
 			continue;
 		}
-		if (Number(existing.current_version) < item.current_version) {
+		if (Number(existing.current_version) < currentVersion) {
 			await execute(
 				'update official_compendium_items set current_version = ?, updated_at = ? where source_key = ? and item_type = ? and item_id = ?',
-				[item.current_version, timestamp, item.source_key, item.item_type, item.item_id]
+				[currentVersion, timestamp, item.source_key, item.item_type, item.item_id]
 			);
 			result.items_updated += 1;
 		}

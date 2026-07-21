@@ -15,7 +15,7 @@ export const load = async (event) => {
 		return {
 			...(await getAdminAccess(session?.user?.id)),
 			type,
-			itemId: null
+			itemId: event.params.item_id
 		};
 	} catch (accessError) {
 		const message = accessError instanceof Error ? accessError.message : 'Not authorized';

@@ -168,6 +168,9 @@ export async function POST(event) {
 			return ok({ inviteCode: await repo.rotateInviteCode(uid, parts[1]) });
 		}
 		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'import') {
+			if (parts[3] === 'preview') {
+				return ok(await repo.previewAdminCompendiumImport(uid, await body(event)));
+			}
 			return ok(await repo.importAdminCompendium(uid, await body(event)));
 		}
 		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'versions') {

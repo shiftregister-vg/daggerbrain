@@ -8,6 +8,7 @@
 	import SubclassCard from '$lib/components/compendium-items/cards/subclass-card.svelte';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import type { CharacterClass } from '@domain/schemas/compendium';
+	import SubclassSheetAddons from './subclass-sheet-addons.svelte';
 
 	let { after_remove_secondary_class = () => {} } = $props();
 
@@ -108,6 +109,8 @@
 							...secondary_subclass.foundation_card
 						}}
 					/>
+
+					<SubclassSheetAddons {character} {compendium} subclass={secondary_subclass} />
 
 					{#if secondary_class_mastery_level < 3 && primary_class_mastery_level <= 1}
 						<Collapsible.Root bind:open={secondary_subclass_cards_open}>

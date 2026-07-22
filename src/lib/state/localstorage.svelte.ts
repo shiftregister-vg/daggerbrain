@@ -20,12 +20,14 @@ const characterFeatureTabSchema = z.enum([
 	'background',
 	'notes',
 	'beastform',
-	'companion'
+	'companion',
+	'addons'
 ]);
 
 const characterBackgroundPreferencesSchema = z.object({
 	showPreview: z.boolean(),
 	backgroundQuestionsOpen: z.boolean(),
+	transformationQuestionsOpen: z.boolean().optional(),
 	connectionQuestionsOpen: z.boolean(),
 	characterDescriptionOpen: z.boolean()
 });

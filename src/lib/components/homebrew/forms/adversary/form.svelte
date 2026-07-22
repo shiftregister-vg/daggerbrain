@@ -40,7 +40,7 @@
 		phy: 'Physical',
 		mag: 'Magical'
 	};
-	const featureTypes: AdversaryFeature['type'][] = ['Action', 'Reaction', 'Passive'];
+	const featureTypes: AdversaryFeature['type'][] = ['Action', 'Reaction', 'Passive', 'Evolution'];
 
 	let {
 		itemId,

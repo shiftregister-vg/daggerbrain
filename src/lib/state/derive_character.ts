@@ -8,7 +8,7 @@ import {
 	type DomainCard,
 	type AncestryCard,
 	type CommunityCard,
-	type TransformationCard,
+	type Transformation,
 	type CharacterClass,
 	type Subclass,
 	type PrimaryWeapon,
@@ -96,7 +96,7 @@ export type DerivedCharacterData = {
 	// queried compendium items
 	ancestry_card?: AncestryCard;
 	community_card?: CommunityCard;
-	transformation_card?: TransformationCard;
+	transformation_card?: Transformation;
 	primary_class?: CharacterClass;
 	primary_subclass?: Subclass;
 	secondary_class?: CharacterClass;
@@ -104,7 +104,7 @@ export type DerivedCharacterData = {
 	additional_domain_cards: Record<string, DomainCard>;
 	additional_ancestry_cards: Record<string, AncestryCard>;
 	additional_community_cards: Record<string, CommunityCard>;
-	additional_transformation_cards: Record<string, TransformationCard>;
+	additional_transformation_cards: Record<string, Transformation>;
 
 	// inventory (resolved against compendium, customizations applied)
 	inventory_primary_weapons: (PrimaryWeapon & { inventory_id: string })[];
@@ -183,7 +183,7 @@ type ModifierBuckets = {
 type DirectRefs = {
 	ancestry_card?: AncestryCard;
 	community_card?: CommunityCard;
-	transformation_card?: TransformationCard;
+	transformation_card?: Transformation;
 	primary_class?: CharacterClass;
 	primary_subclass?: Subclass;
 	secondary_class?: CharacterClass;
@@ -191,7 +191,7 @@ type DirectRefs = {
 	additional_domain_cards: Record<string, DomainCard>;
 	additional_ancestry_cards: Record<string, AncestryCard>;
 	additional_community_cards: Record<string, CommunityCard>;
-	additional_transformation_cards: Record<string, TransformationCard>;
+	additional_transformation_cards: Record<string, Transformation>;
 	inventory_primary_weapons: InventoryPrimaryWeapon[];
 	inventory_secondary_weapons: InventorySecondaryWeapon[];
 	inventory_armor: InventoryArmor[];
@@ -582,7 +582,7 @@ function resolveDirectReferences(character: Character, compendium: CompendiumCon
 			? compendium.community_cards[character.community_card_id]
 			: undefined,
 		transformation_card: character.transformation_card_id
-			? compendium.transformation_cards[character.transformation_card_id]
+			? compendium.transformations[character.transformation_card_id]
 			: undefined,
 		primary_class: character.primary_class_id
 			? compendium.classes[character.primary_class_id]
@@ -613,8 +613,8 @@ function resolveDirectReferences(character: Character, compendium: CompendiumCon
 		),
 		additional_transformation_cards: Object.fromEntries(
 			character.additional_transformation_card_ids
-				.map((id) => [id, compendium.transformation_cards[id]] as const)
-				.filter((entry): entry is [string, TransformationCard] => !!entry[1])
+				.map((id) => [id, compendium.transformations[id]] as const)
+				.filter((entry): entry is [string, Transformation] => !!entry[1])
 		),
 		inventory_primary_weapons: character.inventory.primary_weapons
 			.map((item) => customizePrimaryWeapon(item, compendium))
@@ -1336,8 +1336,6 @@ function collectActiveModifiers(context: EvaluationContext): ModifierBuckets {
 		collectFeatureModifiers(context.refs.ancestry_card.features, buckets);
 	if (context.refs.community_card)
 		collectFeatureModifiers(context.refs.community_card.features, buckets);
-	if (context.refs.transformation_card)
-		collectFeatureModifiers(context.refs.transformation_card.features, buckets);
 	if (context.refs.primary_class) {
 		collectFeatureModifiers([context.refs.primary_class.hope_feature], buckets);
 		collectFeatureModifiers(context.refs.primary_class.class_features, buckets);
@@ -1437,10 +1435,6 @@ function collectActiveModifiers(context: EvaluationContext): ModifierBuckets {
 	for (const card of Object.values(context.refs.additional_community_cards)) {
 		collectFeatureModifiers(card.features, buckets);
 	}
-	for (const card of Object.values(context.refs.additional_transformation_cards)) {
-		collectFeatureModifiers(card.features, buckets);
-	}
-
 	return buckets;
 }
 
@@ -2638,7 +2632,7 @@ function normalizeReferencesAndChoices(
 	character.transformation_card_id = clearIfMissing(
 		character.transformation_card_id,
 		!character.transformation_card_id ||
-			Boolean(compendium.transformation_cards[character.transformation_card_id])
+			Boolean(compendium.transformations[character.transformation_card_id])
 	);
 	character.primary_class_id = clearIfMissing(
 		character.primary_class_id,
@@ -2650,6 +2644,14 @@ function normalizeReferencesAndChoices(
 	);
 	if (!character.subclass_level_up_choices) {
 		character.subclass_level_up_choices = {};
+		changed = true;
+	}
+	if (!character.sheet_addon_choices) {
+		character.sheet_addon_choices = {};
+		changed = true;
+	}
+	if (!character.sheet_addon_resources) {
+		character.sheet_addon_resources = {};
 		changed = true;
 	}
 
@@ -2683,7 +2685,7 @@ function normalizeReferencesAndChoices(
 		changed = true;
 	}
 	const nextAdditionalTransformationCards = character.additional_transformation_card_ids.filter(
-		(id) => Boolean(compendium.transformation_cards[id])
+		(id) => Boolean(compendium.transformations[id])
 	);
 	if (
 		nextAdditionalTransformationCards.length !== character.additional_transformation_card_ids.length
@@ -2798,6 +2800,45 @@ function normalizeReferencesAndChoices(
 		character.subclass_level_up_choices = normalizedSubclassLevelUpChoices;
 		changed = true;
 	}
+
+	const activeSheetAddonIds = new Set<string>();
+	for (const subclass of [refs.primary_subclass, refs.secondary_subclass]) {
+		for (const addonId of subclass?.sheet_addon_ids ?? []) {
+			if (compendium.character_sheet_addons[addonId]) activeSheetAddonIds.add(addonId);
+		}
+	}
+	const normalizedSheetAddonChoices = Object.fromEntries(
+		[...activeSheetAddonIds].flatMap((addonId) => {
+			const addon = compendium.character_sheet_addons[addonId];
+			return addon.sections.flatMap((section, sectionIndex) => {
+				const choiceKey = `${addonId}:${sectionIndex}`;
+				const validOptionIds = new Set(section.options.map((option) => option.option_id));
+				const choices = uniqueStrings(character.sheet_addon_choices?.[choiceKey] ?? []).filter(
+					(optionId) => validOptionIds.has(optionId)
+				);
+				return choices.length > 0 ? ([[choiceKey, choices]] as const) : [];
+			});
+		})
+	);
+	if (JSON.stringify(normalizedSheetAddonChoices) !== JSON.stringify(character.sheet_addon_choices)) {
+		character.sheet_addon_choices = normalizedSheetAddonChoices;
+		changed = true;
+	}
+
+	const normalizedSheetAddonResources = Object.fromEntries(
+		[...activeSheetAddonIds].flatMap((addonId) => {
+			const max = compendium.character_sheet_addons[addonId]?.resource?.max ?? 0;
+			if (max <= 0) return [];
+			const current = character.sheet_addon_resources?.[addonId] ?? 0;
+			return [[addonId, Math.max(0, Math.min(max, Math.trunc(current)))]];
+		})
+	);
+	if (
+		JSON.stringify(normalizedSheetAddonResources) !== JSON.stringify(character.sheet_addon_resources)
+	) {
+		character.sheet_addon_resources = normalizedSheetAddonResources;
+		changed = true;
+	}
 	const levelUp = deriveLevelUpMetadata(character, compendium, refs, intrinsic);
 	const domainCardVault = deriveDomainCardVault(character, compendium, refs, levelUp);
 	for (const card of domainCardVault) validCardIds.add(card.id);
@@ -2829,12 +2870,6 @@ function normalizeReferencesAndChoices(
 		activeChoiceCards.push({
 			id: character.community_card_id!,
 			options: refs.community_card.options ?? []
-		});
-	}
-	if (refs.transformation_card) {
-		activeChoiceCards.push({
-			id: character.transformation_card_id!,
-			options: refs.transformation_card.options ?? []
 		});
 	}
 	for (const card of domainCardVault) {
@@ -3021,6 +3056,40 @@ function normalizeClassQuestions(character: Character, compendium: CompendiumCon
 	return changed;
 }
 
+function normalizeTransformationQuestions(
+	character: Character,
+	compendium: CompendiumContent
+): boolean {
+	let changed = false;
+	const existingQuestions = character.transformation_questions ?? [];
+	const transformation = character.transformation_card_id
+		? compendium.transformations[character.transformation_card_id]
+		: undefined;
+
+	if (!transformation) {
+		if (existingQuestions.length > 0 || !character.transformation_questions) {
+			character.transformation_questions = [];
+			return true;
+		}
+		return false;
+	}
+
+	const existingAnswers = new Map(
+		existingQuestions.map((item) => [item.question, item.answer] as const)
+	);
+	const nextQuestions = transformation.questions.map((question) => ({
+		question,
+		answer: existingAnswers.get(question) ?? ''
+	}));
+
+	if (JSON.stringify(nextQuestions) !== JSON.stringify(existingQuestions)) {
+		character.transformation_questions = nextQuestions;
+		changed = true;
+	}
+
+	return changed;
+}
+
 function normalizeDerivedLimits(character: Character, compendium: CompendiumContent): boolean {
 	let changed = false;
 
@@ -3198,6 +3267,40 @@ function normalizeDerivedLimits(character: Character, compendium: CompendiumCont
 		changed = true;
 	}
 
+	const classFeatureTokenMaxByKey = new Map<string, number>();
+	for (const [classId, characterClass] of [
+		[character.primary_class_id, refs.primary_class],
+		[character.secondary_class_id, refs.secondary_class]
+	] as const) {
+		if (!classId || !characterClass) continue;
+		characterClass.class_features.forEach((feature, index) => {
+			if (feature.tokens_enabled) {
+				classFeatureTokenMaxByKey.set(
+					`class_feature_tokens:${classId}:${index}`,
+					Math.max(0, Math.min(20, Math.trunc(feature.token_max ?? 0)))
+				);
+			}
+		});
+	}
+	const nextClassFeatureTokenChoices = { ...character.feature_choices };
+	for (const key of Object.keys(nextClassFeatureTokenChoices)) {
+		if (key.startsWith('class_feature_tokens:') && !classFeatureTokenMaxByKey.has(key)) {
+			delete nextClassFeatureTokenChoices[key];
+			continue;
+		}
+		const maxTokens = classFeatureTokenMaxByKey.get(key);
+		if (maxTokens !== undefined) {
+			const current = Number(nextClassFeatureTokenChoices[key]?.[0] ?? 0);
+			nextClassFeatureTokenChoices[key] = [
+				String(Math.max(0, Math.min(maxTokens, Number.isFinite(current) ? Math.trunc(current) : 0)))
+			];
+		}
+	}
+	if (JSON.stringify(nextClassFeatureTokenChoices) !== JSON.stringify(character.feature_choices)) {
+		character.feature_choices = nextClassFeatureTokenChoices;
+		changed = true;
+	}
+
 	const nextUnarmedAttackChoices: Character['unarmed_attack_choices'] = {};
 	const selectedUnarmedTrait = character.unarmed_attack_choices.trait?.[0];
 	if (
@@ -3235,6 +3338,7 @@ function normalize_character(character: Character, compendium: CompendiumContent
 		normalizeInventoryAndEquipment(normalized, compendium);
 		normalizeReferencesAndChoices(normalized, compendium);
 		normalizeClassQuestions(normalized, compendium);
+		normalizeTransformationQuestions(normalized, compendium);
 		normalizeDerivedLimits(normalized, compendium);
 		if (JSON.stringify(normalized) === before) break;
 	}

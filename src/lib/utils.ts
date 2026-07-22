@@ -45,12 +45,12 @@ export function renderMarkdown(markdown: string): string {
 
 	// Convert markdown to HTML (synchronous mode)
 	// marked.parse() is synchronous by default, but TypeScript types indicate it could be async
-	const html = marked.parse(markdown) as string;
+	const html = marked.parse(markdown, { gfm: true }) as string;
 
 	// Sanitize the HTML to prevent XSS attacks
 	const sanitized = DOMPurify.sanitize(html);
 
-	return sanitized;
+	return sanitized.replace(/<table>/g, '<table class="markdown-table">');
 }
 
 /**
@@ -361,7 +361,8 @@ export function merge_compendium_content(...compendiums: CompendiumContent[]): C
 		domain_cards: {},
 		ancestry_cards: {},
 		community_cards: {},
-		transformation_cards: {},
+		transformations: {},
+		character_sheet_addons: {},
 		domains: {},
 		adversaries: {},
 		environments: {}
@@ -379,7 +380,8 @@ export function merge_compendium_content(...compendiums: CompendiumContent[]): C
 		Object.assign(result.subclasses, compendium.subclasses);
 		Object.assign(result.ancestry_cards, compendium.ancestry_cards);
 		Object.assign(result.community_cards, compendium.community_cards);
-		Object.assign(result.transformation_cards, compendium.transformation_cards);
+		Object.assign(result.transformations, compendium.transformations);
+		Object.assign(result.character_sheet_addons, compendium.character_sheet_addons);
 		Object.assign(result.domains, compendium.domains);
 		Object.assign(result.domain_cards, compendium.domain_cards);
 		Object.assign(result.adversaries, compendium.adversaries);

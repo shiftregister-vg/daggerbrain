@@ -56,7 +56,9 @@ function normalizeFeature(feature: Feature): Feature {
 	return {
 		...feature,
 		title: feature.title.trim(),
-		description_html: stripRawHtml(feature.description_html)
+		description_html: stripRawHtml(feature.description_html),
+		tokens_enabled: feature.tokens_enabled || undefined,
+		token_max: feature.tokens_enabled ? toInteger(feature.token_max ?? 0) : undefined
 	} as Feature;
 }
 

@@ -14,8 +14,16 @@ export function createEmptyCompendiumContentIds(): CompendiumContentIds {
 		domain_cards: [],
 		ancestry_cards: [],
 		community_cards: [],
-		transformation_cards: [],
+		transformations: [],
+		character_sheet_addons: [],
 		adversaries: [],
 		environments: []
+	};
+}
+
+export function normalizeCompendiumContentIds(value: Partial<CompendiumContentIds> | null | undefined): CompendiumContentIds {
+	return {
+		...createEmptyCompendiumContentIds(),
+		...(value ?? {})
 	};
 }

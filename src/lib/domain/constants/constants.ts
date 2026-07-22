@@ -12,7 +12,7 @@ import type {
 	Environment,
 	Loot,
 	Subclass,
-	TransformationCard,
+	Transformation,
 	PrimaryWeapon,
 	SecondaryWeapon
 } from '../schemas/compendium';
@@ -86,6 +86,7 @@ export const CHARACTER_DEFAULTS: Character = {
 	// notes / descriptions
 	background_questions: [],
 	connection_questions: [],
+	transformation_questions: [],
 	character_descriptions: {
 		clothes: '',
 		eyes: '',
@@ -113,6 +114,8 @@ export const CHARACTER_DEFAULTS: Character = {
 	conditions: [],
 	additional_domain_card_ids: [],
 	subclass_level_up_choices: {},
+	sheet_addon_choices: {},
+	sheet_addon_resources: {},
 	additional_ancestry_card_ids: [],
 	additional_community_card_ids: [],
 	additional_transformation_card_ids: [],
@@ -246,6 +249,7 @@ export const COMPENDIUM_DEFAULTS = {
 		suggested_primary_weapon_id: undefined,
 		suggested_secondary_weapon_id: undefined,
 		suggested_armor_id: undefined,
+		sheet_addon_ids: [],
 		foundation_card: {
 			options: [],
 			features: [],
@@ -366,16 +370,13 @@ export const COMPENDIUM_DEFAULTS = {
 		features: [],
 		options: []
 	} satisfies CommunityCard,
-	transformation_cards: {
+	transformations: {
 		source_key: 'Homebrew',
-		image_url: '',
 		title: '',
 		description_html: '',
-		artist_name: '',
 		features: [],
-		options: [],
-		tokens_enabled: undefined
-	} satisfies TransformationCard,
+		questions: []
+	} satisfies Transformation,
 	beastforms: {
 		source_key: 'Homebrew',
 		level_requirement: 1,

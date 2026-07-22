@@ -2,7 +2,6 @@
 	import type {
 		DomainCard,
 		AncestryCard,
-		TransformationCard,
 		SubclassCard,
 		CommunityCard
 	} from '@domain/schemas/compendium';
@@ -23,7 +22,7 @@
 		enable_tokens = false,
 		class: className = ''
 	}: {
-		card: DomainCard | AncestryCard | TransformationCard | SubclassCard | CommunityCard;
+		card: DomainCard | AncestryCard | SubclassCard | CommunityCard;
 		choices?: CardChoices;
 		tokens?: number;
 		disabled?: boolean;

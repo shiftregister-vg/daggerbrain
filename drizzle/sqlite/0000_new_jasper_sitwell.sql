@@ -127,7 +127,7 @@ CREATE TABLE `users` (
 	`image` text,
 	`legacy_clerk_id` text,
 	`is_admin` integer DEFAULT false NOT NULL,
-	`homebrew_vault` text DEFAULT '{"primary_weapons":[],"secondary_weapons":[],"armor":[],"loot":[],"consumables":[],"beastforms":[],"classes":[],"subclasses":[],"domains":[],"domain_cards":[],"ancestry_cards":[],"community_cards":[],"transformation_cards":[],"adversaries":[],"environments":[]}' NOT NULL,
+	`homebrew_vault` text DEFAULT '{"primary_weapons":[],"secondary_weapons":[],"armor":[],"loot":[],"consumables":[],"beastforms":[],"classes":[],"subclasses":[],"domains":[],"domain_cards":[],"ancestry_cards":[],"community_cards":[],"transformations":[],"adversaries":[],"environments":[]}' NOT NULL,
 	`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch() * 1000) NOT NULL
 );

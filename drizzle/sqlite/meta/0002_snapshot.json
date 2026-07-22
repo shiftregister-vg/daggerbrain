@@ -883,7 +883,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'{\"primary_weapons\":[],\"secondary_weapons\":[],\"armor\":[],\"loot\":[],\"consumables\":[],\"beastforms\":[],\"classes\":[],\"subclasses\":[],\"domains\":[],\"domain_cards\":[],\"ancestry_cards\":[],\"community_cards\":[],\"transformation_cards\":[],\"adversaries\":[],\"environments\":[]}'"
+          "default": "'{\"primary_weapons\":[],\"secondary_weapons\":[],\"armor\":[],\"loot\":[],\"consumables\":[],\"beastforms\":[],\"classes\":[],\"subclasses\":[],\"domains\":[],\"domain_cards\":[],\"ancestry_cards\":[],\"community_cards\":[],\"transformations\":[],\"character_sheet_addons\":[],\"adversaries\":[],\"environments\":[]}'"
         },
         "created_at": {
           "name": "created_at",

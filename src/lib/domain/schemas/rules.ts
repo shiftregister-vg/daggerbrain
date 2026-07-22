@@ -2,9 +2,9 @@ import { z } from 'zod';
 import type {
 	AncestryCard,
 	CommunityCard,
-	TransformationCard,
 	DomainCard,
-	SubclassCard
+	SubclassCard,
+	Transformation
 } from './compendium';
 import type { TableNames } from '../ids';
 
@@ -262,7 +262,9 @@ export const FeatureSchema = z.object({
 	title: z.string(),
 	description_html: z.string(),
 	character_modifiers: z.array(CharacterModifierSchema),
-	weapon_modifiers: z.array(WeaponModifierSchema)
+	weapon_modifiers: z.array(WeaponModifierSchema),
+	tokens_enabled: z.boolean().optional(),
+	token_max: z.number().int().min(0).optional()
 });
 export type Feature = z.infer<typeof FeatureSchema>;
 
@@ -487,9 +489,9 @@ export type Card =
 			card: CommunityCard;
 	  }
 	| {
-			type: 'transformation_card';
+			type: 'transformation';
 			id: string;
-			card: TransformationCard;
+			card: Transformation;
 	  }
 	| {
 			type: 'domain_card';

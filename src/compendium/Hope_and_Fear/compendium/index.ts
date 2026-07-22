@@ -14,7 +14,6 @@ import { LOOT } from './loot';
 import { PRIMARY_WEAPONS } from './primary-weapons';
 import { SECONDARY_WEAPONS } from './secondary-weapons';
 import { SUBCLASSES } from './subclasses';
-import { TRANSFORMATION_CARDS } from './transformation-cards';
 
 export const COMPENDIUM: CompendiumContent = {
 	primary_weapons: PRIMARY_WEAPONS,
@@ -29,7 +28,8 @@ export const COMPENDIUM: CompendiumContent = {
 	domain_cards: DOMAIN_CARDS,
 	ancestry_cards: ANCESTRY_CARDS,
 	community_cards: COMMUNITY_CARDS,
-	transformation_cards: TRANSFORMATION_CARDS,
+	transformations: {},
+	character_sheet_addons: {},
 	adversaries: ADVERSARIES,
 	environments: ENVIRONMENTS
 };

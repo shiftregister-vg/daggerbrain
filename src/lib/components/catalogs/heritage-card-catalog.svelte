@@ -6,16 +6,16 @@
 		AncestryCard,
 		CommunityCard,
 		CompendiumContent,
-		TransformationCard
+		Transformation
 	} from '@domain/schemas/compendium';
 	import AncestryCardComponent from '$lib/components/compendium-items/cards/ancestry-card.svelte';
 	import CommunityCardComponent from '$lib/components/compendium-items/cards/community-card.svelte';
-	import TransformationCardComponent from '$lib/components/compendium-items/cards/transformation-card.svelte';
+	import TransformationComponent from '$lib/components/compendium-items/transformation.svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import type { Card } from '@domain/schemas/rules';
 	import { compareAlpha, sortEntriesByTitle } from '$lib/utils';
 
-	type HeritageCardFilter = 'ancestry_card' | 'community_card' | 'transformation_card';
+	type HeritageCardFilter = 'ancestry_card' | 'community_card' | 'transformation';
 
 	let {
 		onSelect = () => {},
@@ -41,7 +41,7 @@
 
 		// Search in features
 		const featuresMatch = card.card.features.some((feature) =>
-			feature.description_html.toLowerCase().includes(searchLower)
+			'description_html' in feature && feature.description_html.toLowerCase().includes(searchLower)
 		);
 
 		return titleMatch || descriptionMatch || featuresMatch;
@@ -61,10 +61,9 @@
 			cards.push({ type: 'community_card', id, card });
 		});
 
-		// Transformation cards
-		sortEntriesByTitle(Object.entries(compendium.transformation_cards)).forEach(([id, card]) => {
+		sortEntriesByTitle(Object.entries(compendium.transformations)).forEach(([id, card]) => {
 			cards.push({
-				type: 'transformation_card',
+				type: 'transformation',
 				id,
 				card
 			});
@@ -92,7 +91,7 @@
 	const cardTypeOptions: { value: HeritageCardFilter; label: string }[] = [
 		{ value: 'ancestry_card', label: 'Ancestry' },
 		{ value: 'community_card', label: 'Community' },
-		{ value: 'transformation_card', label: 'Transformation' }
+		{ value: 'transformation', label: 'Transformation' }
 	];
 
 	let cardTypeSelectOpen = $state(false);
@@ -174,10 +173,11 @@
 					<CommunityCardComponent card={card.card} disabled variant="responsive">
 						{@render selectButton()}
 					</CommunityCardComponent>
-				{:else if card.type === 'transformation_card'}
-					<TransformationCardComponent card={card.card} disabled variant="responsive">
+				{:else if card.type === 'transformation'}
+					<div class="rounded-lg border bg-card p-3">
+						<TransformationComponent transformation={card.card} class="max-w-none" />
 						{@render selectButton()}
-					</TransformationCardComponent>
+					</div>
 				{/if}
 			{/each}
 		{/if}

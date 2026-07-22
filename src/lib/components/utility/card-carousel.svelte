@@ -6,7 +6,6 @@
 	import AncestryCardComponent from '$lib/components/compendium-items/cards/ancestry-card.svelte';
 	import CommunityCardComponent from '$lib/components/compendium-items/cards/community-card.svelte';
 	import DomainCardComponent from '$lib/components/compendium-items/cards/domain-card.svelte';
-	import TransformationCardComponent from '$lib/components/compendium-items/cards/transformation-card.svelte';
 	import SubclassCardComponent from '$lib/components/compendium-items/cards/subclass-card.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -393,17 +392,6 @@
 						bind:choices={choices[card.id]}
 						bind:tokens={tokens[card.id]}
 					/>
-				{:else if card.type === 'transformation_card'}
-					<TransformationCardComponent
-						card={card.card}
-						variant="card"
-						{disabled}
-						{experiences}
-						{enable_choices}
-						{enable_tokens}
-						bind:choices={choices[card.id]}
-						bind:tokens={tokens[card.id]}
-					/>
 				{:else if card.type === 'subclass_card'}
 					<SubclassCardComponent
 						card={card.card}
@@ -501,17 +489,6 @@
 					/>
 				{:else if card.type === 'community_card'}
 					<CommunityCardComponent
-						card={card.card}
-						variant="card"
-						{disabled}
-						{experiences}
-						{enable_choices}
-						{enable_tokens}
-						bind:choices={choices[card.id]}
-						bind:tokens={tokens[card.id]}
-					/>
-				{:else if card.type === 'transformation_card'}
-					<TransformationCardComponent
 						card={card.card}
 						variant="card"
 						{disabled}

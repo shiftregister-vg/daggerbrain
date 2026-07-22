@@ -16,9 +16,11 @@
 	const character = $derived(characterCtx.character);
 	const derived_character_data = $derived(characterCtx.derived_character_data);
 	const primary_class = $derived(derived_character_data?.primary_class);
+	const transformation = $derived(derived_character_data?.transformation_card);
 
 	const fallbackShowPreview = true;
 	const fallbackBackgroundQuestionsOpen = true;
+	const fallbackTransformationQuestionsOpen = false;
 	const fallbackConnectionQuestionsOpen = false;
 	const fallbackCharacterDescriptionOpen = false;
 
@@ -33,6 +35,12 @@
 			? (localstorageCtx.app_preferences.character_background_preferences[characterCtx.id]
 					?.backgroundQuestionsOpen ?? fallbackBackgroundQuestionsOpen)
 			: fallbackBackgroundQuestionsOpen
+	);
+	let transformationQuestionsOpen = $state(
+		characterCtx.id
+			? (localstorageCtx.app_preferences.character_background_preferences[characterCtx.id]
+					?.transformationQuestionsOpen ?? fallbackTransformationQuestionsOpen)
+			: fallbackTransformationQuestionsOpen
 	);
 	let connectionQuestionsOpen = $state(
 		characterCtx.id
@@ -53,6 +61,7 @@
 		localstorageCtx.app_preferences.character_background_preferences[characterCtx.id] = {
 			showPreview,
 			backgroundQuestionsOpen,
+			transformationQuestionsOpen,
 			connectionQuestionsOpen,
 			characterDescriptionOpen
 		};
@@ -91,6 +100,34 @@
 								</div>
 							{:else}
 								<Textarea bind:value={character.background_questions[i].answer} />
+							{/if}
+						</div>
+					{/each}
+				</div>
+			</Collapsible.Content>
+		</Collapsible.Root>
+	{/if}
+
+	{#if transformation && (character.transformation_questions ?? []).length > 0}
+		<Collapsible.Root bind:open={transformationQuestionsOpen} class="pt-4">
+			<Collapsible.Trigger class="flex items-center gap-1">
+				<ChevronRight
+					class={cn('size-4 transition-transform', transformationQuestionsOpen && 'rotate-90')}
+				/>
+				<p class="text-sm font-medium">{transformation.title}</p>
+			</Collapsible.Trigger>
+
+			<Collapsible.Content>
+				<div class="ml-5 flex flex-col gap-3 pt-2">
+					{#each character.transformation_questions ?? [] as item, i}
+						<div class="flex flex-col gap-1">
+							<p class="text-xs text-muted-foreground">{item.question || 'Untitled question'}</p>
+							{#if showPreview || !characterCtx.canEdit}
+								<div class="text-sm text-muted-foreground">
+									{@html renderMarkdown(item.answer || 'No answer')}
+								</div>
+							{:else}
+								<Textarea bind:value={character.transformation_questions![i].answer} />
 							{/if}
 						</div>
 					{/each}

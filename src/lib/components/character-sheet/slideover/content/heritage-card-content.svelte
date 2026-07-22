@@ -2,7 +2,7 @@
 	import HeritageCardCatalog from '$lib/components/catalogs/heritage-card-catalog.svelte';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import type { AncestryCard, CommunityCard, TransformationCard } from '@domain/schemas/compendium';
+	import type { AncestryCard, CommunityCard, Transformation } from '@domain/schemas/compendium';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import CircleMinus from '@lucide/svelte/icons/circle-minus';
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
@@ -36,7 +36,7 @@
 			if (!alreadyExists) {
 				character.additional_community_card_ids = [...character.additional_community_card_ids, id];
 			}
-		} else if (type === 'transformation_card') {
+		} else if (type === 'transformation') {
 			alreadyExists = character.additional_transformation_card_ids.includes(id);
 			if (!alreadyExists) {
 				character.additional_transformation_card_ids = [
@@ -93,7 +93,7 @@
 							| { card: AncestryCard; type: 'Ancestry'; id: string }
 							| { card: CommunityCard; type: 'Community'; id: string }
 							| {
-									card: TransformationCard;
+									card: Transformation;
 									type: 'Transformation';
 									id: string;
 							  })}

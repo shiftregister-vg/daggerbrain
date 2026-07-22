@@ -32,7 +32,7 @@ const emptyHomebrewVaultSql = sql`'{
 	"domain_cards": [],
 	"ancestry_cards": [],
 	"community_cards": [],
-	"transformation_cards": [],
+	"transformations": [],
 	"adversaries": [],
 	"environments": []
 }'::jsonb`;

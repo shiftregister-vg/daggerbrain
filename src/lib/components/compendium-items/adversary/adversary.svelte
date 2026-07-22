@@ -186,7 +186,8 @@
 									'rounded bg-primary-muted px-1.5 py-0.5 text-[10px] font-normal',
 									f.type === 'Action' && 'bg-accent/10 text-accent',
 									f.type === 'Reaction' && 'bg-sky-300/15 text-sky-300',
-									f.type === 'Passive' && 'bg-primary/30 text-violet-300'
+									f.type === 'Passive' && 'bg-primary/30 text-violet-300',
+									f.type === 'Evolution' && 'bg-orange-300/15 text-orange-300'
 								)}>{f.type}</span
 							>
 						</p>

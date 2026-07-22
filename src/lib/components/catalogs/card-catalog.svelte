@@ -6,13 +6,12 @@
 	import DomainCardComponent from '$lib/components/compendium-items/cards/domain-card.svelte';
 	import AncestryCardComponent from '$lib/components/compendium-items/cards/ancestry-card.svelte';
 	import CommunityCardComponent from '$lib/components/compendium-items/cards/community-card.svelte';
-	import TransformationCardComponent from '$lib/components/compendium-items/cards/transformation-card.svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import type { CompendiumContent } from '@domain/schemas/compendium';
 	import type { Card } from '@domain/schemas/rules';
 	import { compareAlpha, sortEntriesByTitle } from '$lib/utils';
 
-	type CardTypeFilter = 'all' | 'domain' | 'ancestry' | 'community' | 'transformation';
+	type CardTypeFilter = 'all' | 'domain' | 'ancestry' | 'community';
 
 	let {
 		onCardClick = () => {},
@@ -49,15 +48,6 @@
 			cards.push({ type: 'community_card', id, card });
 		});
 
-		// Transformation cards
-		sortEntriesByTitle(Object.entries(compendium.transformation_cards)).forEach(([id, card]) => {
-			cards.push({
-				type: 'transformation_card',
-				id,
-				card
-			});
-		});
-
 		return cards.sort((left, right) => compareAlpha(left.card.title, right.card.title));
 	});
 
@@ -91,8 +81,6 @@
 				if (cardTypeFilter === 'domain' && card.type !== 'domain_card') return false;
 				if (cardTypeFilter === 'ancestry' && card.type !== 'ancestry_card') return false;
 				if (cardTypeFilter === 'community' && card.type !== 'community_card') return false;
-				if (cardTypeFilter === 'transformation' && card.type !== 'transformation_card')
-					return false;
 			}
 
 			// Search filter
@@ -142,8 +130,7 @@
 		{ value: 'all', label: 'All' },
 		{ value: 'domain', label: 'Domain' },
 		{ value: 'ancestry', label: 'Ancestry' },
-		{ value: 'community', label: 'Community' },
-		{ value: 'transformation', label: 'Transformation' }
+		{ value: 'community', label: 'Community' }
 	];
 
 	let domainSelectOpen = $state(false);
@@ -290,10 +277,6 @@
 					<CommunityCardComponent card={card.card} disabled variant="responsive">
 						{@render selectButton()}
 					</CommunityCardComponent>
-				{:else if card.type === 'transformation_card'}
-					<TransformationCardComponent card={card.card} disabled variant="responsive">
-						{@render selectButton()}
-					</TransformationCardComponent>
 				{/if}
 			{/each}
 		{/if}

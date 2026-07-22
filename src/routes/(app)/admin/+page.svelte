@@ -24,9 +24,6 @@
 			<p class="text-sm font-semibold tracking-wide uppercase">Admin</p>
 		</div>
 		<h1 class="mt-4 text-3xl font-bold text-foreground">Admin Dashboard</h1>
-		<p class="mt-3 max-w-2xl text-muted-foreground">
-			Signed in as {data.user.name ?? data.user.email ?? 'an administrator'}.
-		</p>
 	</section>
 
 	<section class="grid gap-4 py-8 md:grid-cols-3">

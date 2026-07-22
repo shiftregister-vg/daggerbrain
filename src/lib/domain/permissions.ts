@@ -7,6 +7,7 @@ import type {
 	AncestryCard,
 	Armor,
 	Beastform,
+	CharacterSheetAddon,
 	CharacterClass,
 	CommunityCard,
 	Consumable,
@@ -17,7 +18,7 @@ import type {
 	PrimaryWeapon,
 	SecondaryWeapon,
 	Subclass,
-	TransformationCard
+	Transformation
 } from './schemas/compendium';
 
 export type CampaignAccess = {
@@ -48,7 +49,8 @@ export type HomebrewTable =
 	| 'domain_cards'
 	| 'ancestry_cards'
 	| 'community_cards'
-	| 'transformation_cards'
+	| 'transformations'
+	| 'character_sheet_addons'
 	| 'adversaries'
 	| 'environments';
 
@@ -76,13 +78,15 @@ export type HomebrewItem<T extends HomebrewTable> = T extends 'primary_weapons'
 											? AncestryCard
 											: T extends 'community_cards'
 												? CommunityCard
-												: T extends 'transformation_cards'
-													? TransformationCard
-													: T extends 'adversaries'
-														? Adversary
-														: T extends 'environments'
-															? Environment
-															: never;
+												: T extends 'transformations'
+													? Transformation
+													: T extends 'character_sheet_addons'
+														? CharacterSheetAddon
+														: T extends 'adversaries'
+															? Adversary
+															: T extends 'environments'
+																? Environment
+																: never;
 
 export type HomebrewAccess<T extends HomebrewTable> = {
 	item: HomebrewItem<T>;

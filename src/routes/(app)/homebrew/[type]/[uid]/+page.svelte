@@ -15,7 +15,7 @@
 		PrimaryWeapon,
 		SecondaryWeapon,
 		Subclass,
-		TransformationCard
+		Transformation
 	} from '@domain/schemas/compendium';
 	import { getHomebrewContext } from '$lib/state/homebrew.svelte';
 	import { page } from '$app/state';
@@ -39,7 +39,6 @@
 	import HomebrewEnvironmentForm from '$lib/components/homebrew/forms/environment/form.svelte';
 	import HomebrewCommunityCardForm from '$lib/components/homebrew/forms/community-card/form.svelte';
 	import HomebrewSubclassForm from '$lib/components/homebrew/forms/subclass/form.svelte';
-	import HomebrewTransformationCardForm from '$lib/components/homebrew/forms/transformation-card/form.svelte';
 	import AncestryCardPreview from '$lib/components/homebrew/previews/ancestry-card-preview.svelte';
 	import ClassPreview from '$lib/components/homebrew/previews/class-preview.svelte';
 	import DomainCardPreview from '$lib/components/homebrew/previews/domain-card-preview.svelte';
@@ -54,7 +53,7 @@
 	import DomainPreview from '$lib/components/homebrew/previews/domain-preview.svelte';
 	import EnvironmentPreview from '$lib/components/homebrew/previews/environment-preview.svelte';
 	import SubclassPreview from '$lib/components/homebrew/previews/subclass-preview.svelte';
-	import TransformationCardPreview from '$lib/components/homebrew/previews/transformation-card-preview.svelte';
+	import TransformationComponent from '$lib/components/compendium-items/transformation.svelte';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { artForge } from '$lib/assets/images';
 	import Footer from '$lib/components/navigation/footer.svelte';
@@ -75,7 +74,7 @@
 		| 'ancestry-cards'
 		| 'domain-cards'
 		| 'community-cards'
-		| 'transformation-cards';
+		| 'transformation';
 
 	type HomebrewItem =
 		| {
@@ -163,10 +162,10 @@
 				item: CommunityCard;
 		  }
 		| {
-				type: 'transformation-cards';
-				typeName: 'Transformation Card';
+				type: 'transformation';
+				typeName: 'Transformation';
 				name: string;
-				item: TransformationCard;
+				item: Transformation;
 		  };
 
 	const homebrew = getHomebrewContext();
@@ -186,7 +185,7 @@
 		'ancestry-cards': 'homebrew-ancestry-card-form',
 		'domain-cards': 'homebrew-domain-card-form',
 		'community-cards': 'homebrew-community-card-form',
-		'transformation-cards': 'homebrew-transformation-card-form',
+		transformation: 'homebrew-transformation-form',
 		domain: 'homebrew-domain-form'
 	} as const;
 
@@ -373,15 +372,15 @@
 					: null;
 				return;
 			}
-			case 'transformation-cards': {
-				const transformationCard =
-					homebrew.compendium?.transformation_cards[uidParam as Id<'transformation_cards'>] ?? null;
-				homebrewItem = transformationCard
+			case 'transformation': {
+				const transformation =
+					homebrew.compendium?.transformations[uidParam as Id<'transformations'>] ?? null;
+				homebrewItem = transformation
 					? {
-							type: 'transformation-cards',
-							typeName: 'Transformation Card',
-							item: transformationCard,
-							name: transformationCard.title
+							type: 'transformation',
+							typeName: 'Transformation',
+							item: transformation,
+							name: transformation.title
 						}
 					: null;
 				return;
@@ -406,7 +405,6 @@
 	let unsavedAncestryCard: AncestryCard | null = $state(null);
 	let unsavedDomainCard: DomainCard | null = $state(null);
 	let unsavedCommunityCard: CommunityCard | null = $state(null);
-	let unsavedTransformationCard: TransformationCard | null = $state(null);
 	let subclassFormTab = $state<'foundation' | 'specialization' | 'mastery'>('foundation');
 
 	beforeNavigate(({ cancel }) => {
@@ -685,18 +683,10 @@
 									onSaveSuccess={() => toast.success('Changes saved')}
 									onSaveError={() => toast.error('Failed to save changes')}
 								/>
-							{:else if homebrewItem.type === 'transformation-cards'}
-								<HomebrewTransformationCardForm
-									itemId={uidParam}
-									formId={migratedFormIds['transformation-cards']}
-									bind:item={homebrewItem.item}
-									bind:unsavedItem={unsavedTransformationCard}
-									bind:hasChanges
-									bind:hasErrors
-									bind:saving={isSaving}
-									onSaveSuccess={() => toast.success('Changes saved')}
-									onSaveError={() => toast.error('Failed to save changes')}
-								/>
+							{:else if homebrewItem.type === 'transformation'}
+								<div class="rounded-md border border-border/70 bg-card/70 p-4 text-sm text-muted-foreground">
+									Transformations use the shared compendium entity model and are edited through the compendium manager.
+								</div>
 							{/if}
 						</div>
 					</div>
@@ -740,10 +730,8 @@
 										<DomainCardPreview card={unsavedDomainCard || homebrewItem.item} />
 									{:else if homebrewItem.type === 'community-cards'}
 										<CommunityCardPreview card={unsavedCommunityCard || homebrewItem.item} />
-									{:else if homebrewItem.type === 'transformation-cards'}
-										<TransformationCardPreview
-											card={unsavedTransformationCard || homebrewItem.item}
-										/>
+									{:else if homebrewItem.type === 'transformation'}
+										<TransformationComponent transformation={homebrewItem.item} />
 									{/if}
 								</div>
 							</div>

@@ -9,6 +9,7 @@
 		Armor,
 		Beastform,
 		CharacterClass,
+		CharacterSheetAddon,
 		CommunityCard,
 		Consumable,
 		Domain,
@@ -18,7 +19,7 @@
 		PrimaryWeapon,
 		SecondaryWeapon,
 		Subclass,
-		TransformationCard
+		Transformation
 	} from '@domain/schemas/compendium';
 	import type { HomebrewTable } from '@domain/permissions';
 	import Search from '@lucide/svelte/icons/search';
@@ -66,7 +67,7 @@
 		| 'domain-cards'
 		| 'ancestry-cards'
 		| 'community-cards'
-		| 'transformation-cards'
+		| 'transformation'
 		| 'adversary'
 		| 'environment';
 
@@ -84,7 +85,7 @@
 		| 'domain-cards'
 		| 'ancestry-cards'
 		| 'community-cards'
-		| 'transformation-cards'
+		| 'transformations'
 		| 'adversaries'
 		| 'environments';
 
@@ -101,7 +102,8 @@
 		| { id: Id<'domain_cards'>; table: 'domain_cards'; item: DomainCard }
 		| { id: Id<'ancestry_cards'>; table: 'ancestry_cards'; item: AncestryCard }
 		| { id: Id<'community_cards'>; table: 'community_cards'; item: CommunityCard }
-		| { id: Id<'transformation_cards'>; table: 'transformation_cards'; item: TransformationCard }
+		| { id: Id<'transformations'>; table: 'transformations'; item: Transformation }
+		| { id: Id<'character_sheet_addons'>; table: 'character_sheet_addons'; item: CharacterSheetAddon }
 		| { id: Id<'adversaries'>; table: 'adversaries'; item: Adversary }
 		| { id: Id<'environments'>; table: 'environments'; item: Environment };
 
@@ -167,9 +169,12 @@
 				([id, item]) =>
 					({ id: id as Id<'community_cards'>, table: 'community_cards', item }) as const
 			),
-			...Object.entries(compendium.transformation_cards).map(
+			...Object.entries(compendium.transformations).map(
+				([id, item]) => ({ id: id as Id<'transformations'>, table: 'transformations', item }) as const
+			),
+			...Object.entries(compendium.character_sheet_addons).map(
 				([id, item]) =>
-					({ id: id as Id<'transformation_cards'>, table: 'transformation_cards', item }) as const
+					({ id: id as Id<'character_sheet_addons'>, table: 'character_sheet_addons', item }) as const
 			),
 			...Object.entries(compendium.adversaries).map(
 				([id, item]) => ({ id: id as Id<'adversaries'>, table: 'adversaries', item }) as const
@@ -196,7 +201,8 @@
 			domain_cards: 0,
 			ancestry_cards: 0,
 			community_cards: 0,
-			transformation_cards: 0,
+			transformations: 0,
+			character_sheet_addons: 0,
 			adversaries: 0,
 			environments: 0
 		};
@@ -254,7 +260,7 @@
 				'domain-cards': 'domain-cards',
 				'ancestry-cards': 'ancestry-cards',
 				'community-cards': 'community-cards',
-				'transformation-cards': 'transformation-cards',
+				transformations: 'transformation',
 				adversaries: 'adversary',
 				environments: 'environment'
 			};
@@ -302,8 +308,8 @@
 				return fullCompendium.ancestry_cards[selectedTemplateId] ?? null;
 			case 'community-cards':
 				return fullCompendium.community_cards[selectedTemplateId] ?? null;
-			case 'transformation-cards':
-				return fullCompendium.transformation_cards[selectedTemplateId] ?? null;
+			case 'transformation':
+				return fullCompendium.transformations[selectedTemplateId] ?? null;
 			case 'adversary':
 				return fullCompendium.adversaries[selectedTemplateId] ?? null;
 			case 'environment':
@@ -353,8 +359,10 @@
 				return 'Ancestry Card';
 			case 'community_cards':
 				return 'Community Card';
-			case 'transformation_cards':
-				return 'Transformation Card';
+			case 'transformations':
+				return 'Transformation';
+			case 'character_sheet_addons':
+				return 'Character Sheet Add-on';
 			case 'adversaries':
 				return `Tier ${entry.item.tier} ${entry.item.type} Adversary`;
 			case 'environments':
@@ -376,7 +384,8 @@
 			domain_cards: 'domain-cards',
 			ancestry_cards: 'ancestry-cards',
 			community_cards: 'community-cards',
-			transformation_cards: 'transformation-cards',
+			transformations: 'transformation',
+			character_sheet_addons: 'character-sheet-addon',
 			adversaries: 'adversary',
 			environments: 'environment'
 		};
@@ -411,8 +420,8 @@
 				return entry.table === 'ancestry_cards';
 			case 'community-cards':
 				return entry.table === 'community_cards';
-			case 'transformation-cards':
-				return entry.table === 'transformation_cards';
+			case 'transformations':
+				return entry.table === 'transformations';
 			case 'adversaries':
 				return entry.table === 'adversaries';
 			case 'environments':
@@ -631,13 +640,12 @@
 						)
 					});
 					break;
-				case 'transformation-cards':
+				case 'transformation':
 					id = await homebrew.addItem({
-						type: 'transformation_cards',
+						type: 'transformations',
 						item: setTitle(
 							deepClone(
-								(selectedTemplate as TransformationCard | null) ??
-									COMPENDIUM_DEFAULTS.transformation_cards
+								(selectedTemplate as Transformation | null) ?? COMPENDIUM_DEFAULTS.transformations
 							),
 							title
 						)
@@ -849,9 +857,9 @@
 													{:else if activeTab === 'community-cards'}
 														{@render cardIcon('size-4')}
 														Community Cards ({countByTable.community_cards})
-													{:else if activeTab === 'transformation-cards'}
+													{:else if activeTab === 'transformations'}
 														{@render cardIcon('size-4')}
-														Transformation Cards ({countByTable.transformation_cards})
+														Transformations ({countByTable.transformations})
 													{:else if activeTab === 'adversaries'}
 														<Sword class="size-4" />
 														Adversaries ({countByTable.adversaries})
@@ -937,10 +945,10 @@
 														Community Cards ({countByTable.community_cards})
 													</div>
 												</Select.Item>
-												<Select.Item value="transformation-cards">
+												<Select.Item value="transformations">
 													<div class="flex items-center gap-2">
 														{@render cardIcon('size-4')}
-														Transformation Cards ({countByTable.transformation_cards})
+														Transformations ({countByTable.transformations})
 													</div>
 												</Select.Item>
 												<Select.Item value="adversaries">
@@ -1057,7 +1065,7 @@
 															alt={getItemName(entry)}
 														/>{:else}<Sparkles
 															class="size-6 text-muted-foreground"
-														/>{/if}{:else if entry.table === 'ancestry_cards' || entry.table === 'community_cards' || entry.table === 'transformation_cards'}{#if entry.item.image_url}<img
+														/>{/if}{:else if entry.table === 'ancestry_cards' || entry.table === 'community_cards'}{#if entry.item.image_url}<img
 															class="h-full w-full rounded-md object-cover"
 															src={entry.item.image_url}
 															alt={getItemName(entry)}
@@ -1166,7 +1174,7 @@
 							{#if newItemType === 'primary-weapon'}Primary Weapon{:else if newItemType === 'secondary-weapon'}Secondary
 								Weapon{:else if newItemType === 'armor'}Armor{:else if newItemType === 'beastform'}Beastform{:else if newItemType === 'loot'}Loot{:else if newItemType === 'consumable'}Consumable{:else if newItemType === 'class'}Class{:else if newItemType === 'subclass'}Subclass{:else if newItemType === 'domain'}Domain{:else if newItemType === 'domain-cards'}Domain
 								Card{:else if newItemType === 'ancestry-cards'}Ancestry Card{:else if newItemType === 'community-cards'}Community
-								Card{:else if newItemType === 'transformation-cards'}Transformation Card{:else if newItemType === 'adversary'}Adversary{:else if newItemType === 'environment'}Environment{:else}Select
+								Card{:else if newItemType === 'transformation'}Transformation{:else if newItemType === 'adversary'}Adversary{:else if newItemType === 'environment'}Environment{:else}Select
 								a type...{/if}
 						</Select.Trigger>
 						<Select.Content>
@@ -1192,8 +1200,8 @@
 							<Select.Item value="community-cards" disabled={!canCreateHomebrew}
 								>Community Card</Select.Item
 							>
-							<Select.Item value="transformation-cards" disabled={!canCreateHomebrew}
-								>Transformation Card</Select.Item
+							<Select.Item value="transformation" disabled={!canCreateHomebrew}
+								>Transformation</Select.Item
 							>
 							<Select.Item value="adversary" disabled={!canCreateHomebrew}>Adversary</Select.Item>
 							<Select.Item value="environment" disabled={!canCreateHomebrew}

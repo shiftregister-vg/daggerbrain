@@ -25,7 +25,7 @@
 		| 'domain_cards'
 		| 'ancestry_cards'
 		| 'community_cards'
-		| 'transformation_cards'
+		| 'transformations'
 		| 'adversaries'
 		| 'environments';
 
@@ -155,10 +155,10 @@
 					name: item.title
 				}))
 		},
-		transformation_cards: {
-			name: 'Transformation Card',
+		transformations: {
+			name: 'Transformation',
 			getItems: () =>
-				Object.entries(homebrew.compendium?.transformation_cards ?? {}).map(([id, item]) => ({
+				Object.entries(homebrew.compendium?.transformations ?? {}).map(([id, item]) => ({
 					id,
 					name: item.title
 				}))
@@ -278,7 +278,7 @@
 						>
 							{#if group.type === 'loot'}
 								{@render lootIcon('size-4')}
-							{:else if ['domain_cards', 'ancestry_cards', 'community_cards', 'transformation_cards'].includes(group.type)}
+							{:else if ['domain_cards', 'ancestry_cards', 'community_cards'].includes(group.type)}
 								{@render cardIcon('size-4')}
 							{:else}
 								{@const Icon = TYPE_CONFIG[group.type].icon}

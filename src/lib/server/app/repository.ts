@@ -14,7 +14,10 @@ import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@domain/permis
 import type { Id } from '@domain/ids';
 import { publish } from './events';
 import { execute, jsonParam, parseJson, queryOne, queryRows } from '$lib/server/db/client';
-import { createEmptyCompendiumContentIds } from '@domain/character-compendium';
+import {
+	createEmptyCompendiumContentIds,
+	normalizeCompendiumContentIds
+} from '@domain/character-compendium';
 import {
 	OFFICIAL_COMPENDIUM_TABLES,
 	ensureOfficialCompendiumSeeded,
@@ -34,7 +37,7 @@ const VAULT_KEYS = [
 	'domain_cards',
 	'ancestry_cards',
 	'community_cards',
-	'transformation_cards',
+	'transformations',
 	'adversaries',
 	'environments'
 ] as const satisfies (keyof CompendiumContentIds)[];
@@ -193,7 +196,7 @@ function requireUserId(userId: string | undefined) {
 }
 
 function parseVault(value: unknown): CompendiumContentIds {
-	return value ? parseJson<CompendiumContentIds>(value) : createEmptyCompendiumContentIds();
+	return normalizeCompendiumContentIds(value ? parseJson<Partial<CompendiumContentIds>>(value) : null);
 }
 
 function countHomebrewVault(vault: CompendiumContentIds): number {
@@ -214,7 +217,8 @@ function emptyCompendium(): CompendiumContent {
 		domain_cards: {},
 		ancestry_cards: {},
 		community_cards: {},
-		transformation_cards: {},
+		transformations: {},
+		character_sheet_addons: {},
 		adversaries: {},
 		environments: {}
 	};
@@ -1891,7 +1895,9 @@ export async function getCharacterCompendiumScope(
 		campaign_source_keys: campaignData?.enabled_source_keys,
 		homebrew_vault: parseVault(owner.homebrew_vault),
 		campaign_id: campaignId as CharacterCompendiumScope['campaign_id'],
-		campaign_vault: campaignData ? campaignData.homebrew_vault : createEmptyCompendiumContentIds()
+		campaign_vault: campaignData
+			? normalizeCompendiumContentIds(campaignData.homebrew_vault)
+			: createEmptyCompendiumContentIds()
 	};
 }
 

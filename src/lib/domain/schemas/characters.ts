@@ -153,6 +153,11 @@ export const ConditionSchema = z.object({
 });
 export type Condition = z.infer<typeof ConditionSchema>;
 
+const CharacterQuestionAnswerSchema = z.object({
+	question: z.string(),
+	answer: z.string()
+});
+
 // ============================================================================
 // Character Schema (full character model)
 // ============================================================================
@@ -235,18 +240,9 @@ export const CharacterSchema = z.object({
 	companion: CompanionSchema.optional(),
 
 	// notes / descriptions
-	background_questions: z.array(
-		z.object({
-			question: z.string(),
-			answer: z.string()
-		})
-	),
-	connection_questions: z.array(
-		z.object({
-			question: z.string(),
-			answer: z.string()
-		})
-	),
+	background_questions: z.array(CharacterQuestionAnswerSchema),
+	connection_questions: z.array(CharacterQuestionAnswerSchema),
+	transformation_questions: z.array(CharacterQuestionAnswerSchema).optional(),
 	character_descriptions: z.object({
 		clothes: z.string(),
 		eyes: z.string(),
@@ -271,6 +267,8 @@ export const CharacterSchema = z.object({
 
 	// ephemeral stats
 	subclass_level_up_choices: z.record(z.string(), z.array(z.string())).optional(),
+	sheet_addon_choices: z.record(z.string(), z.array(z.string())).optional(),
+	sheet_addon_resources: z.record(z.string(), z.number().int().min(0)).optional(),
 	card_choices: z.record(z.string(), CardChoicesSchema), // only for cards (inventory and other compendium choices are stored elsewhere)
 	card_tokens: z.record(z.string(), z.number().int().min(0)),
 	feature_choices: z.record(z.string(), z.array(z.string())), // used by specific feature flags

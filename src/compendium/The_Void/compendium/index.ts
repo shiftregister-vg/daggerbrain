@@ -17,7 +17,8 @@ export const COMPENDIUM: CompendiumContent = {
 	domain_cards: DOMAIN_CARDS,
 	ancestry_cards: {},
 	community_cards: {},
-	transformation_cards: {},
+	transformations: {},
+	character_sheet_addons: {},
 	adversaries: {},
 	environments: {}
 };

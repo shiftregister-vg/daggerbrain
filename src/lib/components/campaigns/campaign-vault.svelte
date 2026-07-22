@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CompendiumContentIds } from '@domain/schemas/compendium';
+	import { normalizeCompendiumContentIds } from '@domain/character-compendium';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { getCampaignContext } from '$lib/state/campaign.svelte';
@@ -12,11 +13,14 @@
 
 	let { class: className = '' }: { class?: string } = $props();
 
-	type VaultType = keyof CompendiumContentIds;
+	type VaultType = Exclude<keyof CompendiumContentIds, 'character_sheet_addons'>;
 
 	const campaignCtx = getCampaignContext();
 	const homebrewCtx = getHomebrewContext();
 	const campaign = $derived(campaignCtx.campaign);
+	const campaignVault = $derived(
+		campaign ? normalizeCompendiumContentIds(campaign.homebrew_vault) : null
+	);
 
 	const TYPE_CONFIG: Record<
 		VaultType,
@@ -86,10 +90,10 @@
 			routeType: 'community-cards',
 			getItemName: (id) => homebrewCtx.compendium?.community_cards[id]?.title ?? null
 		},
-		transformation_cards: {
-			name: 'Transformation Card',
-			routeType: 'transformation-cards',
-			getItemName: (id) => homebrewCtx.compendium?.transformation_cards[id]?.title ?? null
+		transformations: {
+			name: 'Transformation',
+			routeType: 'transformation',
+			getItemName: (id) => homebrewCtx.compendium?.transformations[id]?.title ?? null
 		},
 		adversaries: {
 			name: 'Adversary',
@@ -109,17 +113,15 @@
 	const sortedVaultItems = $derived.by(() => {
 		if (!campaign) return [];
 
-		return Object.entries(campaign.homebrew_vault)
-			.flatMap(([type, ids]) =>
-				(ids as readonly string[]).map((id) => {
-					const vaultType = type as VaultType;
-					const config = TYPE_CONFIG[vaultType];
+		return (Object.entries(TYPE_CONFIG) as [VaultType, (typeof TYPE_CONFIG)[VaultType]][])
+			.flatMap(([type, config]) =>
+				((campaignVault?.[type] ?? []) as readonly string[]).map((id) => {
 					const name = config.getItemName(id);
 					if (!name) return null;
 
 					return {
 						id,
-						type: vaultType,
+						type,
 						name,
 						typeName: config.name,
 						href: `/homebrew/${config.routeType}/${id}`

@@ -143,22 +143,6 @@
 					id: character.secondary_subclass_id
 				});
 
-			// transformation card
-			if (derived_character.transformation_card && character.transformation_card_id)
-				cards.push({
-					type: 'transformation_card',
-					card: derived_character.transformation_card,
-					id: character.transformation_card_id
-				});
-
-			// Additional transformation Cards
-			cards.push(
-				...Object.entries(derived_character.additional_transformation_cards).map(([id, card]) => ({
-					type: 'transformation_card' as const,
-					card,
-					id
-				}))
-			);
 		}
 
 		return cards;

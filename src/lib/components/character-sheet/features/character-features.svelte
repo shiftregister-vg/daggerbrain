@@ -10,7 +10,7 @@
 	import Notes from './tabs/notes.svelte';
 	import Beastforms from './tabs/beastforms.svelte';
 	import Companion from './tabs/companion.svelte';
-	import ScrollArea from '$lib/components/ui/scroll-area/scroll-area.svelte';
+	import SheetAddons from './tabs/sheet-addons.svelte';
 	let {
 		class: className = '',
 		hideSides = false,
@@ -49,7 +49,8 @@
 		| 'background'
 		| 'notes'
 		| 'beastform'
-		| 'companion';
+		| 'companion'
+		| 'addons';
 	const fallbackTab: TabValue = 'weapons';
 	let tab = $state<TabValue>(
 		characterCtx.id
@@ -57,9 +58,19 @@
 			: fallbackTab
 	);
 
+	const hasSheetAddons = $derived.by(() => {
+		const compendium = characterCtx.character_compendium;
+		if (!compendium) return false;
+		return [
+			...(derived_character_data?.primary_subclass?.sheet_addon_ids ?? []),
+			...(derived_character_data?.secondary_subclass?.sheet_addon_ids ?? [])
+		].some((id) => Boolean(compendium.character_sheet_addons[id]));
+	});
+
 	const availableTabs = $derived.by<TabValue[]>(() => [
 		'weapons',
 		'features',
+		...(hasSheetAddons ? ['addons' as const] : []),
 		...(derived_character_data?.hasBeastformClassFeature ? ['beastform' as const] : []),
 		...(derived_character_data?.hasCompanionSubclassFeature ? ['companion' as const] : []),
 		'inventory',
@@ -95,7 +106,10 @@
 	<div class={cn('relative z-11 grid h-full grid-rows-[auto_1fr]')}>
 		<Tabs.List class="-mt-2 flex h-auto w-full flex-wrap gap-y-1 rounded-none p-2">
 			<Tabs.Trigger value="weapons" class="h-auto flex-initial">Weapons & Armor</Tabs.Trigger>
-			<Tabs.Trigger value="features" class="h-auto flex-initial">Class Features</Tabs.Trigger>
+			<Tabs.Trigger value="features" class="h-auto flex-initial">Features</Tabs.Trigger>
+			{#if hasSheetAddons}
+				<Tabs.Trigger value="addons" class="h-auto flex-initial">Add-ons</Tabs.Trigger>
+			{/if}
 			{#if derived_character_data?.hasBeastformClassFeature}
 				<Tabs.Trigger value="beastform" class="h-auto flex-initial">Beastform</Tabs.Trigger>
 			{/if}
@@ -116,6 +130,11 @@
 					<Tabs.Content value="features" class="px-4">
 						<ClassFeatures />
 					</Tabs.Content>
+					{#if hasSheetAddons}
+						<Tabs.Content value="addons" class="px-4">
+							<SheetAddons />
+						</Tabs.Content>
+					{/if}
 					{#if derived_character_data?.hasBeastformClassFeature}
 						<Tabs.Content value="beastform" class="px-4">
 							<Beastforms {onBeastformCatalogClick} />

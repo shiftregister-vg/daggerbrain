@@ -3,6 +3,7 @@ import {
 	AncestryCardSchema,
 	ArmorSchema,
 	BeastformSchema,
+	CharacterSheetAddonSchema,
 	CharacterClassSchema,
 	CommunityCardSchema,
 	ConsumableSchema,
@@ -13,7 +14,7 @@ import {
 	PrimaryWeaponSchema,
 	SecondaryWeaponSchema,
 	SubclassSchema,
-	TransformationCardSchema,
+	TransformationSchema,
 	type CompendiumContent
 } from '@domain/schemas/compendium';
 import type { SourceKey } from '@domain/schemas/rules';
@@ -35,7 +36,8 @@ export const OFFICIAL_COMPENDIUM_TABLES = [
 	'domain_cards',
 	'ancestry_cards',
 	'community_cards',
-	'transformation_cards',
+	'transformations',
+	'character_sheet_addons',
 	'adversaries',
 	'environments'
 ] as const satisfies HomebrewTable[];
@@ -62,7 +64,8 @@ const ITEM_SCHEMAS = {
 	domain_cards: DomainCardSchema,
 	ancestry_cards: AncestryCardSchema,
 	community_cards: CommunityCardSchema,
-	transformation_cards: TransformationCardSchema,
+	transformations: TransformationSchema,
+	character_sheet_addons: CharacterSheetAddonSchema,
 	adversaries: AdversarySchema,
 	environments: EnvironmentSchema
 } as const;

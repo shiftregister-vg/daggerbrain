@@ -237,6 +237,7 @@ export const SubclassSchema = z
 		suggested_primary_weapon_id: z.string().nullable().optional(),
 		suggested_secondary_weapon_id: z.string().nullable().optional(),
 		suggested_armor_id: z.string().nullable().optional(),
+		sheet_addon_ids: z.array(z.string().trim().min(1, 'Sheet add-on is required')).optional(),
 		foundation_card: BaseCardSchema.extend({
 			level_up_options: z.array(SubclassLevelUpOptionSchema).optional()
 		}),
@@ -280,6 +281,34 @@ export const SubclassSchema = z
 export type Subclass = z.infer<typeof SubclassSchema>;
 export type SubclassCard = Subclass &
 	BaseCard & { type: 'foundation' | 'specialization' | 'mastery' };
+
+export const CharacterSheetAddonSchema = z.object({
+	source_key: SourceKeySchema,
+	title: z.string(),
+	description_html: z.string(),
+	resource: z
+		.object({
+			title: z.string(),
+			description_html: z.string(),
+			max: z.number().int().min(0)
+		})
+		.optional(),
+	sections: z.array(
+		z.object({
+			title: z.string(),
+			description_html: z.string(),
+			tier: TierSchema.optional(),
+			options: z.array(
+				z.object({
+					option_id: z.string().trim().min(1, 'Option ID is required'),
+					title: z.string(),
+					description_html: z.string()
+				})
+			)
+		})
+	)
+});
+export type CharacterSheetAddon = z.infer<typeof CharacterSheetAddonSchema>;
 
 export const DomainSchema = z.object({
 	source_key: SourceKeySchema,
@@ -340,16 +369,20 @@ export const CommunityCardSchema = z
 	.and(BaseCardSchema);
 export type CommunityCard = z.infer<typeof CommunityCardSchema>;
 
-export const TransformationCardSchema = z
-	.object({
-		source_key: SourceKeySchema,
-		title: z.string(),
-		description_html: z.string(),
-		image_url: z.string(),
-		artist_name: z.string()
-	})
-	.and(BaseCardSchema);
-export type TransformationCard = z.infer<typeof TransformationCardSchema>;
+export const TransformationFeatureSchema = z.object({
+	name: z.string().trim().min(1, 'Feature name is required'),
+	description_html: z.string()
+});
+export type TransformationFeature = z.infer<typeof TransformationFeatureSchema>;
+
+export const TransformationSchema = z.object({
+	source_key: SourceKeySchema,
+	title: z.string(),
+	description_html: z.string(),
+	features: z.array(TransformationFeatureSchema),
+	questions: z.array(z.string().trim().min(1, 'Question is required'))
+});
+export type Transformation = z.infer<typeof TransformationSchema>;
 
 export const AdversarySchema = z
 	.object({
@@ -377,7 +410,7 @@ export const AdversarySchema = z
 		experience_modifiers: z.array(z.number()),
 		features: z.array(
 			z.object({
-				type: z.enum(['Action', 'Reaction', 'Passive']),
+				type: z.enum(['Action', 'Reaction', 'Passive', 'Evolution']),
 				name: z.string(),
 				max_uses: z.number().int().min(0).nullable(),
 				description_html: z.string()
@@ -433,7 +466,8 @@ export const CompendiumContentIdsSchema = z.object({
 	domain_cards: z.array(zid('domain_cards')),
 	ancestry_cards: z.array(zid('ancestry_cards')),
 	community_cards: z.array(zid('community_cards')),
-	transformation_cards: z.array(zid('transformation_cards')),
+	transformations: z.array(zid('transformations')),
+	character_sheet_addons: z.array(zid('character_sheet_addons')),
 	adversaries: z.array(zid('adversaries')),
 	environments: z.array(zid('environments'))
 });
@@ -452,7 +486,8 @@ export const CompendiumContentSchema = z.object({
 	domain_cards: z.record(z.string(), DomainCardSchema),
 	ancestry_cards: z.record(z.string(), AncestryCardSchema),
 	community_cards: z.record(z.string(), CommunityCardSchema),
-	transformation_cards: z.record(z.string(), TransformationCardSchema),
+	transformations: z.record(z.string(), TransformationSchema),
+	character_sheet_addons: z.record(z.string(), CharacterSheetAddonSchema),
 	domains: z.record(z.string(), DomainSchema),
 	adversaries: z.record(z.string(), AdversarySchema),
 	environments: z.record(z.string(), EnvironmentSchema)

@@ -26,7 +26,7 @@
 		'ancestry-cards',
 		'domain-cards',
 		'community-cards',
-		'transformation-cards'
+		'transformation'
 	];
 	const isValidType = $derived(Boolean(typeParam && editableTypes.includes(typeParam)));
 	const isLoading = $derived(homebrew.isLoading);
@@ -63,10 +63,8 @@
 				return Boolean(homebrew.compendium?.domain_cards[uidParam as Id<'domain_cards'>]);
 			case 'community-cards':
 				return Boolean(homebrew.compendium?.community_cards[uidParam as Id<'community_cards'>]);
-			case 'transformation-cards':
-				return Boolean(
-					homebrew.compendium?.transformation_cards[uidParam as Id<'transformation_cards'>]
-				);
+			case 'transformation':
+				return Boolean(homebrew.compendium?.transformations[uidParam as Id<'transformations'>]);
 			default:
 				return false;
 		}

@@ -1,12 +1,13 @@
 <script lang="ts">
 	import Database from '@lucide/svelte/icons/database';
+	import Eye from '@lucide/svelte/icons/eye';
 	import ListTree from '@lucide/svelte/icons/list-tree';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Save from '@lucide/svelte/icons/save';
 	import ShieldCheck from '@lucide/svelte/icons/shield-check';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import { goto } from '$app/navigation';
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { deleteApi, getApi, patchApi, postApi } from '$lib/api/client';
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -78,6 +79,24 @@
 		{ key: 'levels', label: 'Level', fields: ['level_requirement'], prefix: 'Level' }
 	];
 	const FILTER_STORAGE_PREFIX = 'daggerlore:admin-compendium:filters:';
+	const ADMIN_COMPENDIUM_TYPES = [
+		'primary_weapons',
+		'secondary_weapons',
+		'armor',
+		'loot',
+		'consumables',
+		'beastforms',
+		'classes',
+		'subclasses',
+		'domains',
+		'domain_cards',
+		'ancestry_cards',
+		'community_cards',
+		'transformations',
+		'character_sheet_addons',
+		'adversaries',
+		'environments'
+	] as const satisfies HomebrewTable[];
 
 	let dashboard = $state<Dashboard | null>(null);
 	let items = $state<AdminCompendiumItem[]>([]);
@@ -96,6 +115,11 @@
 	let isLoading = $state(false);
 	let isSaving = $state(false);
 	let routeStateKey = $state('');
+	let previewOpen = $state(false);
+	let baselineEditorChecksum = $state('');
+	let editorHeaderElement = $state<HTMLDivElement | null>(null);
+	let editorContentElement = $state<HTMLDivElement | null>(null);
+	let titleInputElement = $state<HTMLInputElement | null>(null);
 
 	const selectedItem = $derived(
 		items.find((item) => itemKey(item) === selectedItemKey) ?? null
@@ -104,7 +128,9 @@
 		dashboard?.counts.reduce((total: number, count) => total + count.count, 0) ?? 0
 	);
 	const entityTypes = $derived(
-		[...(dashboard?.item_types ?? [])].sort((a, b) => itemTypeLabel(a).localeCompare(itemTypeLabel(b)))
+		[...new Set([...(dashboard?.item_types ?? []), ...ADMIN_COMPENDIUM_TYPES])].sort((a, b) =>
+			itemTypeLabel(a).localeCompare(itemTypeLabel(b))
+		)
 	);
 	const selectedTypeCount = $derived(selectedItemType ? countFor(selectedItemType) : totalItems);
 	const filteredItems = $derived(
@@ -135,6 +161,10 @@
 		Object.values(listFilters).reduce((total, values) => total + values.length, 0)
 	);
 	const relatedGroups = $derived(buildRelatedGroups());
+	const currentEditorChecksum = $derived(buildEditorChecksum());
+	const hasEditorChanges = $derived(
+		Boolean(editorItem && selectedItemType && currentEditorChecksum !== baselineEditorChecksum)
+	);
 
 	function itemKey(item: AdminCompendiumItem) {
 		return `${item.source_key}:${item.item_type}:${item.item_id}`;
@@ -167,6 +197,35 @@
 
 	function cloneItem(item: unknown): MutableItem {
 		return JSON.parse(JSON.stringify(item ?? {})) as MutableItem;
+	}
+
+	function stableStringify(value: unknown): string {
+		return JSON.stringify(value, (_key, currentValue) => {
+			if (!currentValue || typeof currentValue !== 'object' || Array.isArray(currentValue)) {
+				return currentValue;
+			}
+			return Object.fromEntries(
+				Object.entries(currentValue as Record<string, unknown>).sort(([left], [right]) =>
+					left.localeCompare(right)
+				)
+			);
+		});
+	}
+
+	function buildEditorChecksum() {
+		if (!editorItem || !selectedItemType) return '';
+		const sourceKey = editorItem.source_key as SourceKey | undefined;
+		const itemId = createMode ? slugId(editorItem.title) : selectedItem?.item_id;
+		return stableStringify({
+			item_type: selectedItemType,
+			item_id: itemId ?? '',
+			source_key: sourceKey ?? '',
+			item: { ...itemForSave(editorItem, selectedItemType), source_key: sourceKey }
+		});
+	}
+
+	function captureEditorBaseline() {
+		baselineEditorChecksum = buildEditorChecksum();
 	}
 
 	function optionItems(itemType: HomebrewTable) {
@@ -252,6 +311,20 @@
 				...relatedByIds('secondary_weapons', [currentEditorItem.suggested_secondary_weapon_id]),
 				...relatedByIds('armor', [currentEditorItem.suggested_armor_id])
 			]);
+			const sheetAddonIds = Array.isArray(currentEditorItem.sheet_addon_ids)
+				? currentEditorItem.sheet_addon_ids
+				: [];
+			addRelatedGroup(groups, 'Sheet Add-ons', relatedByIds('character_sheet_addons', sheetAddonIds));
+		} else if (selectedItemType === 'character_sheet_addons') {
+			addRelatedGroup(
+				groups,
+				'Used By Subclasses',
+				optionItems('subclasses').filter(
+					(item) =>
+						Array.isArray(item.item?.sheet_addon_ids) &&
+						item.item.sheet_addon_ids.includes(currentId)
+				)
+			);
 		} else if (selectedItemType === 'domain_cards') {
 			addRelatedGroup(groups, 'Domain', relatedByIds('domains', [currentEditorItem.domain_id]));
 			addRelatedGroup(
@@ -289,7 +362,7 @@
 
 	function sourceLabel(sourceKey: SourceKey | string | undefined) {
 		return (
-			dashboard?.sources.find((source) => source.source_key === sourceKey)?.short_title ??
+			dashboard?.sources.find((source) => source.source_key === sourceKey)?.name ??
 			sourceKey ??
 			'Source'
 		);
@@ -472,8 +545,16 @@
 			];
 		}
 		if (itemType === 'subclasses') {
-			return ['classes', 'domain_cards', 'primary_weapons', 'secondary_weapons', 'armor'];
+			return [
+				'classes',
+				'domain_cards',
+				'primary_weapons',
+				'secondary_weapons',
+				'armor',
+				'character_sheet_addons'
+			];
 		}
+		if (itemType === 'character_sheet_addons') return ['subclasses'];
 		if (itemType === 'domains') return ['classes', 'domain_cards'];
 		if (itemType === 'domain_cards') return ['domains', 'classes'];
 		if (itemType === 'primary_weapons' || itemType === 'secondary_weapons' || itemType === 'armor') {
@@ -508,6 +589,24 @@
 		editorItem = null;
 		createMode = false;
 		saveError = '';
+		baselineEditorChecksum = '';
+	}
+
+	function scrollEditorToTop() {
+		tick().then(() => {
+			if (!editorContentElement) return;
+			const headerHeight = editorHeaderElement?.offsetHeight ?? 0;
+			const targetTop =
+				editorContentElement.getBoundingClientRect().top + window.scrollY - headerHeight;
+			window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+		});
+	}
+
+	function focusTitleInput() {
+		tick().then(() => {
+			titleInputElement?.focus();
+			titleInputElement?.select();
+		});
 	}
 
 	async function navigateToType(itemType: HomebrewTable) {
@@ -559,10 +658,14 @@
 	}
 
 	function selectItemForEdit(item: AdminCompendiumItem) {
+		const nextItemKey = itemKey(item);
+		const shouldScroll = createMode || selectedItemKey !== nextItemKey;
 		createMode = false;
-		selectedItemKey = itemKey(item);
+		selectedItemKey = nextItemKey;
 		editorItem = { ...cloneItem(item.item), source_key: item.source_key };
 		saveError = '';
+		captureEditorBaseline();
+		if (shouldScroll) scrollEditorToTop();
 	}
 
 	function applyRouteSelection() {
@@ -586,6 +689,9 @@
 		selectedItemKey = '';
 		editorItem = defaultItem(itemType, sourceKey as SourceKey);
 		saveError = '';
+		captureEditorBaseline();
+		scrollEditorToTop();
+		focusTitleInput();
 	}
 
 	function removeEmptyOptionalFields(item: MutableItem, keys: string[]) {
@@ -617,7 +723,7 @@
 	}
 
 	async function saveItem() {
-		if (!editorItem || !selectedItemType) return;
+		if (!editorItem || !selectedItemType || !hasEditorChanges) return;
 		saveError = '';
 		isSaving = true;
 		try {
@@ -639,10 +745,12 @@
 			const savedItemKey = `${payload.source_key}:${payload.item_type}:${payload.item_id}`;
 			selectedItemKey = savedItemKey;
 			createMode = false;
+			captureEditorBaseline();
 			await loadDashboard();
 			await loadItems();
 			const savedItem = items.find((item) => itemKey(item) === savedItemKey);
 			if (savedItem) await navigateToItem(savedItem);
+			scrollEditorToTop();
 		} catch (error) {
 			saveError = error instanceof Error ? error.message : 'Unable to save compendium item';
 		} finally {
@@ -796,9 +904,19 @@
 				description_html: '',
 				image_url: '',
 				artist_name: '',
+				sheet_addon_ids: [],
 				foundation_card: { ...defaultBaseCard(sourceKey), level_up_options: [] },
 				specialization_card: { ...defaultBaseCard(sourceKey), level_up_options: [] },
 				mastery_card: { ...defaultBaseCard(sourceKey), level_up_options: [] }
+			};
+		}
+		if (itemType === 'character_sheet_addons') {
+			return {
+				source_key: sourceKey,
+				title: '',
+				description_html: '',
+				resource: { title: '', description_html: '', max: 0 },
+				sections: []
 			};
 		}
 		if (itemType === 'domains') {
@@ -815,12 +933,17 @@
 		if (itemType === 'domain_cards') {
 			return defaultDomainCard(sourceKey);
 		}
-		if (
-			itemType === 'ancestry_cards' ||
-			itemType === 'community_cards' ||
-			itemType === 'transformation_cards'
-		) {
+		if (itemType === 'ancestry_cards' || itemType === 'community_cards') {
 			return defaultBaseCard(sourceKey);
+		}
+		if (itemType === 'transformations') {
+			return {
+				source_key: sourceKey,
+				title: '',
+				description_html: '',
+				features: [],
+				questions: []
+			};
 		}
 		if (itemType === 'adversaries') {
 			return {
@@ -864,6 +987,13 @@
 		target[key] = [...(target[key] ?? []), defaultFeature()];
 	}
 
+	function addClassFeature(target: MutableItem) {
+		target.class_features = [
+			...(target.class_features ?? []),
+			{ ...defaultFeature(), tokens_enabled: false, token_max: 6 }
+		];
+	}
+
 	function ensureSubclassCard(target: MutableItem, key: string) {
 		target[key] ??= { features: [], options: [] };
 		target[key].features ??= [];
@@ -877,6 +1007,24 @@
 	function removeSubclassCardFeature(target: MutableItem, key: string, index: number) {
 		ensureSubclassCard(target, key);
 		removeArrayItem(target[key], 'features', index);
+	}
+
+	function addSheetAddonSection(target: MutableItem) {
+		target.sections = [
+			...(target.sections ?? []),
+			{ title: '', description_html: '', tier: undefined, options: [] }
+		];
+	}
+
+	function addSheetAddonOption(section: MutableItem) {
+		section.options = [
+			...(section.options ?? []),
+			{
+				option_id: `option_${(section.options ?? []).length + 1}`,
+				title: '',
+				description_html: ''
+			}
+		];
 	}
 
 	function addSubclassCardChoice(target: MutableItem, key: string, type: 'arbitrary' | 'experience') {
@@ -950,6 +1098,10 @@
 			...(target.features ?? []),
 			{ type: 'Passive', name: '', description_html: '', questions: '' }
 		];
+	}
+
+	function addTransformationFeature(target: MutableItem) {
+		target.features = [...(target.features ?? []), { name: '', description_html: '' }];
 	}
 
 	function removeArrayItem(target: MutableItem, key: string, index: number) {
@@ -1124,6 +1276,10 @@
 		selectedItemType;
 		untrack(() => void loadReferences());
 	});
+
+	$effect(() => {
+		if (selectedItemType !== 'domain_cards' && previewOpen) previewOpen = false;
+	});
 </script>
 
 <svelte:head>
@@ -1144,9 +1300,6 @@
 			<h1 class="mt-3 text-3xl font-bold text-foreground">
 				{itemTypeLabel(selectedItemType)} Manager
 			</h1>
-			<p class="mt-2 text-sm text-muted-foreground">
-				Signed in as {data.user.name ?? data.user.email ?? 'an administrator'}.
-			</p>
 		</div>
 	</section>
 
@@ -1181,7 +1334,7 @@
 
 	<section class="editor-layout {sectionsExpanded ? 'sections-open' : 'sections-closed'}">
 		{#if sectionsExpanded}
-			<aside class="border-border/70 bg-card/40 overflow-hidden rounded-lg border">
+			<aside class="sections-panel border-border/70 bg-card/40 flex min-h-0 flex-col rounded-lg border">
 				<div class="border-border/70 flex items-start justify-between gap-3 border-b p-4">
 					<div>
 						<p class="font-semibold text-foreground">Entity Sections</p>
@@ -1196,7 +1349,7 @@
 						Hide
 					</Button>
 				</div>
-				<div class="max-h-[38rem] overflow-auto p-2">
+				<div class="sections-list p-2">
 					{#each entityTypes as itemType}
 						<a
 							href={editorHref(itemType)}
@@ -1230,7 +1383,7 @@
 			</aside>
 		{/if}
 
-		<aside class="border-border/70 bg-card/40 flex min-h-0 flex-col rounded-lg border">
+		<aside class="items-panel border-border/70 bg-card/40 flex min-h-0 flex-col rounded-lg border">
 			<div class="border-border/70 flex items-center justify-between border-b p-4">
 				<div>
 					<p class="font-semibold text-foreground">
@@ -1296,7 +1449,7 @@
 					</div>
 				</div>
 			{/if}
-			<div class="min-h-0 flex-1 overflow-auto p-2">
+			<div class="p-2">
 				{#if isLoading}
 					<p class="p-3 text-sm text-muted-foreground">Loading...</p>
 				{:else if filteredItems.length === 0}
@@ -1319,8 +1472,11 @@
 			</div>
 		</aside>
 
-		<section class="border-border/70 bg-card/40 flex min-h-0 flex-col overflow-hidden rounded-lg border">
-			<div class="border-border/70 bg-card/95 sticky top-0 z-10 flex flex-col gap-3 border-b p-4 backdrop-blur md:flex-row md:items-center md:justify-between">
+		<section class="border-border/70 bg-card/40 flex min-h-0 flex-col rounded-lg border">
+			<div
+				bind:this={editorHeaderElement}
+				class="editor-actions-header border-border/70 bg-card/95 sticky z-10 flex flex-col gap-3 border-b p-4 backdrop-blur md:flex-row md:items-center md:justify-between"
+			>
 				<div class="min-w-0">
 					<p class="truncate text-lg font-semibold text-foreground">
 						{createMode ? `New ${selectedItemType ? itemTypeLabel(selectedItemType) : 'Item'}` : (selectedItem?.title ?? 'Select an item')}
@@ -1332,7 +1488,21 @@
 					</p>
 				</div>
 				<div class="flex gap-2">
-					<Button class="w-fit gap-2" onclick={saveItem} disabled={!editorItem || isSaving}>
+					{#if selectedItemType === 'domain_cards' && editorItem}
+						<Button
+							variant="outline"
+							class="w-fit gap-2"
+							onclick={() => (previewOpen = true)}
+						>
+							<Eye class="size-4" />
+							Preview
+						</Button>
+					{/if}
+					<Button
+						class="w-fit gap-2"
+						onclick={saveItem}
+						disabled={!editorItem || isSaving || !hasEditorChanges}
+					>
 						<Save class="size-4" />
 						Save
 					</Button>
@@ -1354,13 +1524,14 @@
 				</p>
 			{/if}
 
-			<div class="min-h-0 flex-1 overflow-auto p-4">
+			<div bind:this={editorContentElement} class="p-4">
 				{#if !editorItem || !selectedItemType}
 					<p class="text-sm text-muted-foreground">Select an item or create one from an entity section.</p>
 				{:else}
 					{#if selectedItemType === 'domain_cards'}
 						<DomainCardEditor
 							bind:item={editorItem}
+							bind:previewOpen
 							sources={dashboard?.sources ?? []}
 							domains={optionItems('domains')}
 							{sourceLabel}
@@ -1374,13 +1545,17 @@
 									<span>Source</span>
 									<select class="admin-input" bind:value={editorItem.source_key} required>
 										{#each dashboard?.sources ?? [] as source}
-											<option value={source.source_key}>{source.short_title} - {source.name}</option>
+											<option value={source.source_key}>{source.name}</option>
 										{/each}
 									</select>
 								</label>
 								<label class="admin-field">
 									<span>Title</span>
-									<input class="admin-input" bind:value={editorItem.title} />
+									<input
+										bind:this={titleInputElement}
+										class="admin-input"
+										bind:value={editorItem.title}
+									/>
 								</label>
 								{#if 'image_url' in editorItem}
 									<label class="admin-field">
@@ -1395,7 +1570,7 @@
 									</label>
 								{/if}
 							</div>
-							{#if 'description_html' in editorItem}
+							{#if 'description_html' in editorItem && selectedItemType !== 'primary_weapons' && selectedItemType !== 'secondary_weapons'}
 								<label class="admin-field">
 									<span>Description</span>
 									<MarkdownTextarea bind:value={editorItem.description_html} />
@@ -1425,6 +1600,132 @@
 							</section>
 						{/if}
 
+						{#if selectedItemType === 'character_sheet_addons'}
+							<section class="admin-panel">
+								<div class="flex items-center justify-between gap-3">
+									<div>
+										<h2>Sheet Add-on</h2>
+										<p class="text-sm text-muted-foreground">
+											Define optional sheet pages and selectable choices for subclasses.
+										</p>
+									</div>
+									<Button size="sm" variant="outline" onclick={() => addSheetAddonSection(editorItem!)}>
+										Add Section
+									</Button>
+								</div>
+								<div class="rounded-md border border-border/70 bg-background/60 p-3">
+									<div class="mb-3 grid gap-3 md:grid-cols-[1fr_8rem]">
+										<label class="admin-field">
+											<span>Resource Name</span>
+											<input
+												class="admin-input"
+												value={editorItem.resource?.title ?? ''}
+												placeholder="Focus"
+												onchange={(event) => {
+													editorItem!.resource ??= { title: '', description_html: '', max: 0 };
+													editorItem!.resource.title = event.currentTarget.value;
+												}}
+											/>
+										</label>
+										<label class="admin-field">
+											<span>Maximum</span>
+											<input
+												class="admin-input"
+												type="number"
+												min="0"
+												value={editorItem.resource?.max ?? 0}
+												onchange={(event) => {
+													editorItem!.resource ??= { title: '', description_html: '', max: 0 };
+													editorItem!.resource.max = Number(event.currentTarget.value);
+												}}
+											/>
+										</label>
+									</div>
+									<label class="admin-field">
+										<span>Resource Text</span>
+										<MarkdownTextarea
+											value={editorItem.resource?.description_html ?? ''}
+											placeholder="Explain how this sheet resource works."
+											onchangeValue={(value) => {
+												editorItem!.resource ??= { title: '', description_html: '', max: 0 };
+												editorItem!.resource.description_html = value;
+											}}
+										/>
+									</label>
+								</div>
+								<div class="grid gap-3">
+									{#each editorItem.sections ?? [] as section, sectionIndex}
+										<div class="rounded-md border border-border/70 bg-background/60 p-3">
+											<div class="mb-3 flex items-start justify-between gap-3">
+												<div class="grid flex-1 gap-3 md:grid-cols-[1fr_8rem]">
+													<label class="admin-field">
+														<span>Section Title</span>
+														<input class="admin-input" bind:value={section.title} placeholder="Tier 1" />
+													</label>
+													<label class="admin-field">
+														<span>Tier</span>
+														<select
+															class="admin-input"
+															value={section.tier ?? ''}
+															onchange={(event) => {
+																section.tier =
+																	event.currentTarget.value === ''
+																		? undefined
+																		: Number(event.currentTarget.value);
+															}}
+														>
+															<option value="">None</option>
+															{#each [1, 2, 3, 4] as tier}
+																<option value={tier}>Tier {tier}</option>
+															{/each}
+														</select>
+													</label>
+												</div>
+												<Button
+													size="sm"
+													variant="outline"
+													onclick={() => removeArrayItem(editorItem!, 'sections', sectionIndex)}
+												>
+													Remove
+												</Button>
+											</div>
+											<label class="admin-field">
+												<span>Section Text</span>
+												<MarkdownTextarea
+													placeholder="Optional section instructions"
+													bind:value={section.description_html}
+												/>
+											</label>
+											<div class="mt-4 grid gap-3 border-t border-border/70 pt-4">
+												<div class="flex items-center justify-between gap-3">
+													<p class="text-sm font-medium text-foreground">Options</p>
+													<Button size="sm" variant="outline" onclick={() => addSheetAddonOption(section)}>
+														Add Option
+													</Button>
+												</div>
+												{#each section.options ?? [] as option, optionIndex}
+													<div class="rounded-md border border-border/70 bg-card/60 p-3">
+														<div class="mb-3 grid gap-3 md:grid-cols-[12rem_1fr_auto]">
+															<input class="admin-input" placeholder="option_id" bind:value={option.option_id} />
+															<input class="admin-input" placeholder="Option title" bind:value={option.title} />
+															<Button
+																size="sm"
+																variant="outline"
+																onclick={() => removeArrayItem(section, 'options', optionIndex)}
+															>
+																Remove
+															</Button>
+														</div>
+														<MarkdownTextarea placeholder="Option text" bind:value={option.description_html} />
+													</div>
+												{/each}
+											</div>
+										</div>
+									{/each}
+								</div>
+							</section>
+						{/if}
+
 						{#if selectedItemType === 'ancestry_cards'}
 							<section class="admin-panel">
 								<h2>Ancestry Settings</h2>
@@ -1435,7 +1736,7 @@
 							</section>
 						{/if}
 
-						{#if selectedItemType === 'ancestry_cards' || selectedItemType === 'community_cards' || selectedItemType === 'transformation_cards'}
+						{#if selectedItemType === 'ancestry_cards' || selectedItemType === 'community_cards'}
 							<section class="admin-panel">
 								<h2>Card Settings</h2>
 								<label class="check-field">
@@ -1789,6 +2090,26 @@
 											</select>
 										</label>
 									</div>
+								</div>
+								<div class="grid gap-3">
+									<div>
+										<p class="text-sm font-medium text-foreground">Optional Sheet Add-ons</p>
+										<p class="text-xs text-muted-foreground">
+											Additional character sheet pages unlocked by this subclass.
+										</p>
+									</div>
+									<select
+										class="admin-input min-h-32"
+										multiple
+										value={editorItem.sheet_addon_ids ?? []}
+										onchange={(event) => (editorItem!.sheet_addon_ids = selectValues(event))}
+									>
+										{#each optionItems('character_sheet_addons') as addon}
+											<option value={addon.item_id} selected={(editorItem.sheet_addon_ids ?? []).includes(addon.item_id)}>
+												{referenceLabel(addon)}
+											</option>
+										{/each}
+									</select>
 								</div>
 								<div class="grid gap-4">
 									{#each [
@@ -2315,7 +2636,59 @@
 							</section>
 						{/if}
 
-						{#if 'features' in editorItem && selectedItemType !== 'adversaries' && selectedItemType !== 'environments'}
+						{#if selectedItemType === 'transformations'}
+							<section class="admin-panel">
+								<div class="flex items-center justify-between">
+									<div>
+										<h2>Transformation Features</h2>
+										<p class="text-sm text-muted-foreground">
+											Add the named features granted by this transformation.
+										</p>
+									</div>
+									<Button size="sm" variant="outline" onclick={() => addTransformationFeature(editorItem!)}>
+										Add Feature
+									</Button>
+								</div>
+								<div class="grid gap-3">
+									{#each editorItem.features ?? [] as feature, index}
+										<div class="rounded-md border border-border/70 bg-background/60 p-3">
+											<div class="mb-3 flex items-center justify-between gap-3">
+												<input class="admin-input" placeholder="Feature name" bind:value={feature.name} />
+												<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'features', index)}>Remove</Button>
+											</div>
+											<MarkdownTextarea placeholder="Feature text" bind:value={feature.description_html} />
+										</div>
+									{/each}
+								</div>
+							</section>
+
+							<section class="admin-panel">
+								<div class="flex items-center justify-between">
+									<div>
+										<h2>Transformation Questions</h2>
+										<p class="text-sm text-muted-foreground">
+											Add prompts players can answer when choosing this transformation.
+										</p>
+									</div>
+									<Button size="sm" variant="outline" onclick={() => addString(editorItem!, 'questions')}>Add Question</Button>
+								</div>
+								<div class="grid gap-3">
+									{#each editorItem.questions ?? [] as question, index}
+										<div class="question-row">
+											<MarkdownTextarea
+												class="question-input"
+												value={question}
+												ariaLabel="Transformation question"
+												onchangeValue={(value) => updateString(editorItem!, 'questions', index, value)}
+											/>
+											<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'questions', index)}>Remove</Button>
+										</div>
+									{/each}
+								</div>
+							</section>
+						{/if}
+
+						{#if 'features' in editorItem && selectedItemType !== 'adversaries' && selectedItemType !== 'environments' && selectedItemType !== 'transformations'}
 							<section class="admin-panel">
 								<div class="flex items-center justify-between">
 									<h2>Features</h2>
@@ -2350,6 +2723,7 @@
 													<option value="Action">Action</option>
 													<option value="Reaction">Reaction</option>
 													<option value="Passive">Passive</option>
+													<option value="Evolution">Evolution</option>
 												</select>
 												<input
 													class="admin-input"
@@ -2396,6 +2770,13 @@
 							</section>
 						{/if}
 
+						{#if (selectedItemType === 'primary_weapons' || selectedItemType === 'secondary_weapons') && 'description_html' in editorItem}
+							<section class="admin-panel">
+								<h2>Description</h2>
+								<MarkdownTextarea bind:value={editorItem.description_html} />
+							</section>
+						{/if}
+
 						{#if selectedItemType === 'classes'}
 							<section class="admin-panel">
 								<h2>Class Text</h2>
@@ -2410,7 +2791,7 @@
 								<div class="grid gap-3">
 									<div class="flex items-center justify-between">
 										<p class="text-sm font-medium text-foreground">Class Features</p>
-										<Button size="sm" variant="outline" onclick={() => addFeature(editorItem!, 'class_features')}>Add Feature</Button>
+										<Button size="sm" variant="outline" onclick={() => addClassFeature(editorItem!)}>Add Feature</Button>
 									</div>
 									{#if (editorItem.class_features ?? []).length === 0}
 										<p class="text-sm text-muted-foreground">No class features configured.</p>
@@ -2420,6 +2801,29 @@
 												<div class="mb-3 flex items-center justify-between gap-3">
 													<input class="admin-input" placeholder="Feature title" bind:value={feature.title} />
 													<Button size="sm" variant="outline" onclick={() => removeArrayItem(editorItem!, 'class_features', index)}>Remove</Button>
+												</div>
+												<div class="mb-3 grid gap-3 md:grid-cols-[1fr_8rem]">
+													<label class="flex items-center gap-2 text-sm text-muted-foreground">
+														<input
+															type="checkbox"
+															bind:checked={feature.tokens_enabled}
+															onchange={() => {
+																if (feature.tokens_enabled && !feature.token_max) feature.token_max = 6;
+															}}
+														/>
+														Enable token tracker
+													</label>
+													{#if feature.tokens_enabled}
+														<label class="admin-field">
+															<span>Max Tokens</span>
+															<input
+																class="admin-input"
+																type="number"
+																min="0"
+																bind:value={feature.token_max}
+															/>
+														</label>
+													{/if}
 												</div>
 												<MarkdownTextarea placeholder="Feature text" bind:value={feature.description_html} />
 											</div>
@@ -2557,10 +2961,9 @@
 <style>
 	.editor-layout {
 		display: grid;
-		height: calc(100vh - 25rem);
-		min-height: 34rem;
+		align-items: start;
 		gap: 1.25rem;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	.editor-layout.sections-closed {
@@ -2581,6 +2984,41 @@
 		border: 1px solid hsl(var(--border) / 0.7);
 		background: hsl(var(--card) / 0.4);
 		padding: 0.75rem 0.5rem;
+		position: sticky;
+		top: 1rem;
+	}
+
+	.sections-panel {
+		max-height: calc(100vh - 2rem);
+		overflow: hidden;
+		position: sticky;
+		top: 1rem;
+	}
+
+	.items-panel {
+		max-height: calc(100vh - 2rem);
+		overflow: hidden;
+		position: sticky;
+		top: 1rem;
+	}
+
+	.items-panel > div:last-child {
+		min-height: 0;
+		overflow-y: auto;
+		scrollbar-gutter: stable;
+	}
+
+	.sections-list {
+		min-height: 0;
+		flex: 1;
+		overflow-y: auto;
+		padding-bottom: 1.5rem;
+		scrollbar-gutter: stable;
+	}
+
+	.editor-actions-header {
+		top: 0;
+		z-index: 30;
 	}
 
 	.sections-rail span {
@@ -2818,6 +3256,17 @@
 		.editor-layout.sections-closed,
 		.editor-layout.sections-open {
 			grid-template-columns: 1fr;
+		}
+
+		.sections-rail,
+		.sections-panel,
+		.items-panel {
+			position: static;
+			max-height: none;
+		}
+
+		.items-panel > div:last-child {
+			overflow: visible;
 		}
 	}
 </style>

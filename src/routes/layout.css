@@ -204,6 +204,40 @@
 	}
 }
 
+@layer components {
+	.markdown-table {
+		display: table;
+		width: 100%;
+		max-width: 100%;
+		border-collapse: collapse;
+		table-layout: fixed;
+		margin: 0.5rem 0 0.75rem;
+		font-size: 0.95em;
+	}
+
+	.markdown-table th,
+	.markdown-table td {
+		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		padding: 0.35rem 0.5rem;
+		text-align: left;
+		vertical-align: top;
+		overflow-wrap: anywhere;
+	}
+
+	.markdown-table th {
+		background: color-mix(in srgb, currentColor 10%, transparent);
+		font-weight: 700;
+	}
+
+	.markdown-table td {
+		background: color-mix(in srgb, currentColor 4%, transparent);
+	}
+
+	.markdown-table p {
+		margin: 0;
+	}
+}
+
 /* clerk custom theme */
 :root {
 	--clerk-color-background: #212126;

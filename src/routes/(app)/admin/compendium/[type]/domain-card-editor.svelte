@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Eye from '@lucide/svelte/icons/eye';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import DomainCardComponent from '$lib/components/compendium-items/cards/domain-card.svelte';
@@ -21,18 +20,19 @@
 
 	let {
 		item = $bindable(),
+		previewOpen = $bindable(false),
 		sources,
 		domains,
 		sourceLabel
 	}: {
 		item: MutableItem;
+		previewOpen?: boolean;
 		sources: (SourceMetadata & { enabled: boolean })[];
 		domains: ReferenceItem[];
 		sourceLabel: (sourceKey: SourceKey | string | undefined) => string;
 	} = $props();
 
 	const CARD_CATEGORIES = ['ability', 'spell', 'grimoire'];
-	let previewOpen = $state(false);
 	let previewChoices = $state({});
 	let previewTokens = $state(0);
 	const previewExperiences = ['Example experience 1', 'Example experience 2'];
@@ -109,7 +109,8 @@
 			domain_cards: { preview: card },
 			ancestry_cards: {},
 			community_cards: {},
-			transformation_cards: {},
+			transformations: {},
+			character_sheet_addons: {},
 			domains: Object.fromEntries(
 				domains.map((domain) => [domain.item_id, buildPreviewDomain(domain)])
 			),
@@ -185,13 +186,7 @@
 
 <div class="grid gap-6">
 	<section class="admin-panel">
-		<div class="flex items-center justify-between gap-3">
-			<h2>Identity</h2>
-			<Button size="sm" variant="outline" class="gap-2" onclick={() => (previewOpen = true)}>
-				<Eye class="size-4" />
-				Preview
-			</Button>
-		</div>
+		<h2>Identity</h2>
 		<div class="grid gap-4 md:grid-cols-2">
 			<label class="admin-field">
 				<span>Source</span>

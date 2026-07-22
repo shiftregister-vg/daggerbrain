@@ -5,7 +5,7 @@
 	import Dropdown from '$lib/components/utility/dropdown.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import AncestryCard from '$lib/components/compendium-items/cards/ancestry-card.svelte';
-	import TransformationCard from '$lib/components/compendium-items/cards/transformation-card.svelte';
+	import Transformation from '$lib/components/compendium-items/transformation.svelte';
 	import CommunityCard from '$lib/components/compendium-items/cards/community-card.svelte';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 
@@ -16,8 +16,9 @@
 	const sortedAncestryEntries = $derived(sortEntriesByTitle(Object.entries(compendium.ancestry_cards)));
 	const sortedCommunityEntries = $derived(sortEntriesByTitle(Object.entries(compendium.community_cards)));
 	const sortedTransformationEntries = $derived(
-		sortEntriesByTitle(Object.entries(compendium.transformation_cards))
+		sortEntriesByTitle(Object.entries(compendium.transformations))
 	);
+	const hasTransformations = $derived(sortedTransformationEntries.length > 0);
 
 	let ancestryDialogOpen = $state(false);
 	let communityDialogOpen = $state(false);
@@ -110,52 +111,52 @@
 				</div>
 			</Dropdown>
 
-			{#if Object.keys(characterCtx.character_compendium.transformation_cards).length > 0}
-				<Dropdown
-					title="Transformation"
-					subtitle={derived_character_data.transformation_card?.title
-						? derived_character_data.transformation_card?.title +
-							' • ' +
-							(characterCtx.sources.find(
-								(source) =>
-									source.source_key === derived_character_data.transformation_card?.source_key
-							)?.short_title ?? 'Unknown')
-						: ''}
-				>
-					<div class="flex flex-col gap-4">
-						<p class="text-sm text-muted-foreground italic">
-							Transformations represent changes or augmentations to characters in Daggerheart. These
-							are optional aspects of a character's identity that may be given out by the GM during
-							a campaign for narrative purposes. GMs may also present transformations as an option
-							at character creation, at their discretion.
+			<Dropdown
+				title="Transformation (Optional)"
+				subtitle={derived_character_data.transformation_card?.title
+					? derived_character_data.transformation_card?.title +
+						' • ' +
+						(characterCtx.sources.find(
+							(source) =>
+								source.source_key === derived_character_data.transformation_card?.source_key
+						)?.name ?? 'Unknown')
+					: 'None'}
+			>
+				<div class="flex flex-col gap-4">
+					<p class="text-sm text-muted-foreground italic">
+						Transformations represent changes or augmentations to characters in Daggerheart. These
+						are optional aspects of a character's identity that may be given out by the GM during
+						a campaign for narrative purposes. GMs may also present transformations as an option
+						at character creation, at their discretion.
+					</p>
+					{#if derived_character_data.transformation_card && character.transformation_card_id}
+						<Transformation
+							transformation={derived_character_data.transformation_card}
+							showQuestions={false}
+						/>
+					{:else if !hasTransformations}
+						<p class="rounded-md border border-border/70 bg-card/60 p-3 text-sm text-muted-foreground">
+							No transformations are available for this character's selected sources.
 						</p>
-						{#if derived_character_data.transformation_card && character.transformation_card_id}
-							<TransformationCard
-								card={derived_character_data.transformation_card}
-								bind:choices={character.card_choices[character.transformation_card_id]}
-								bind:tokens={character.card_tokens[character.transformation_card_id]}
-								experiences={character.experiences}
-							/>
-						{/if}
+					{/if}
 
-						<div class="flex justify-between gap-2">
-							{#if !character.transformation_card_id}
-								<Button onclick={() => (transformationDialogOpen = true)}>
-									Choose a transformation
-								</Button>
-							{:else}
-								<div class="flex w-full justify-center sm:justify-end">
-									<Button
-										variant="link"
-										class={cn('text-destructive', !character.transformation_card_id && 'hidden')}
-										onclick={() => (character.transformation_card_id = undefined)}>Remove</Button
-									>
-								</div>
-							{/if}
-						</div>
+					<div class="flex justify-between gap-2">
+						{#if !character.transformation_card_id}
+							<Button disabled={!hasTransformations} onclick={() => (transformationDialogOpen = true)}>
+								Choose a transformation
+							</Button>
+						{:else}
+							<div class="flex w-full justify-center sm:justify-end">
+								<Button
+									variant="link"
+									class={cn('text-destructive', !character.transformation_card_id && 'hidden')}
+									onclick={() => (character.transformation_card_id = undefined)}>Remove</Button
+								>
+							</div>
+						{/if}
 					</div>
-				</Dropdown>
-			{/if}
+				</div>
+			</Dropdown>
 		</div>
 	</div>
 
@@ -217,17 +218,16 @@
 				<Dialog.Title>Select a transformation</Dialog.Title>
 			</Dialog.Header>
 			<div class="grid grid-cols-1 gap-3 overflow-y-auto p-2 sm:grid-cols-2">
-				{#each sortedTransformationEntries as [id, card] (id)}
-					<div>
-						<TransformationCard {card}
-							><Button
+				{#each sortedTransformationEntries as [id, transformation] (id)}
+					<div class="flex flex-col gap-3">
+						<Transformation {transformation} showQuestions={false} />
+						<Button
 								onclick={() => {
 									character.transformation_card_id = id;
 									transformationDialogOpen = false;
 								}}
-								class="mt-auto w-min">Select {card.title}</Button
+								class="mt-auto w-min">Select {transformation.title}</Button
 							>
-						</TransformationCard>
 					</div>
 				{/each}
 			</div>

@@ -9,6 +9,7 @@
 	import HomebrewBadge from '$lib/components/decorations/badges/homebrew-badge.svelte';
 	import CampaignBadge from '$lib/components/decorations/badges/campaign-badge.svelte';
 	import SubclassDomainCardOption from '../subclass-domain-card-option.svelte';
+	import SubclassSheetAddons from './subclass-sheet-addons.svelte';
 	import {
 		get_available_domain_cards,
 		get_previously_chosen_domain_card_ids
@@ -60,6 +61,8 @@
 				enable_tokens
 				experiences={character.experiences}
 			/>
+
+			<SubclassSheetAddons {character} {compendium} subclass={primary_subclass} />
 
 			{#if subclass_level_up_options.length > 0}
 				<div class="flex flex-col gap-3">

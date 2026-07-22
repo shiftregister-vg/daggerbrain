@@ -7,8 +7,16 @@
 	import List from '@lucide/svelte/icons/list';
 	import ListOrdered from '@lucide/svelte/icons/list-ordered';
 	import Quote from '@lucide/svelte/icons/quote';
+	import Columns3 from '@lucide/svelte/icons/columns-3';
+	import Rows3 from '@lucide/svelte/icons/rows-3';
+	import TableIcon from '@lucide/svelte/icons/table';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import { Editor } from '@tiptap/core';
 	import Link from '@tiptap/extension-link';
+	import { Table } from '@tiptap/extension-table';
+	import { TableCell } from '@tiptap/extension-table-cell';
+	import { TableHeader } from '@tiptap/extension-table-header';
+	import { TableRow } from '@tiptap/extension-table-row';
 	import { Markdown } from '@tiptap/markdown';
 	import StarterKit from '@tiptap/starter-kit';
 	import { onDestroy, onMount, tick } from 'svelte';
@@ -29,8 +37,14 @@
 
 	let editorElement: HTMLDivElement;
 	let editor = $state<Editor | null>(null);
+	let toolbarVersion = $state(0);
 	let lastMarkdown = '';
 	let isApplyingExternalValue = false;
+
+	const isInTable = $derived.by(() => {
+		toolbarVersion;
+		return Boolean(editor?.isActive('table'));
+	});
 
 	function syncValue(nextMarkdown: string) {
 		lastMarkdown = nextMarkdown;
@@ -48,6 +62,14 @@
 
 	function buttonClass(active: boolean) {
 		return active ? 'toolbar-button active' : 'toolbar-button';
+	}
+
+	function tableButtonDisabled() {
+		return !isInTable;
+	}
+
+	function refreshToolbar() {
+		toolbarVersion += 1;
 	}
 
 	function toggleLink() {
@@ -73,6 +95,12 @@
 					autolink: true,
 					linkOnPaste: true
 				}),
+				Table.configure({
+					resizable: true
+				}),
+				TableRow,
+				TableHeader,
+				TableCell,
 				Markdown.configure({
 					markedOptions: { gfm: true }
 				})
@@ -86,9 +114,12 @@
 				}
 			},
 			onUpdate: ({ editor: currentEditor }) => {
+				refreshToolbar();
 				if (isApplyingExternalValue) return;
 				syncValue(currentEditor.getMarkdown());
-			}
+			},
+			onSelectionUpdate: refreshToolbar,
+			onTransaction: refreshToolbar
 		});
 	});
 
@@ -176,6 +207,70 @@
 		>
 			<LinkIcon class="size-4" />
 		</button>
+		<div class="toolbar-divider"></div>
+		<button
+			type="button"
+			class={buttonClass(isInTable)}
+			title="Insert table"
+			aria-label="Insert table"
+			onclick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+		>
+			<TableIcon class="size-4" />
+		</button>
+		<button
+			type="button"
+			class="toolbar-button"
+			title="Add row"
+			aria-label="Add row"
+			disabled={tableButtonDisabled()}
+			onclick={() => editor?.chain().focus().addRowAfter().run()}
+		>
+			<Rows3 class="size-4" />
+			<span class="toolbar-action-mark">+</span>
+		</button>
+		<button
+			type="button"
+			class="toolbar-button"
+			title="Delete row"
+			aria-label="Delete row"
+			disabled={tableButtonDisabled()}
+			onclick={() => editor?.chain().focus().deleteRow().run()}
+		>
+			<Rows3 class="size-4" />
+			<span class="toolbar-action-mark">-</span>
+		</button>
+		<button
+			type="button"
+			class="toolbar-button"
+			title="Add column"
+			aria-label="Add column"
+			disabled={tableButtonDisabled()}
+			onclick={() => editor?.chain().focus().addColumnAfter().run()}
+		>
+			<Columns3 class="size-4" />
+			<span class="toolbar-action-mark">+</span>
+		</button>
+		<button
+			type="button"
+			class="toolbar-button"
+			title="Delete column"
+			aria-label="Delete column"
+			disabled={tableButtonDisabled()}
+			onclick={() => editor?.chain().focus().deleteColumn().run()}
+		>
+			<Columns3 class="size-4" />
+			<span class="toolbar-action-mark">-</span>
+		</button>
+		<button
+			type="button"
+			class="toolbar-button"
+			title="Delete table"
+			aria-label="Delete table"
+			disabled={tableButtonDisabled()}
+			onclick={() => editor?.chain().focus().deleteTable().run()}
+		>
+			<Trash2 class="size-4" />
+		</button>
 	</div>
 	<div class="editor-shell {className}">
 		{#if !value && placeholder}
@@ -216,6 +311,7 @@
 	}
 
 	.toolbar-button {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -232,6 +328,32 @@
 	.toolbar-button.active {
 		background: hsl(var(--primary) / 0.35);
 		color: hsl(var(--foreground));
+	}
+
+	.toolbar-button:disabled {
+		cursor: not-allowed;
+		opacity: 0.35;
+	}
+
+	.toolbar-button:disabled:hover {
+		background: transparent;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.toolbar-divider {
+		width: 1px;
+		align-self: stretch;
+		background: #3d3151;
+		margin: 0 0.125rem;
+	}
+
+	.toolbar-action-mark {
+		position: absolute;
+		right: 0.2rem;
+		bottom: 0.05rem;
+		font-size: 0.75rem;
+		font-weight: 800;
+		line-height: 1;
 	}
 
 	.editor-shell {
@@ -319,5 +441,58 @@
 	:global(.markdown-editor-content a) {
 		color: hsl(var(--accent));
 		text-decoration: underline;
+	}
+
+	:global(.markdown-editor-content table) {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 0 0 0.75rem;
+		table-layout: fixed;
+	}
+
+	:global(.markdown-editor-content th),
+	:global(.markdown-editor-content td) {
+		position: relative;
+		min-width: 1em;
+		border: 1px solid #5a4b78;
+		padding: 0.4rem 0.5rem;
+		vertical-align: top;
+	}
+
+	:global(.markdown-editor-content th) {
+		background: hsl(var(--primary) / 0.22);
+		color: hsl(var(--foreground));
+		font-weight: 700;
+	}
+
+	:global(.markdown-editor-content td) {
+		background: rgb(255 255 255 / 0.03);
+	}
+
+	:global(.markdown-editor-content th p),
+	:global(.markdown-editor-content td p) {
+		margin: 0;
+	}
+
+	:global(.markdown-editor-content .selectedCell::after) {
+		content: '';
+		pointer-events: none;
+		position: absolute;
+		inset: 0;
+		background: hsl(var(--primary) / 0.18);
+	}
+
+	:global(.markdown-editor-content .column-resize-handle) {
+		pointer-events: none;
+		position: absolute;
+		top: 0;
+		right: -2px;
+		bottom: -2px;
+		width: 4px;
+		background: hsl(var(--accent));
+	}
+
+	:global(.markdown-editor-content.resize-cursor) {
+		cursor: ew-resize;
 	}
 </style>

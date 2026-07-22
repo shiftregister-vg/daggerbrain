@@ -9,6 +9,7 @@ import type { Campaign, CampaignCharacter, CampaignMember } from '@domain/schema
 import type { Character } from '@domain/schemas/characters';
 import type { CompendiumContent, CompendiumContentIds } from '@domain/schemas/compendium';
 import type { Roll } from '@domain/schemas/dice';
+import { normalizeCompendiumContentIds } from '@domain/character-compendium';
 import { getContext, onDestroy, setContext, untrack } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { getUserContext } from './user.svelte';
@@ -29,7 +30,7 @@ const VAULT_KEYS = [
 	'domain_cards',
 	'ancestry_cards',
 	'community_cards',
-	'transformation_cards',
+	'transformations',
 	'adversaries',
 	'environments'
 ] as const satisfies (keyof CompendiumContentIds)[];
@@ -181,10 +182,10 @@ function createCampaign() {
 		}
 	});
 
-	const activeVault = $derived.by(
-		(): CompendiumContentIds | null =>
-			campaign?.homebrew_vault ?? serverCampaign?.homebrew_vault ?? null
-	);
+	const activeVault = $derived.by((): CompendiumContentIds | null => {
+		const vault = campaign?.homebrew_vault ?? serverCampaign?.homebrew_vault ?? null;
+		return vault ? normalizeCompendiumContentIds(vault) : null;
+	});
 
 	async function refreshVault() {
 		const vault = activeVault;
@@ -285,7 +286,8 @@ function createCampaign() {
 			domain_cards: itemsFor(vault.domain_cards, vaultResults, 'Campaign'),
 			ancestry_cards: itemsFor(vault.ancestry_cards, vaultResults, 'Campaign'),
 			community_cards: itemsFor(vault.community_cards, vaultResults, 'Campaign'),
-			transformation_cards: itemsFor(vault.transformation_cards, vaultResults, 'Campaign'),
+			transformations: itemsFor(vault.transformations, vaultResults, 'Campaign'),
+			character_sheet_addons: {},
 			adversaries: itemsFor(vault.adversaries, vaultResults, 'Campaign'),
 			environments: itemsFor(vault.environments, vaultResults, 'Campaign')
 		};
@@ -335,7 +337,7 @@ function createCampaign() {
 			: [];
 		bootstrapVaultIds =
 			hasResolvedCurrentCampaign && campaignAccess?.campaign
-				? getAllVaultIds(campaignAccess.campaign.homebrew_vault)
+				? getAllVaultIds(normalizeCompendiumContentIds(campaignAccess.campaign.homebrew_vault))
 				: [];
 		bootstrapTargetsCaptured = true;
 	});

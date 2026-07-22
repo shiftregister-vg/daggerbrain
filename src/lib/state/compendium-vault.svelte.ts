@@ -19,7 +19,7 @@ const VAULT_KEYS = [
 	'domain_cards',
 	'ancestry_cards',
 	'community_cards',
-	'transformation_cards',
+	'transformations',
 	'adversaries',
 	'environments'
 ] as const satisfies (keyof CompendiumContentIds)[];
@@ -148,11 +148,8 @@ export function createVaultCompendiumSubscription(options: {
 			domain_cards: itemsFor(vault.domain_cards, results, options.sourceKeyOverride),
 			ancestry_cards: itemsFor(vault.ancestry_cards, results, options.sourceKeyOverride),
 			community_cards: itemsFor(vault.community_cards, results, options.sourceKeyOverride),
-			transformation_cards: itemsFor(
-				vault.transformation_cards,
-				results,
-				options.sourceKeyOverride
-			),
+			transformations: itemsFor(vault.transformations, results, options.sourceKeyOverride),
+			character_sheet_addons: {},
 			adversaries: itemsFor(vault.adversaries, results, options.sourceKeyOverride),
 			environments: itemsFor(vault.environments, results, options.sourceKeyOverride)
 		};

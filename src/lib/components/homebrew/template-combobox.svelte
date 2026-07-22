@@ -21,7 +21,7 @@
 		| 'domain-cards'
 		| 'ancestry-cards'
 		| 'community-cards'
-		| 'transformation-cards'
+		| 'transformation'
 		| 'adversary'
 		| 'environment';
 
@@ -90,8 +90,8 @@
 				return compendium.ancestry_cards[val]?.title ?? null;
 			case 'community-cards':
 				return compendium.community_cards[val]?.title ?? null;
-			case 'transformation-cards':
-				return compendium.transformation_cards[val]?.title ?? null;
+			case 'transformation':
+				return compendium.transformations[val]?.title ?? null;
 			case 'adversary':
 				return compendium.adversaries[val]?.title ?? null;
 			case 'environment':
@@ -283,11 +283,11 @@
 					.sort((a, b) => a.name.localeCompare(b.name));
 				return { groups: [{ heading: 'Community Cards', items }], flat: items };
 			}
-			case 'transformation-cards': {
-				const items = Object.entries(compendium.transformation_cards)
+			case 'transformation': {
+				const items = Object.entries(compendium.transformations)
 					.map(([id, item]) => ({ id, name: item.title, source_key: item.source_key }))
 					.sort((a, b) => a.name.localeCompare(b.name));
-				return { groups: [{ heading: 'Transformation Cards', items }], flat: items };
+				return { groups: [{ heading: 'Transformations', items }], flat: items };
 			}
 			case 'adversary': {
 				const byTier: Record<number, TemplateOption[]> = { 1: [], 2: [], 3: [], 4: [] };

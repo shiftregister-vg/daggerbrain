@@ -95,8 +95,29 @@
 	let importResult = $state<ImportResult | null>(null);
 	let conflictResolutions = $state<Record<string, ConflictResolution>>({});
 
+	const ADMIN_COMPENDIUM_TYPES = [
+		'primary_weapons',
+		'secondary_weapons',
+		'armor',
+		'loot',
+		'consumables',
+		'beastforms',
+		'classes',
+		'subclasses',
+		'domains',
+		'domain_cards',
+		'ancestry_cards',
+		'community_cards',
+		'transformations',
+		'character_sheet_addons',
+		'adversaries',
+		'environments'
+	] as const satisfies HomebrewTable[];
+
 	const entityTypes = $derived(
-		[...(dashboard?.item_types ?? [])].sort((a, b) => itemTypeLabel(a).localeCompare(itemTypeLabel(b)))
+		[...new Set([...(dashboard?.item_types ?? []), ...ADMIN_COMPENDIUM_TYPES])].sort((a, b) =>
+			itemTypeLabel(a).localeCompare(itemTypeLabel(b))
+		)
 	);
 	const totalItems = $derived(
 		entityTypes.reduce((total, itemType) => total + countFor(itemType), 0)
@@ -325,9 +346,6 @@
 				<p class="text-sm font-semibold tracking-wide uppercase">Admin</p>
 			</div>
 			<h1 class="mt-3 text-3xl font-bold text-foreground">Compendium Manager</h1>
-			<p class="mt-2 text-sm text-muted-foreground">
-				Signed in as {data.user.name ?? data.user.email ?? 'an administrator'}.
-			</p>
 		</div>
 		<div class="flex flex-wrap gap-2">
 			<Button variant="outline" class="w-fit gap-2" onclick={exportCompendium} disabled={isExporting}>

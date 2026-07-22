@@ -6,6 +6,7 @@
 	import BackgroundQuestions from '$lib/components/character-editor/background/background-questions.svelte';
 	import Connections from '$lib/components/character-editor/background/connections.svelte';
 	import Descriptions from '$lib/components/character-editor/background/descriptions.svelte';
+	import TransformationQuestions from '$lib/components/character-editor/background/transformation-questions.svelte';
 
 	const characterCtx = getCharacterContext();
 	const derived_character_data = $derived(characterCtx.derived_character_data);
@@ -61,6 +62,17 @@
 					<BackgroundQuestions />
 				</div>
 			</Dropdown>
+
+			{#if derived_character_data.transformation_card}
+				<Dropdown title={derived_character_data.transformation_card.title}>
+					<div class="flex flex-col gap-4">
+						<p class="text-sm text-muted-foreground italic">
+							Answer the questions for your selected transformation.
+						</p>
+						<TransformationQuestions />
+					</div>
+				</Dropdown>
+			{/if}
 
 			<Dropdown title="Connections">
 				<div class="flex flex-col gap-4">

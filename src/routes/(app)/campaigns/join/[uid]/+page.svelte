@@ -58,6 +58,7 @@
 			const { id } = await postApi<{ id: string }>(`/invites/${inviteCode}/join`, {
 				displayName: displayName.trim()
 			});
+			await userCtx.refresh();
 			goto(`/campaigns/${id}`);
 		} catch (error) {
 			joinError = error instanceof Error ? error.message : 'Failed to join campaign';

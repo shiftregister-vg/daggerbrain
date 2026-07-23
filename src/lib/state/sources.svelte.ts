@@ -20,19 +20,20 @@ function sameSourceKeys(left: SourceKey[], right: SourceKey[]) {
 
 function createSources() {
 	const userContext = getUserContext();
+	const userInviteAccepted = $derived(userContext.user?.invite_accepted === true);
 
 	const sourceResource = createApiResource<SourceKey[]>(async () => {
-		if (!userContext.user) return [];
+		if (!userContext.user?.invite_accepted) return [];
 		return await getApi<SourceKey[]>('/sources');
 	});
 	const sourceKeys: SourceKey[] = $derived(sourceResource.data ?? []);
 	const sourceKeySignature = $derived(sourceKeys.join('|'));
 	const sourceMetadataResource = createApiResource<SourceMetadata[]>(async () => {
-		if (!userContext.user || sourceKeys.length === 0) return [];
+		if (!userContext.user?.invite_accepted || sourceKeys.length === 0) return [];
 		return await getApi<SourceMetadata[]>(`/official-sources${sourceQuery(sourceKeys)}`);
 	});
 	const compendiumResource = createApiResource<CompendiumContent>(async () => {
-		if (!userContext.user || sourceKeys.length === 0) return merge_compendium_content();
+		if (!userContext.user?.invite_accepted || sourceKeys.length === 0) return merge_compendium_content();
 		return await getApi<CompendiumContent>(`/official-compendium${sourceQuery(sourceKeys)}`);
 	}, { immediate: false });
 	const sources = $derived(sourceMetadataResource.data ?? []);
@@ -58,6 +59,11 @@ function createSources() {
 	function loadCompendium() {
 		return compendiumResource.refresh();
 	}
+
+	$effect(() => {
+		userInviteAccepted;
+		untrack(() => void sourceResource.refresh());
+	});
 
 	$effect(() => {
 		sourceKeySignature;

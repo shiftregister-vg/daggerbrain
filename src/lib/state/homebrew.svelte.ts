@@ -1,7 +1,7 @@
 import type { Id } from '@domain/ids';
 import type { CompendiumContent } from '@domain/schemas/compendium';
 import type { HomebrewItem, HomebrewTable } from '@domain/permissions';
-import { getContext, setContext } from 'svelte';
+import { getContext, setContext, untrack } from 'svelte';
 import { createApiResource } from './api-resource.svelte';
 import { deleteApi, getApi, patchApi, postApi } from '$lib/api/client';
 import { getUserContext } from './user.svelte';
@@ -17,12 +17,18 @@ type UpdateHomebrewData = AddHomebrewData & {
 
 function createHomebrew() {
 	const userContext = getUserContext();
+	const userInviteAccepted = $derived(userContext.user?.invite_accepted === true);
 	const resource = createApiResource<CompendiumContent | null>(
 		async () => {
-			if (!userContext.user) return null;
+			if (!userContext.user?.invite_accepted) return null;
 			return await getApi<CompendiumContent>('/homebrew');
 		}
 	);
+
+	$effect(() => {
+		userInviteAccepted;
+		untrack(() => void resource.refresh());
+	});
 
 	async function addItem(data: AddHomebrewData) {
 		const result = await postApi<{ id: Id<HomebrewTable> }>('/homebrew', data);

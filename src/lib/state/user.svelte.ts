@@ -102,6 +102,7 @@ function userContext() {
 
 		createCharacter,
 		deleteCharacter,
+		refresh: userResource.refresh,
 		uploadImage
 	};
 }

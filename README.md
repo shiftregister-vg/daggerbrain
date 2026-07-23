@@ -4,18 +4,18 @@ Daggerlore is a DNDBeyond-style set of digital tools for the Daggerheart TTRPG. 
 
 Daggerlore includes materials from the Daggerheart System Reference Document 1.0, © Critical Role, LLC. under the terms of the Darrington Press Community Gaming (DPCGL) License. More information can be found at https://www.daggerheart.com. There are no previous modifications by others
 
-This repo includes character, campaign, encounter, homebrew, and stream overlay tools, as well as a markdown style Blog, subscriptions through Clerk billing, and more.
+This repo includes character, campaign, encounter, homebrew, stream overlay, admin, and feedback tools, as well as a markdown-style blog.
 
 Basic Stack:
 - PostgreSQL in production and SQLite for local development
 - Sveltekit (fullstack framework)
-- Cloudflare Workers (deploy target)
-- Cloudflare R2 (image storing)
-- Clerk (Auth and Billing)
+- Node server deployment target
+- Google OAuth through Auth.js
 
 ## Prerequisites
 - NPM (node 24 or later)
-- A Clerk application for authentication
+- PostgreSQL 15 or later for deployed environments
+- A Google OAuth client for authentication
 
 ## Install
 
@@ -26,36 +26,107 @@ npm install
 ## Environment
 There is a `.env.example` file in the repo that you can use as a template to set up your own `.env.local` environment file.
 
-## Clerk Setup
+## Google OAuth Setup
 
-Create a Clerk application and copy its publishable key, secret key, and frontend
-API/issuer URL into `.env.local`.
+Create a Google OAuth client and copy its client id and client secret into the
+environment as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
-For subscriptions, enable Clerk Billing for user subscriptions and connect it to
-Stripe. Clerk automatically creates a default free plan when Billing is enabled;
-set that free plan's slug to `free_user`. Create a paid plan with the slug
-`adventurer`, then attach these features to that paid plan:
+Add this authorized redirect URI to the Google OAuth client:
 
-- `unlimited_characters`
-- `unlimited_homebrew`
-
-The `/subscribe` page renders Clerk's `PricingTable`, and successful checkout
-returns to `/subscribe/success`.
+```text
+https://your-domain.example/auth/callback/google
+```
 
 ## Database Setup
 
-For local development, set `DATABASE_PROVIDER=sqlite` and `SQLITE_PATH` in
-`.env.local`, then run:
+The app chooses the database driver from `DATABASE_URL`.
+
+- PostgreSQL: use a `postgres://...` or `postgresql://...` connection string.
+- SQLite: use a `file:...` connection string, for example `file:./data/local.db`.
+
+For local SQLite development:
 
 ```bash
+cp .env.example .env.local
+# Set DATABASE_URL=file:./data/local.db in .env.local
 npm run db:migrate
 ```
 
-For production or PostgreSQL development, set `DATABASE_PROVIDER=postgres` and
-`DATABASE_URL`, then run the same migration command.
+For PostgreSQL development or deployment, create the database first, set
+`DATABASE_URL`, then run the same migration command:
 
-The app does not need a separate seed step for normal local use. When a user
-signs in for the first time, the app creates the user record.
+```bash
+createdb daggerlore
+DATABASE_URL=postgres://daggerlore:password@localhost:5432/daggerlore npm run db:migrate
+```
+
+The app does not need a separate seed command. On first access to official
+compendium data, it inserts the built-in SRD data if the compendium tables are
+empty.
+
+## PostgreSQL Deployment
+
+These steps assume a server that already has Node 24 or later, npm, and
+PostgreSQL installed.
+
+1. Create the database and application user:
+
+```sql
+create user daggerlore with password 'replace-with-a-strong-password';
+create database daggerlore owner daggerlore;
+```
+
+2. Set production environment variables:
+
+```bash
+PUBLIC_ORIGIN=https://your-domain.example
+DATABASE_URL=postgres://daggerlore:replace-with-a-strong-password@localhost:5432/daggerlore
+AUTH_SECRET=replace-with-a-long-random-secret
+GOOGLE_CLIENT_ID=replace-with-google-client-id
+GOOGLE_CLIENT_SECRET=replace-with-google-client-secret
+MAINTENANCE_MODE=false
+ADMIN_USER_ID=
+PORT=3000
+```
+
+`AUTH_SECRET` should be a long random value. For example:
+
+```bash
+openssl rand -base64 32
+```
+
+3. Install dependencies, run migrations, and build:
+
+```bash
+npm ci
+npm run db:migrate
+npm run build
+```
+
+4. Start the built Node server:
+
+```bash
+node build
+```
+
+For a real deployment, run `node build` under a process manager such as systemd,
+PM2, or your platform's Node runtime. The process must receive the same
+environment variables used for `npm run db:migrate`. Set `PORT` to control the
+port the Node server listens on.
+
+5. Put a reverse proxy in front of the Node process and forward HTTPS traffic to
+the app. Make sure `PUBLIC_ORIGIN` exactly matches the external URL users open
+in their browser.
+
+6. Sign in once with Google so the app creates your user row, then grant your
+user admin access:
+
+```sql
+update users set is_admin = true where email = 'you@example.com';
+```
+
+The app is invite-only. After the first admin is configured, use the admin
+interface to create invite links for additional users.
 
 ## Run The App
 

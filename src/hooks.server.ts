@@ -6,19 +6,42 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { dev } from '$app/environment';
 import { handle as authHandle } from './auth';
 import { ensureInviteAccessForRequest } from '$lib/server/app/invite-access';
+import { getSystemOperationsSettings, isUserAdmin } from '$lib/server/app/repository';
+
+function isMaintenanceAllowedPath(pathname: string) {
+	return (
+		pathname.startsWith('/maintenance') ||
+		pathname.startsWith('/auth') ||
+		pathname.startsWith('/api/auth') ||
+		pathname.startsWith('/_app') ||
+		pathname.startsWith('/images') ||
+		pathname === '/favicon.svg' ||
+		pathname === '/apple-touch-icon.png'
+	);
+}
 
 const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 	if (building) {
 		return resolve(event);
 	}
 
-	if (env.MAINTENANCE_MODE === 'true' && !event.url.pathname.startsWith('/maintenance')) {
+	let dbMaintenanceEnabled = false;
+	try {
+		dbMaintenanceEnabled = (await getSystemOperationsSettings()).maintenance_enabled;
+	} catch (error) {
+		if (dev) console.warn('Unable to load system maintenance setting', error);
+	}
+
+	const maintenanceEnabled = env.MAINTENANCE_MODE === 'true' || dbMaintenanceEnabled;
+
+	if (maintenanceEnabled && !isMaintenanceAllowedPath(event.url.pathname)) {
 		const session = await event.locals.auth();
 		const userId = session?.user?.id;
 
 		const adminIds = env.ADMIN_USER_ID?.split(',') ?? [];
+		const hasAdminBypass = adminIds.includes(userId ?? '') || (await isUserAdmin(userId));
 
-		if (!userId || !adminIds.includes(userId)) {
+		if (!hasAdminBypass) {
 			throw redirect(302, '/maintenance');
 		}
 	}

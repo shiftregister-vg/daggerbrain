@@ -1,20 +1,44 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { artMountains } from '$lib/assets/images';
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
+	import { postApi } from '$lib/api/client';
 
+	let category = $state('general');
 	let subject = $state('');
 	let message = $state('');
+	let submitError = $state('');
+	let submitMessage = $state('');
+	let isSubmitting = $state(false);
 
-	const email = 'scribe@daggerlore.com';
+	const email = $derived(page.data.system_settings?.operations.contact_email ?? 'scribe@daggerlore.com');
+	const communitySettings = $derived(page.data.system_settings?.operations.community);
 
-	const mailtoLink = $derived(() => {
-		const encodedSubject = encodeURIComponent(subject);
-		const encodedBody = encodeURIComponent(message);
-		return `mailto:${email}?subject=${encodedSubject}&body=${encodedBody}`;
-	});
+	async function submitFeedback() {
+		if (isSubmitting) return;
+		submitError = '';
+		submitMessage = '';
+		isSubmitting = true;
+		try {
+			await postApi('/feedback', {
+				category,
+				subject,
+				message,
+				page_url: page.url.href
+			});
+			subject = '';
+			message = '';
+			category = 'general';
+			submitMessage = 'Feedback submitted. Thank you.';
+		} catch (error) {
+			submitError = error instanceof Error ? error.message : 'Unable to submit feedback';
+		} finally {
+			isSubmitting = false;
+		}
+	}
 </script>
 
 <div class="relative min-h-[calc(100dvh-var(--navbar-height,3.5rem))]">
@@ -52,7 +76,27 @@
 				</div>
 			</div>
 
-			<div class="space-y-4">
+			<form
+				class="space-y-4"
+				onsubmit={(event) => {
+					event.preventDefault();
+					submitFeedback();
+				}}
+			>
+				<div class="space-y-2">
+					<label for="category" class="text-sm font-medium text-foreground"> Category </label>
+					<select
+						id="category"
+						bind:value={category}
+						class="inset-shadow flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm shadow-sm ring-offset-background transition-colors outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
+					>
+						<option value="general">General</option>
+						<option value="bug">Bug Report</option>
+						<option value="feature">Feature Request</option>
+						<option value="content">Content</option>
+						<option value="account">Account</option>
+					</select>
+				</div>
 				<div class="space-y-2">
 					<label for="subject" class="text-sm font-medium text-foreground"> Subject </label>
 					<Input
@@ -75,24 +119,40 @@
 				</div>
 
 				<Button
-					href={mailtoLink()}
+					type="submit"
 					variant="default"
 					size="lg"
 					class="w-full"
-					disabled={!subject.trim() || !message.trim()}
+					disabled={isSubmitting || subject.trim().length < 3 || message.trim().length < 10}
 				>
-					Send me an email
+					{isSubmitting ? 'Submitting...' : 'Submit Feedback'}
 				</Button>
-			</div>
 
-			<div class="-mt-2 flex flex-col items-center justify-center gap-4">
-				<p class="text-center text-sm font-medium text-foreground">Or</p>
+				{#if submitError}
+					<p class="rounded border border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive">
+						{submitError}
+					</p>
+				{/if}
+				{#if submitMessage}
+					<p class="rounded border border-emerald-500/60 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+						{submitMessage}
+					</p>
+				{/if}
+				<p class="text-center text-xs text-muted-foreground">
+					Prefer email? <a class="underline hover:text-accent" href={`mailto:${email}`}>{email}</a>
+				</p>
+			</form>
+
+			{#if communitySettings?.discord_enabled || communitySettings?.roadmap_enabled}
+				<div class="-mt-2 flex flex-col items-center justify-center gap-4">
+					<p class="text-center text-sm font-medium text-foreground">Or</p>
 				<div class="flex gap-4">
-					<Button
-						class="mx-auto bg-[#5865F2] hover:bg-[#5865F2]/80"
-						target="_blank"
-						href="https://discord.gg/"
-					>
+					{#if communitySettings?.discord_enabled}
+						<Button
+							class="mx-auto bg-[#5865F2] hover:bg-[#5865F2]/80"
+							target="_blank"
+							href="https://discord.gg/"
+						>
 						<svg id="Discord-Logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 126.644 96"
 							><defs
 								><style>
@@ -106,22 +166,26 @@
 								d="M81.15,0c-1.2376,2.1973-2.3489,4.4704-3.3591,6.794-9.5975-1.4396-19.3718-1.4396-28.9945,0-.985-2.3236-2.1216-4.5967-3.3591-6.794-9.0166,1.5407-17.8059,4.2431-26.1405,8.0568C2.779,32.5304-1.6914,56.3725.5312,79.8863c9.6732,7.1476,20.5083,12.603,32.0505,16.0884,2.6014-3.4854,4.8998-7.1981,6.8698-11.0623-3.738-1.3891-7.3497-3.1318-10.8098-5.1523.9092-.6567,1.7932-1.3386,2.6519-1.9953,20.281,9.547,43.7696,9.547,64.0758,0,.8587.7072,1.7427,1.3891,2.6519,1.9953-3.4601,2.0457-7.0718,3.7632-10.835,5.1776,1.97,3.8642,4.2683,7.5769,6.8698,11.0623,11.5419-3.4854,22.3769-8.9156,32.0509-16.0631,2.626-27.2771-4.496-50.9172-18.817-71.8548C98.9811,4.2684,90.1918,1.5659,81.1752.0505l-.0252-.0505ZM42.2802,65.4144c-6.2383,0-11.4159-5.6575-11.4159-12.6535s4.9755-12.6788,11.3907-12.6788,11.5169,5.708,11.4159,12.6788c-.101,6.9708-5.026,12.6535-11.3907,12.6535ZM84.3576,65.4144c-6.2637,0-11.3907-5.6575-11.3907-12.6535s4.9755-12.6788,11.3907-12.6788,11.4917,5.708,11.3906,12.6788c-.101,6.9708-5.026,12.6535-11.3906,12.6535Z"
 							/></svg
 						>
-						Join the Discord
-					</Button>
-					<Button
-						variant="secondary"
-						href="/roadmap"
-						class="bg-secondary hover:bg-secondary/70 md:w-min"
-						>See the roadmap
+							Join the Discord
+						</Button>
+					{/if}
+					{#if communitySettings?.roadmap_enabled}
+						<Button
+							variant="secondary"
+							href="/roadmap"
+							class="bg-secondary hover:bg-secondary/70 md:w-min"
+							>See the roadmap
 						<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"
 							><path
 								fill="currentColor"
 								d="M227.4 34.7c-10.1 0-20.2.2-30.2.5l6.1 65.6-61.1-62.5c-31.3 2.5-62.5 6.6-93.8 12.5l34.2 28.4-48-.6c35.1 100.2 6.9 182.6-.3 292.1L130 476.5c10-1.3 19.9-2.4 29.6-3.3l21.5-42.2 18.6 28.8 41.5-33.5.8 43c82.9-.2 157.7 9.1 235.7 7.9-28.2-73-31.2-143.6-31.9-209.2l-33.3-19.1 32.7-33.9c-.4-21.3-1.3-42-3.6-61.9l-57.4.7 50.2-41.7c-3.8-15.5-9-30.4-16.1-44.7l-29.5-23.9C335 38 281.2 34.6 227.4 34.7zm58.7 37c10.6 24.75 21.1 49.5 31.7 74.3 7.5-10.5 14.9-21 22.4-31.5 16 27.2 32 54.3 48 81.5l-16.2 9.5-33.3-56.7-42.5 59.4-15.2-10.9 24-33.5-21.9-51.5-24.6 40.1 12 22.6-16.5 8.8-18.3-34.5-24.8 58.2-17.2-7.4 32.5-76.2 7.7-18c4.8 9.2 9.6 18.3 14.5 27.4 12.5-20.6 25.1-41.11 37.7-61.6zM91.2 128c6.72 1.6 13.4 3.4 19.2 5.3-2.1 5.9-4.1 11.8-6.2 17.6-5.79-1.6-11.72-3.4-16.9-4.7 1.39-6 2.62-12.1 3.9-18.2zm37.9 13.4c6.3 3.8 12 7.2 17 12.8L132.6 167c-4-3.7-8.6-7-12.8-9.4zm28.7 32.3c2.1 7.4 2.1 15.7 1.6 22.5l-18.5-2.4c.1-5.1.3-10-1-14.5zm-21.2 35.7l17.2 7.1c-3.3 6.6-5.1 12.7-8.6 17.8l-16.3-9c2.6-5.4 5.6-10.8 7.7-15.9zm-16.5 34.1l17.7 6.1c-1.5 5.4-3 11.2-3.6 16.2l-18.6-2c1.3-7.5 2.1-14 4.5-20.3zm207.8 17.4c8.5 1 14.6 3 21.7 7.1l-9.8 16c-4.1-2.8-9.4-3.8-13.5-4.5zm-21.2 1.5c1.1 6.1 2.5 12.2 3.9 18.3-5.9 1.3-11.7 3.3-16.5 5.1l-6.8-17.4c6.7-2.4 13.5-4.7 19.4-6zm-37.9 15.9l11 15.1c-5.6 4-11.8 7.8-16.8 10.6l-8.9-16.4c5.1-2.9 10.6-6.3 14.7-9.3zM135.3 281c1.5 4.7 4.2 9.2 6.9 12.1l-13.8 12.6c-5.5-5.7-9.5-13.5-11.2-20.1zm230.3 3.3c3.5 6.4 6.8 12.7 8.7 19.1l-17.8 5.6c-2-5.4-4.3-10.8-6.8-14.8zm-127.4 10.9l6.9 17.3c-6.4 2.7-12.9 4.8-18.6 6.5l-5-18c5.9-1.6 11.3-3.8 16.7-5.8zm-83.8 6.2c5.3 1.7 10.8 3.4 15.7 4.2-1.2 6.1-2 12.3-2.8 18.5-7-1-14.5-3.3-20.5-5.7zm50 3.5l2.8 18.5c-7.2 1.3-13.4 1.6-19.8 1.9l-.4-18.7c5.9-.2 11.6-.8 17.4-1.7zm174.5 18c1 6.4 1.6 12.9 2.2 19.3l-18.7 1.5c-.4-6-.9-11.9-2-17.8zm-67.6 30.8c18.9 3.5 44.9 16.2 68.9 33.9 7.4-9.9 14.4-20.4 21.3-31.1l30.1 12.9c-4.7 12.3-15 25.6-28.6 37.2 17 16.2 30.9 34.5 37 53-13.8-18.1-31.1-31.8-50.3-42.8-23.4 15.8-52.7 25.9-79.6 20.4 22.9-4.4 40.6-16.6 55.8-32.6-16.5-7.5-33.8-13.9-51.3-20.1z"
 							/></svg
 						>
-					</Button>
+						</Button>
+					{/if}
 				</div>
 			</div>
+			{/if}
 		</div>
 	</div>
 </div>

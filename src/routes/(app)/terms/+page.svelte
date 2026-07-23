@@ -1,5 +1,10 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import Footer from '$lib/components/navigation/footer.svelte';
+
+	const contactEmail = $derived(
+		page.data.system_settings?.operations.contact_email ?? 'scribe@daggerlore.com'
+	);
 </script>
 
 <main class="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
@@ -144,7 +149,7 @@
 				To request a refund, contact
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
+					href={`mailto:${contactEmail}`}>{contactEmail}</a
 				> with the order details, a description of the issue, and any helpful screenshots or error messages.
 				We may grant or deny refunds at our discretion, subject to applicable law and payment processor
 				rules.
@@ -191,7 +196,7 @@
 				taken in error, contact us at
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
+					href={`mailto:${contactEmail}`}>{contactEmail}</a
 				>.
 			</p>
 		</section>
@@ -229,7 +234,7 @@
 				Questions about these Terms can be sent to
 				<a
 					class="underline underline-offset-[0.2em] hover:text-accent"
-					href="mailto:scribe@daggerlore.com">scribe@daggerlore.com</a
+					href={`mailto:${contactEmail}`}>{contactEmail}</a
 				>.
 			</p>
 		</section>

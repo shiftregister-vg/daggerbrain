@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import * as Select from '$lib/components/ui/select';
 	import { cn } from '$lib/utils';
@@ -27,6 +28,9 @@
 	} = $props();
 
 	let mobileSelectedHeadingId = $state(mobilePlaceholderValue);
+	const articlesEnabled = $derived(
+		page.data.system_settings?.operations.community.articles_enabled ?? true
+	);
 	let visibleHeadings = $derived.by(() => {
 		if (headerLevel === undefined) {
 			return headings;
@@ -48,7 +52,9 @@
 
 <div>
 	<div class="mb-6 flex flex-col gap-3 lg:hidden">
-		<Button href="/posts" variant="outline" class="w-fit shrink-0"><ArrowLeft />Back</Button>
+		{#if articlesEnabled}
+			<Button href="/posts" variant="outline" class="w-fit shrink-0"><ArrowLeft />Back</Button>
+		{/if}
 
 		{#if visibleHeadings.length > 0}
 			<div class="min-w-0">
@@ -82,7 +88,9 @@
 	</div>
 
 	<aside class="mt-2 hidden self-start lg:sticky lg:top-6 lg:block">
-		<Button href="/posts" size="sm" variant="outline" class="mb-6"><ArrowLeft />Back</Button>
+		{#if articlesEnabled}
+			<Button href="/posts" size="sm" variant="outline" class="mb-6"><ArrowLeft />Back</Button>
+		{/if}
 		{#if visibleHeadings.length > 0}
 			<nav aria-label="Table of contents">
 				<p

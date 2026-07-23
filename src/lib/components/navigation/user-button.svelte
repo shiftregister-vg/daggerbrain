@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import FeedbackDialog from '$lib/components/feedback/feedback-dialog.svelte';
 	import * as Popover from '$lib/components/ui/popover';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
 	import LogOut from '@lucide/svelte/icons/log-out';
+	import MessageSquare from '@lucide/svelte/icons/message-square';
 	import ShieldCheck from '@lucide/svelte/icons/shield-check';
 	import Settings from '@lucide/svelte/icons/settings';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
@@ -17,6 +19,9 @@
 	const userImageUrl = $derived(user?.image || '/images/art/portrait-placeholder.webp');
 	const userName = $derived(user?.name || user?.email || 'Profile');
 	const isAdmin = $derived(userContext.user?.is_admin ?? false);
+	const contactEnabled = $derived(
+		page.data.system_settings?.operations.community.contact_enabled ?? true
+	);
 
 	let open = $state(false);
 
@@ -65,6 +70,12 @@
 				<Settings class="size-4" />
 				Manage Account
 			</Button>
+			{#if contactEnabled}
+				<FeedbackDialog variant="ghost" class="w-full justify-start gap-2">
+					<MessageSquare class="size-4" />
+					Contact / Feedback
+				</FeedbackDialog>
+			{/if}
 			<Button
 				variant="ghost"
 				class="w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"

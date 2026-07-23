@@ -1,6 +1,13 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/button/button.svelte';
-	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import { page } from '$app/state';
+	import FeedbackDialog from '$lib/components/feedback/feedback-dialog.svelte';
+
+	const contactEmail = $derived(
+		page.data.system_settings?.operations.contact_email ?? 'scribe@daggerlore.com'
+	);
+	const contactEnabled = $derived(
+		page.data.system_settings?.operations.community.contact_enabled ?? true
+	);
 </script>
 
 <footer class="border-t bg-card text-xs">
@@ -129,35 +136,40 @@
 				</a>
 			</div>
 
-			<!-- Contact Us Section -->
-			<div
-				class="relative mr-6 -mb-5 ml-6 min-h-[130px] overflow-hidden rounded pt-4 pr-4 md:-mb-0 md:ml-0"
-			>
-				<!-- Background Image -->
-				<img
-					src="/images/daggerlore.svg"
-					alt=""
-					class="absolute inset-0 size-full object-contain object-right opacity-10"
-				/>
-				<!-- Content -->
-				<div class="relative z-10">
-					<h3 class="mb-2 font-semibold text-foreground">Contact Me</h3>
-					<div class="space-y-2">
-						<Button variant="outline" size="sm" href="/contact" class="bg-muted hover:bg-muted/70"
-							>Reach Out <ExternalLink class="ml-1 size-3" /></Button
-						>
+			{#if contactEnabled}
+				<!-- Contact Us Section -->
+				<div
+					class="relative mr-6 -mb-5 ml-6 min-h-[130px] overflow-hidden rounded pt-4 pr-4 md:-mb-0 md:ml-0"
+				>
+					<!-- Background Image -->
+					<img
+						src="/images/daggerlore.svg"
+						alt=""
+						class="absolute inset-0 size-full object-contain object-right opacity-10"
+					/>
+					<!-- Content -->
+					<div class="relative z-10">
+						<h3 class="mb-2 font-semibold text-foreground">Contact Me</h3>
+						<div class="space-y-2">
+							<FeedbackDialog
+								triggerText="Reach Out"
+								variant="outline"
+								size="sm"
+								class="bg-muted hover:bg-muted/70"
+							/>
 
-						<div>
-							<a
-								href="mailto:me@example.com"
-								class="text-muted-foreground underline hover:text-accent"
-							>
-								me@example.com
-							</a>
+							<div>
+								<a
+									href={`mailto:${contactEmail}`}
+									class="text-muted-foreground underline hover:text-accent"
+								>
+									{contactEmail}
+								</a>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
+			{/if}
 		</div>
 	</div>
 </footer>

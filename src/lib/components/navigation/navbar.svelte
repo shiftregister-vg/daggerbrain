@@ -26,6 +26,16 @@
 	const user = $derived(session?.user);
 	const userImageUrl = $derived(user?.image || '/images/art/portrait-placeholder.webp');
 	const userName = $derived(user?.name || user?.email || 'Profile');
+	const communitySettings = $derived(page.data.system_settings?.operations.community);
+	const communityVisible = $derived(
+		communitySettings &&
+			(communitySettings.articles_enabled ||
+				communitySettings.changelog_enabled ||
+				communitySettings.roadmap_enabled ||
+				communitySettings.faq_enabled ||
+				communitySettings.discord_enabled ||
+				communitySettings.socials_enabled)
+	);
 
 	function updateNavbarHeight() {
 		if (headerElement) {
@@ -187,54 +197,56 @@
 							Encounters
 						</Button>
 
-						<p class="pt-12 pb-2 text-xs font-bold text-muted-foreground uppercase">Community</p>
+						{#if communityVisible}
+							<p class="pt-12 pb-2 text-xs font-bold text-muted-foreground uppercase">Community</p>
 
-						<Button
-							variant="link"
-							onclick={closeMobileMenu}
-							href="/posts"
-							class="h-10 w-full justify-start rounded-none border-b pl-0"
-						>
-							Articles
-						</Button>
-						<Button
-							variant="link"
-							onclick={closeMobileMenu}
-							href="/changelog"
-							class="h-10 w-full justify-start rounded-none border-b pl-0"
-						>
-							Changelog
-						</Button>
-						<Button
-							variant="link"
-							onclick={closeMobileMenu}
-							href="/roadmap"
-							class="h-10 w-full justify-start rounded-none border-b pl-0"
-						>
-							Roadmap
-						</Button>
-						<Button
-							variant="link"
-							onclick={closeMobileMenu}
-							href="/faq"
-							class="h-10 w-full justify-start rounded-none border-b pl-0"
-						>
-							FAQ
-						</Button>
-						<Button
-							variant="link"
-							onclick={closeMobileMenu}
-							href="/contact"
-							class="h-10 w-full justify-start rounded-none border-b pl-0"
-						>
-							Contact
-						</Button>
-						<Button
-							variant="link"
-							target="_blank"
-							href="https://discord.gg/"
-							class="h-10 w-full justify-start gap-2 rounded-none border-b pl-0"
-						>
+							{#if communitySettings?.articles_enabled}
+								<Button
+									variant="link"
+									onclick={closeMobileMenu}
+									href="/posts"
+									class="h-10 w-full justify-start rounded-none border-b pl-0"
+								>
+									Articles
+								</Button>
+							{/if}
+							{#if communitySettings?.changelog_enabled}
+								<Button
+									variant="link"
+									onclick={closeMobileMenu}
+									href="/changelog"
+									class="h-10 w-full justify-start rounded-none border-b pl-0"
+								>
+									Changelog
+								</Button>
+							{/if}
+							{#if communitySettings?.roadmap_enabled}
+								<Button
+									variant="link"
+									onclick={closeMobileMenu}
+									href="/roadmap"
+									class="h-10 w-full justify-start rounded-none border-b pl-0"
+								>
+									Roadmap
+								</Button>
+							{/if}
+							{#if communitySettings?.faq_enabled}
+								<Button
+									variant="link"
+									onclick={closeMobileMenu}
+									href="/faq"
+									class="h-10 w-full justify-start rounded-none border-b pl-0"
+								>
+									FAQ
+								</Button>
+							{/if}
+							{#if communitySettings?.discord_enabled}
+								<Button
+									variant="link"
+									target="_blank"
+									href="https://discord.gg/"
+									class="h-10 w-full justify-start gap-2 rounded-none border-b pl-0"
+								>
 							<svg
 								class="size-4"
 								id="Discord-Logo"
@@ -246,10 +258,12 @@
 									d="M81.15,0c-1.2376,2.1973-2.3489,4.4704-3.3591,6.794-9.5975-1.4396-19.3718-1.4396-28.9945,0-.985-2.3236-2.1216-4.5967-3.3591-6.794-9.0166,1.5407-17.8059,4.2431-26.1405,8.0568C2.779,32.5304-1.6914,56.3725.5312,79.8863c9.6732,7.1476,20.5083,12.603,32.0505,16.0884,2.6014-3.4854,4.8998-7.1981,6.8698-11.0623-3.738-1.3891-7.3497-3.1318-10.8098-5.1523.9092-.6567,1.7932-1.3386,2.6519-1.9953,20.281,9.547,43.7696,9.547,64.0758,0,.8587.7072,1.7427,1.3891,2.6519,1.9953-3.4601,2.0457-7.0718,3.7632-10.835,5.1776,1.97,3.8642,4.2683,7.5769,6.8698,11.0623,11.5419-3.4854,22.3769-8.9156,32.0509-16.0631,2.626-27.2771-4.496-50.9172-18.817-71.8548C98.9811,4.2684,90.1918,1.5659,81.1752.0505l-.0252-.0505ZM42.2802,65.4144c-6.2383,0-11.4159-5.6575-11.4159-12.6535s4.9755-12.6788,11.3907-12.6788,11.5169,5.708,11.4159,12.6788c-.101,6.9708-5.026,12.6535-11.3907,12.6535ZM84.3576,65.4144c-6.2637,0-11.3907-5.6575-11.3907-12.6535s4.9755-12.6788,11.3907-12.6788,11.4917,5.708,11.3906,12.6788c-.101,6.9708-5.026,12.6535-11.3906,12.6535Z"
 								/></svg
 							>
-							Join the Discord
-						</Button>
+									Join the Discord
+								</Button>
+							{/if}
 
-						<div class="flex items-center gap-2 pt-4">
+							{#if communitySettings?.socials_enabled}
+								<div class="flex items-center gap-2 pt-4">
 							<Button
 								variant="ghost"
 								size="icon"
@@ -322,7 +336,9 @@
 									></svg
 								>
 							</Button>
-						</div>
+								</div>
+							{/if}
+						{/if}
 					</div>
 				</Sheet.Content>
 			</Sheet.Root>
@@ -340,17 +356,19 @@
 						class={cn('stroke-3 transition-transform', openMenu === 'play' && 'rotate-180')}
 					/>
 				</Button>
-				<Button
-					variant="ghost"
-					class="h-full rounded-none"
-					onpointerdown={() => {
-						openMenu = openMenu === 'community' ? null : 'community';
-					}}
-				>
-					Community <ChevronDown
-						class={cn('stroke-3 transition-transform', openMenu === 'community' && 'rotate-180')}
-					/>
-				</Button>
+				{#if communityVisible}
+					<Button
+						variant="ghost"
+						class="h-full rounded-none"
+						onpointerdown={() => {
+							openMenu = openMenu === 'community' ? null : 'community';
+						}}
+					>
+						Community <ChevronDown
+							class={cn('stroke-3 transition-transform', openMenu === 'community' && 'rotate-180')}
+						/>
+					</Button>
+				{/if}
 
 				<div class="grow"></div>
 
@@ -473,13 +491,14 @@
 	</Sheet.Content>
 </Sheet.Root>
 
-<!-- desktop community tab -->
-<Sheet.Root
-	bind:open={communityMenuOpen}
-	onOpenChange={(open) => {
-		openMenu = open ? 'community' : null;
-	}}
->
+{#if communityVisible}
+	<!-- desktop community tab -->
+	<Sheet.Root
+		bind:open={communityMenuOpen}
+		onOpenChange={(open) => {
+			openMenu = open ? 'community' : null;
+		}}
+	>
 	<Sheet.Content
 		onCloseAutoFocus={(e) => {
 			e.preventDefault();
@@ -491,8 +510,10 @@
 		class={desktopSheetClass}
 	>
 		<div class="mx-auto flex w-full max-w-7xl gap-8 px-8 py-8">
-			<div class="flex w-40 flex-col gap-1">
+			{#if communitySettings?.articles_enabled || communitySettings?.changelog_enabled || communitySettings?.roadmap_enabled || communitySettings?.faq_enabled}
+				<div class="flex w-40 flex-col gap-1">
 				<p class="pb-2 pl-3 text-xs font-bold text-muted-foreground uppercase">Support</p>
+				{#if communitySettings?.articles_enabled}
 				<Button
 					variant="ghost"
 					href="/posts"
@@ -500,6 +521,8 @@
 				>
 					Articles
 				</Button>
+				{/if}
+				{#if communitySettings?.changelog_enabled}
 				<Button
 					variant="ghost"
 					href="/changelog"
@@ -507,6 +530,8 @@
 				>
 					Changelog
 				</Button>
+				{/if}
+				{#if communitySettings?.roadmap_enabled}
 				<Button
 					variant="ghost"
 					href="/roadmap"
@@ -514,6 +539,8 @@
 				>
 					Roadmap
 				</Button>
+				{/if}
+				{#if communitySettings?.faq_enabled}
 				<Button
 					variant="ghost"
 					href="/faq"
@@ -521,16 +548,12 @@
 				>
 					FAQ
 				</Button>
-				<Button
-					variant="ghost"
-					href="/contact"
-					class="h-10 w-min text-lg font-bold tracking-wide hover:bg-card hover:text-foreground"
-				>
-					Contact
-				</Button>
-			</div>
+				{/if}
+				</div>
+			{/if}
 
-			<div class="flex w-60 flex-col gap-1">
+			{#if communitySettings?.discord_enabled}
+				<div class="flex w-60 flex-col gap-1">
 				<p class="pb-2 pl-3 text-xs font-bold text-muted-foreground uppercase">Connect</p>
 				<Button
 					variant="ghost"
@@ -551,9 +574,11 @@
 					>
 					Join the Discord
 				</Button>
-			</div>
+				</div>
+			{/if}
 
-			<div class="flex w-60 flex-col gap-1">
+			{#if communitySettings?.socials_enabled}
+				<div class="flex w-60 flex-col gap-1">
 				<p class="pb-2 pl-3 text-xs font-bold text-muted-foreground uppercase">Socials</p>
 				<div class="ml-1 flex gap-2">
 					<Button
@@ -625,9 +650,11 @@
 						>
 					</Button>
 				</div>
-			</div>
+				</div>
+			{/if}
 
-			<div class="ml-auto flex w-60 flex-col gap-1">
+			{#if communitySettings?.articles_enabled}
+				<div class="ml-auto flex w-60 flex-col gap-1">
 				<p class="pb-2 text-xs font-bold text-muted-foreground uppercase">Featured Article</p>
 				<a
 					href="/posts/example"
@@ -645,7 +672,9 @@
 					</div>
 					<p class="relative z-10 font-bold">Example Article</p>
 				</a>
-			</div>
+				</div>
+			{/if}
 		</div>
 	</Sheet.Content>
 </Sheet.Root>
+{/if}

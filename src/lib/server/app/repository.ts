@@ -86,6 +86,27 @@ type InvitationRow = {
 	updated_at: string | number;
 };
 
+type FeedbackStatus = 'new' | 'reviewing' | 'resolved' | 'archived';
+
+type FeedbackRow = {
+	id: string;
+	user_id: string | null;
+	user_name?: string | null;
+	user_email?: string | null;
+	name: string | null;
+	email: string | null;
+	category: string;
+	subject: string;
+	message: string;
+	page_url: string | null;
+	user_agent: string | null;
+	status: FeedbackStatus;
+	admin_notes: string | null;
+	resolved_at: string | number | null;
+	created_at: string | number;
+	updated_at: string | number;
+};
+
 type CharacterRow = {
 	id: string;
 	owner_user_id: string;
@@ -217,6 +238,44 @@ type StreamOverlayRow = {
 	layout: unknown;
 };
 
+type SystemSettingRow = {
+	key: string;
+	value: unknown;
+	updated_at: string | number;
+};
+
+export type OperationsSettings = {
+	maintenance_enabled: boolean;
+	maintenance_message: string;
+	invite_only_enabled: boolean;
+	contact_email: string;
+	community: {
+		articles_enabled: boolean;
+		changelog_enabled: boolean;
+		roadmap_enabled: boolean;
+		faq_enabled: boolean;
+		contact_enabled: boolean;
+		discord_enabled: boolean;
+		socials_enabled: boolean;
+	};
+};
+
+export const DEFAULT_OPERATIONS_SETTINGS: OperationsSettings = {
+	maintenance_enabled: false,
+	maintenance_message: 'Daggerlore is being upgraded!',
+	invite_only_enabled: true,
+	contact_email: 'scribe@daggerlore.com',
+	community: {
+		articles_enabled: true,
+		changelog_enabled: true,
+		roadmap_enabled: true,
+		faq_enabled: true,
+		contact_enabled: true,
+		discord_enabled: true,
+		socials_enabled: true
+	}
+};
+
 function newId() {
 	return crypto.randomUUID();
 }
@@ -227,6 +286,98 @@ function nowIso() {
 
 function nowDbTimestamp() {
 	return databaseDialect === 'sqlite' ? Date.now() : nowIso();
+}
+
+function parseOperationsSettings(value: unknown): OperationsSettings {
+	const parsed = value ? parseJson<Partial<OperationsSettings>>(value) : {};
+	const community = (parsed.community ?? {}) as Partial<OperationsSettings['community']>;
+	return {
+		maintenance_enabled: parsed.maintenance_enabled === true,
+		maintenance_message:
+			typeof parsed.maintenance_message === 'string' && parsed.maintenance_message.trim()
+				? parsed.maintenance_message
+				: DEFAULT_OPERATIONS_SETTINGS.maintenance_message,
+		invite_only_enabled: parsed.invite_only_enabled !== false,
+		contact_email:
+			typeof parsed.contact_email === 'string' && parsed.contact_email.trim()
+				? parsed.contact_email.trim()
+				: DEFAULT_OPERATIONS_SETTINGS.contact_email,
+		community: {
+			articles_enabled: community.articles_enabled !== false,
+			changelog_enabled: community.changelog_enabled !== false,
+			roadmap_enabled: community.roadmap_enabled !== false,
+			faq_enabled: community.faq_enabled !== false,
+			contact_enabled: community.contact_enabled !== false,
+			discord_enabled: community.discord_enabled !== false,
+			socials_enabled: community.socials_enabled !== false
+		}
+	};
+}
+
+function validateOperationsSettings(data: unknown): OperationsSettings {
+	const input = (data ?? {}) as Partial<OperationsSettings>;
+	const community = (input.community ?? {}) as Partial<OperationsSettings['community']>;
+	const maintenanceMessage =
+		typeof input.maintenance_message === 'string'
+			? input.maintenance_message.trim()
+			: DEFAULT_OPERATIONS_SETTINGS.maintenance_message;
+	const contactEmail =
+		typeof input.contact_email === 'string'
+			? input.contact_email.trim()
+			: DEFAULT_OPERATIONS_SETTINGS.contact_email;
+
+	if (maintenanceMessage.length > 500) {
+		throw new Error('Maintenance message must be 500 characters or less');
+	}
+	if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail)) {
+		throw new Error('Contact email must be a valid email address');
+	}
+
+	return {
+		maintenance_enabled: input.maintenance_enabled === true,
+		maintenance_message: maintenanceMessage || DEFAULT_OPERATIONS_SETTINGS.maintenance_message,
+		invite_only_enabled: true,
+		contact_email: contactEmail,
+		community: {
+			articles_enabled: community.articles_enabled === true,
+			changelog_enabled: community.changelog_enabled === true,
+			roadmap_enabled: community.roadmap_enabled === true,
+			faq_enabled: community.faq_enabled === true,
+			contact_enabled: community.contact_enabled === true,
+			discord_enabled: community.discord_enabled === true,
+			socials_enabled: community.socials_enabled === true
+		}
+	};
+}
+
+function textField(value: unknown, options: { max: number; min?: number; label: string }) {
+	const text = typeof value === 'string' ? value.trim() : '';
+	if ((options.min ?? 0) > 0 && text.length < (options.min ?? 0)) {
+		throw new Error(`${options.label} is required`);
+	}
+	if (text.length > options.max) {
+		throw new Error(`${options.label} must be ${options.max} characters or less`);
+	}
+	return text;
+}
+
+function nullableTextField(value: unknown, options: { max: number }) {
+	const text = typeof value === 'string' ? value.trim() : '';
+	if (!text) return null;
+	return text.slice(0, options.max);
+}
+
+function feedbackCategory(value: unknown) {
+	const category = typeof value === 'string' ? value.trim().toLowerCase() : 'general';
+	if (['general', 'bug', 'feature', 'content', 'account'].includes(category)) return category;
+	return 'general';
+}
+
+function feedbackStatus(value: unknown): FeedbackStatus {
+	if (value === 'new' || value === 'reviewing' || value === 'resolved' || value === 'archived') {
+		return value;
+	}
+	throw new Error('Invalid feedback status');
 }
 
 function requireUserId(userId: string | undefined) {
@@ -350,6 +501,160 @@ export async function getAdminAccess(userId: string | undefined) {
 			image: user.image
 		}
 	};
+}
+
+export async function isUserAdmin(userId: string | undefined) {
+	if (!userId) return false;
+	try {
+		const user = await getUserRow(userId);
+		return isAdminValue(user.is_admin);
+	} catch {
+		return false;
+	}
+}
+
+export async function getSystemOperationsSettings(): Promise<OperationsSettings> {
+	const row = await queryOne<SystemSettingRow>('select key, value, updated_at from system_settings where key = ?', [
+		'operations'
+	]);
+	if (!row) return DEFAULT_OPERATIONS_SETTINGS;
+	return parseOperationsSettings(row.value);
+}
+
+export async function getAdminSystemSettings(userId: string | undefined) {
+	await getAdminAccess(userId);
+	return {
+		operations: await getSystemOperationsSettings()
+	};
+}
+
+export async function updateAdminSystemSettings(userId: string | undefined, data: unknown) {
+	await getAdminAccess(userId);
+	const operations = validateOperationsSettings(data);
+	const updatedAt = nowDbTimestamp();
+	await execute(
+		`insert into system_settings (key, value, updated_at)
+			values (?, ?, ?)
+			on conflict(key) do update set
+				value = excluded.value,
+				updated_at = excluded.updated_at`,
+		['operations', jsonParam(operations), updatedAt]
+	);
+	return { operations };
+}
+
+function parseFeedbackRow(row: FeedbackRow) {
+	return {
+		id: row.id,
+		user_id: row.user_id,
+		user_name: row.user_name ?? null,
+		user_email: row.user_email ?? null,
+		name: row.name,
+		email: row.email,
+		category: row.category,
+		subject: row.subject,
+		message: row.message,
+		page_url: row.page_url,
+		user_agent: row.user_agent,
+		status: row.status,
+		admin_notes: row.admin_notes,
+		resolved_at: row.resolved_at,
+		created_at: row.created_at,
+		updated_at: row.updated_at
+	};
+}
+
+export async function createFeedbackSubmission(
+	userId: string | undefined,
+	data: unknown,
+	meta: { userAgent?: string | null } = {}
+) {
+	const input = (data ?? {}) as Record<string, unknown>;
+	const subject = textField(input.subject, { min: 3, max: 160, label: 'Subject' });
+	const message = textField(input.message, { min: 10, max: 5000, label: 'Message' });
+	const category = feedbackCategory(input.category);
+	const pageUrl = nullableTextField(input.page_url, { max: 1000 });
+	const userAgent = nullableTextField(meta.userAgent, { max: 1000 });
+
+	let user: UserRow | null = null;
+	if (userId) {
+		try {
+			user = await getUserRow(userId);
+		} catch {
+			user = null;
+		}
+	}
+
+	const name =
+		user?.name ??
+		nullableTextField(input.name, { max: 160 });
+	const email =
+		user?.email ??
+		nullableTextField(input.email, { max: 255 });
+	const id = newId();
+	const now = nowDbTimestamp();
+
+	await execute(
+		`insert into feedback_submissions (
+			id, user_id, name, email, category, subject, message, page_url, user_agent,
+			status, admin_notes, resolved_at, created_at, updated_at
+		) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		[id, user?.id ?? null, name, email, category, subject, message, pageUrl, userAgent, 'new', null, null, now, now]
+	);
+
+	return { id };
+}
+
+export async function listAdminFeedback(userId: string | undefined) {
+	await getAdminAccess(userId);
+	const rows = await queryRows<FeedbackRow>(
+		`select
+			feedback_submissions.*,
+			users.name as user_name,
+			users.email as user_email
+		from feedback_submissions
+		left join users on users.id = feedback_submissions.user_id
+		order by
+			case feedback_submissions.status
+				when 'new' then 0
+				when 'reviewing' then 1
+				when 'resolved' then 2
+				else 3
+			end,
+			feedback_submissions.created_at desc`
+	);
+	return rows.map(parseFeedbackRow);
+}
+
+export async function getAdminFeedback(userId: string | undefined, feedbackId: string) {
+	await getAdminAccess(userId);
+	const row = await queryOne<FeedbackRow>(
+		`select
+			feedback_submissions.*,
+			users.name as user_name,
+			users.email as user_email
+		from feedback_submissions
+		left join users on users.id = feedback_submissions.user_id
+		where feedback_submissions.id = ?`,
+		[feedbackId]
+	);
+	if (!row) throw new Error('Feedback not found');
+	return parseFeedbackRow(row);
+}
+
+export async function updateAdminFeedback(userId: string | undefined, feedbackId: string, data: unknown) {
+	await getAdminAccess(userId);
+	const input = (data ?? {}) as Record<string, unknown>;
+	const status = feedbackStatus(input.status);
+	const adminNotes = nullableTextField(input.admin_notes, { max: 5000 });
+	const now = nowDbTimestamp();
+	await execute(
+		`update feedback_submissions
+			set status = ?, admin_notes = ?, resolved_at = ?, updated_at = ?
+			where id = ?`,
+		[status, adminNotes, status === 'resolved' ? now : null, now, feedbackId]
+	);
+	return getAdminFeedback(userId, feedbackId);
 }
 
 function adminUserStatus(row: Pick<UserRow, 'disabled_at' | 'banned_at'>) {

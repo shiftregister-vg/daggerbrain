@@ -114,6 +114,15 @@ export async function GET(event) {
 		if (parts[0] === 'admin' && parts[1] === 'invitations' && parts.length === 2) {
 			return ok(await repo.listAdminInvitations(uid));
 		}
+		if (parts[0] === 'admin' && parts[1] === 'system' && parts.length === 2) {
+			return ok(await repo.getAdminSystemSettings(uid));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'feedback' && parts.length === 2) {
+			return ok(await repo.listAdminFeedback(uid));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'feedback' && parts[2]) {
+			return ok(await repo.getAdminFeedback(uid, parts[2]));
+		}
 		if (parts[0] === 'admin' && parts[1] === 'users' && parts[2]) {
 			return ok(await repo.getAdminUser(uid, parts[2]));
 		}
@@ -207,6 +216,13 @@ export async function POST(event) {
 		if (parts[0] === 'admin' && parts[1] === 'invitations') {
 			return ok(await repo.createAdminInvitation(uid, await body(event)));
 		}
+		if (parts[0] === 'feedback') {
+			return ok(
+				await repo.createFeedbackSubmission(uid, await body(event), {
+					userAgent: event.request.headers.get('user-agent')
+				})
+			);
+		}
 
 		return notFound();
 	} catch (error) {
@@ -276,6 +292,12 @@ export async function PATCH(event) {
 		}
 		if (parts[0] === 'admin' && parts[1] === 'users' && parts[2] && parts[3] === 'invalidate') {
 			return ok(await repo.invalidateAdminUserSessions(uid, parts[2]));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'system' && parts.length === 2) {
+			return ok(await repo.updateAdminSystemSettings(uid, await body(event)));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'feedback' && parts[2]) {
+			return ok(await repo.updateAdminFeedback(uid, parts[2], await body(event)));
 		}
 		if (parts[0] === 'campaigns' && parts[1]) {
 			await repo.updateCampaign(uid, parts[1], await body(event));

@@ -1,5 +1,7 @@
 <script>
 	import { artMountains } from '$lib/assets/images';
+
+	const { data } = $props();
 </script>
 
 <svelte:head>
@@ -28,7 +30,7 @@
 		<h1 class="font-eveleth text-4xl">We'll be back soon!</h1>
 		<p class="">
 			<img src="/images/daggerlore.svg" alt="Daggerlore" class="inline size-8" />
-			<b>Daggerlore</b> is being upgraded!
+			<b>{data.operations.maintenance_message}</b>
 			<span class="text-nowrap">Please check back soon.</span>
 		</p>
 	</div>

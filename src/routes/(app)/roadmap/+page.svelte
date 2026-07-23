@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { artMountains } from '$lib/assets/images';
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
+
+	const communitySettings = $derived(page.data.system_settings?.operations.community);
 </script>
 
 <div class="relative min-h-[calc(100dvh-var(--navbar-height,3.5rem))]">
@@ -28,15 +31,23 @@
 			</header>
 
 			<section class="mx-auto mt-6 w-full max-w-3xl" aria-label="Product roadmap timeline">
-				<div class="mb-6 flex items-center gap-4">
-					<Button variant="outline" href="/posts" class="inline-flex items-center gap-1.5">
-						Read past articles
-					</Button>
-					<p class="text-sm text-muted-foreground">or</p>
-					<Button variant="outline" href="/changelog" class="inline-flex items-center gap-1.5">
-						Checkout the full Changelog
-					</Button>
-				</div>
+				{#if communitySettings?.articles_enabled || communitySettings?.changelog_enabled}
+					<div class="mb-6 flex items-center gap-4">
+						{#if communitySettings?.articles_enabled}
+							<Button variant="outline" href="/posts" class="inline-flex items-center gap-1.5">
+								Read past articles
+							</Button>
+						{/if}
+						{#if communitySettings?.articles_enabled && communitySettings?.changelog_enabled}
+							<p class="text-sm text-muted-foreground">or</p>
+						{/if}
+						{#if communitySettings?.changelog_enabled}
+							<Button variant="outline" href="/changelog" class="inline-flex items-center gap-1.5">
+								Checkout the full Changelog
+							</Button>
+						{/if}
+					</div>
+				{/if}
 
 				<div class="relative border-l border-dashed border-muted-foreground/40 pl-8">
 					<!-- Past -->
@@ -69,7 +80,8 @@
 					</div>
 				</div>
 
-				<div class="mt-10 space-y-2">
+				{#if communitySettings?.discord_enabled}
+					<div class="mt-10 space-y-2">
 					<p class="mb-4 text-sm font-medium text-foreground">Want to stay connected?</p>
 					<div class="flex flex-wrap items-center gap-4">
 						<Button
@@ -93,7 +105,8 @@
 							Join the Discord
 						</Button>
 					</div>
-				</div>
+					</div>
+				{/if}
 			</section>
 		</div>
 	</main>

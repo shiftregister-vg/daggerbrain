@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { env } from '$env/dynamic/public';
+	import { page } from '$app/state';
+	import FeedbackDialog from '$lib/components/feedback/feedback-dialog.svelte';
 	import { createAbsoluteUrl } from '$lib/components/seo/seo';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte';
@@ -26,6 +28,9 @@
 	} = $props();
 
 	const clipboard = new UseClipboard({ delay: 1200 });
+	const contactEnabled = $derived(
+		page.data.system_settings?.operations.community.contact_enabled ?? true
+	);
 	const streamOverlayQuery = createApiResource<{
 		token: string;
 		enabled: boolean;
@@ -503,8 +508,9 @@
 		</div>
 
 		<Dialog.Footer class="px-6">
-			<Button href="/contact" target="_blank" rel="noreferrer" variant="link">Have feedback?</Button
-			>
+			{#if contactEnabled}
+				<FeedbackDialog triggerText="Have feedback?" variant="link" initialCategory="feature" />
+			{/if}
 			<div class="grow"></div>
 			<Dialog.Close type="button" class={cn(buttonVariants({ variant: 'outline' }))}>
 				Close

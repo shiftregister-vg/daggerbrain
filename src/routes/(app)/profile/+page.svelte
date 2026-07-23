@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { artCharacters } from '$lib/assets/images';
+	import FeedbackDialog from '$lib/components/feedback/feedback-dialog.svelte';
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Loader from '$lib/components/utility/loader.svelte';
 	import { signOut } from '@auth/sveltekit/client';
-	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import { fade } from 'svelte/transition';
 
 	const user = $derived(page.data.session?.user);
+	const communitySettings = $derived(page.data.system_settings?.operations.community);
+	const showProfileActions = $derived(
+		communitySettings?.contact_enabled || communitySettings?.roadmap_enabled
+	);
 </script>
 
 <div class="relative min-h-[calc(100dvh-var(--navbar-height,3.5rem))]">
@@ -49,25 +53,29 @@
 					</div>
 				</section>
 
-				<section class="grid gap-4 rounded border border-white/5 bg-card p-5 shadow sm:grid-cols-2">
-					<div class="flex flex-col gap-3">
-						<p class="text-sm font-medium">Have Questions?</p>
-						<Button variant="default" size="sm" href="/contact" class="w-min">
-							Contact Me<ExternalLink class="-mt-[1px] ml-1 size-3.5" />
-						</Button>
-					</div>
-					<div class="flex flex-col gap-3">
-						<p class="text-sm font-medium">See what's brewing</p>
-						<Button
-							size="sm"
-							variant="secondary"
-							href="/roadmap"
-							class="w-min bg-secondary/50 hover:bg-secondary/30"
-						>
-							See the roadmap
-						</Button>
-					</div>
-				</section>
+				{#if showProfileActions}
+					<section class="grid gap-4 rounded border border-white/5 bg-card p-5 shadow sm:grid-cols-2">
+						{#if communitySettings?.contact_enabled}
+							<div class="flex flex-col gap-3">
+								<p class="text-sm font-medium">Have Questions?</p>
+								<FeedbackDialog triggerText="Contact Me" variant="default" size="sm" class="w-min" />
+							</div>
+						{/if}
+						{#if communitySettings?.roadmap_enabled}
+							<div class="flex flex-col gap-3">
+								<p class="text-sm font-medium">See what's brewing</p>
+								<Button
+									size="sm"
+									variant="secondary"
+									href="/roadmap"
+									class="w-min bg-secondary/50 hover:bg-secondary/30"
+								>
+									See the roadmap
+								</Button>
+							</div>
+						{/if}
+					</section>
+				{/if}
 
 				<Button
 					onclick={() => signOut({ redirectTo: '/' })}

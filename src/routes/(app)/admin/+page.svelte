@@ -3,6 +3,7 @@
 	import Database from '@lucide/svelte/icons/database';
 	import Users from '@lucide/svelte/icons/users';
 	import Settings from '@lucide/svelte/icons/settings';
+	import MessageSquare from '@lucide/svelte/icons/message-square';
 	import Footer from '$lib/components/navigation/footer.svelte';
 	import { Button } from '$lib/components/ui/button';
 
@@ -26,7 +27,7 @@
 		<h1 class="mt-4 text-3xl font-bold text-foreground">Admin Dashboard</h1>
 	</section>
 
-	<section class="grid gap-4 py-8 md:grid-cols-3">
+	<section class="grid gap-4 py-8 md:grid-cols-2 lg:grid-cols-4">
 		<div class="border-border/70 bg-card/50 rounded-lg border p-5">
 			<Database class="size-5 text-accent" />
 			<h2 class="mt-4 text-lg font-semibold text-foreground">Compendium Data</h2>
@@ -49,8 +50,18 @@
 			<Settings class="size-5 text-accent" />
 			<h2 class="mt-4 text-lg font-semibold text-foreground">System</h2>
 			<p class="mt-2 text-sm text-muted-foreground">
-				Placeholder for operational settings and future admin-only actions.
+				Manage maintenance mode and review application access controls.
 			</p>
+			<Button href="/admin/system" size="sm" class="mt-4 w-fit">Open Settings</Button>
+		</div>
+
+		<div class="border-border/70 bg-card/50 rounded-lg border p-5">
+			<MessageSquare class="size-5 text-accent" />
+			<h2 class="mt-4 text-lg font-semibold text-foreground">Feedback</h2>
+			<p class="mt-2 text-sm text-muted-foreground">
+				Review user-submitted feedback, bugs, feature requests, and content reports.
+			</p>
+			<Button href="/admin/feedback" size="sm" class="mt-4 w-fit">Open Feedback</Button>
 		</div>
 	</section>
 </main>

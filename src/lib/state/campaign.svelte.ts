@@ -63,6 +63,10 @@ function stableSnapshot(value: unknown): string {
 	});
 }
 
+function cloneCampaign(campaign: Campaign): Campaign {
+	return JSON.parse(JSON.stringify(campaign)) as Campaign;
+}
+
 function itemsFor<T extends HomebrewTable>(
 	ids: Id<T>[],
 	results: SvelteMap<string, HomebrewAccess<HomebrewTable> | null>,
@@ -425,7 +429,7 @@ function createCampaign() {
 		}
 
 		if (local_snapshot !== server_snapshot) {
-			campaign = serverCampaign;
+			campaign = cloneCampaign(serverCampaign);
 		}
 	});
 
@@ -459,19 +463,29 @@ function createCampaign() {
 		itemId: CampaignVaultItemId<TKey>
 	) {
 		if (!campaign) return;
-		const currentItems = campaign.homebrew_vault[type] as CompendiumContentIds[TKey];
-		if (!(currentItems as readonly string[]).includes(itemId as string)) {
-			campaign.homebrew_vault[type] = [...currentItems, itemId] as CompendiumContentIds[TKey];
-		}
+		const vault = normalizeCompendiumContentIds(campaign.homebrew_vault);
+		const currentItems = vault[type] as CompendiumContentIds[TKey];
+		if ((currentItems as readonly string[]).includes(itemId as string)) return;
+
+		campaign = {
+			...campaign,
+			homebrew_vault: {
+				...vault,
+				[type]: [...currentItems, itemId]
+			} as Campaign['homebrew_vault']
+		};
 	}
 
 	function removeFromVault(itemId: string) {
 		if (!campaign) return;
-		const vault = campaign.homebrew_vault;
+		const vault = normalizeCompendiumContentIds(campaign.homebrew_vault);
 
-		campaign.homebrew_vault = Object.fromEntries(
-			VAULT_KEYS.map((key) => [key, vault[key].filter((id) => id !== itemId)])
-		) as Campaign['homebrew_vault'];
+		campaign = {
+			...campaign,
+			homebrew_vault: Object.fromEntries(
+				VAULT_KEYS.map((key) => [key, vault[key].filter((id) => id !== itemId)])
+			) as Campaign['homebrew_vault']
+		};
 	}
 
 	async function addRollToHistory(roll: Roll) {

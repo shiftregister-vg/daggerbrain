@@ -10,6 +10,7 @@
 		"db:studio": "drizzle-kit studio",
 		"dev": "vite dev",
 		"build": "vite build",
+		"start": "node build",
 		"preview": "vite preview",
 		"test": "vitest",
 		"test:once": "vitest run",

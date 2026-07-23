@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { signIn } from '@auth/sveltekit/client';
+	import { untrack } from 'svelte';
 	import { artCampaigns } from '$lib/assets/images';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
@@ -27,6 +28,7 @@
 	const inviteStatus = $derived(inviteQuery.data ?? null);
 	const isLoading = $derived(userCtx.isLoading || inviteQuery.isLoading);
 	const loadError = $derived(userCtx.error || inviteQuery.error);
+	const signedInUserId = $derived(userCtx.user?._id ?? null);
 
 	let displayName = $state('');
 	let joining = $state(false);
@@ -35,8 +37,16 @@
 
 	$effect(() => {
 		if (hasInitializedDisplayName) return;
+		if (!userCtx.user) return;
 		displayName = userCtx.user?.name || userCtx.user?.email || '';
 		hasInitializedDisplayName = true;
+	});
+
+	$effect(() => {
+		inviteCode;
+		signedInUserId;
+		if (userCtx.isLoading || !signedInUserId || !inviteCode) return;
+		untrack(() => void inviteQuery.refresh());
 	});
 
 	$effect(() => {

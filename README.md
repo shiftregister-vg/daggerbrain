@@ -86,6 +86,7 @@ GOOGLE_CLIENT_ID=replace-with-google-client-id
 GOOGLE_CLIENT_SECRET=replace-with-google-client-secret
 MAINTENANCE_MODE=false
 ADMIN_USER_ID=
+ADMIN_EMAIL=you@example.com
 PORT=3000
 ```
 
@@ -118,8 +119,13 @@ port the Node server listens on.
 the app. Make sure `PUBLIC_ORIGIN` exactly matches the external URL users open
 in their browser.
 
-6. Sign in once with Google so the app creates your user row, then grant your
-user admin access:
+6. For the first production admin, set `ADMIN_EMAIL` to the Google account email
+you will use to sign in. The app will mark that matching user as admin and
+invite-accepted on first request after Google auth. You can provide multiple
+bootstrap admins as a comma-separated list.
+
+If you prefer to grant admin manually, sign in once with Google so the app
+creates your user row, then run:
 
 ```sql
 update users set is_admin = true where email = 'you@example.com';

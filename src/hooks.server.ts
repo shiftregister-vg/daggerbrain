@@ -20,6 +20,19 @@ function isMaintenanceAllowedPath(pathname: string) {
 	);
 }
 
+function normalizedEmail(email: string | null | undefined) {
+	return email?.trim().toLowerCase() ?? '';
+}
+
+function adminEmails() {
+	return new Set(
+		(env.ADMIN_EMAIL ?? '')
+			.split(',')
+			.map((email) => normalizedEmail(email))
+			.filter(Boolean)
+	);
+}
+
 const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 	if (building) {
 		return resolve(event);
@@ -37,9 +50,11 @@ const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 	if (maintenanceEnabled && !isMaintenanceAllowedPath(event.url.pathname)) {
 		const session = await event.locals.auth();
 		const userId = session?.user?.id;
+		const userEmail = normalizedEmail(session?.user?.email);
 
 		const adminIds = env.ADMIN_USER_ID?.split(',') ?? [];
-		const hasAdminBypass = adminIds.includes(userId ?? '') || (await isUserAdmin(userId));
+		const hasAdminBypass =
+			adminIds.includes(userId ?? '') || adminEmails().has(userEmail) || (await isUserAdmin(userId));
 
 		if (!hasAdminBypass) {
 			throw redirect(302, '/maintenance');

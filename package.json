@@ -3,6 +3,7 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"packageManager": "npm@10.9.8",
 	"scripts": {
 		"t3": "npm dlx t3@latest",
 		"db:generate": "drizzle-kit generate",

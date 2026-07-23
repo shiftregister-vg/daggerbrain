@@ -87,6 +87,7 @@ GOOGLE_CLIENT_SECRET=replace-with-google-client-secret
 MAINTENANCE_MODE=false
 ADMIN_USER_ID=
 ADMIN_EMAIL=you@example.com
+BODY_SIZE_LIMIT=10M
 PORT=3000
 ```
 
@@ -95,6 +96,10 @@ PORT=3000
 ```bash
 openssl rand -base64 32
 ```
+
+`BODY_SIZE_LIMIT` must be above SvelteKit's default `512K` limit for admin
+compendium import/export JSON uploads. `10M` is enough for current full
+compendium exports with room to grow.
 
 3. Install dependencies, run migrations, and build:
 

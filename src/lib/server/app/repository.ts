@@ -139,7 +139,7 @@ type OfficialSourceRow = {
 	source_key: SourceKey;
 	metadata: unknown;
 	enabled: boolean | number;
-	deleted_at?: string | number | null;
+	deleted_at?: TransferTimestamp;
 };
 
 type OfficialCompendiumItemRow = {
@@ -149,7 +149,7 @@ type OfficialCompendiumItemRow = {
 	current_version: string | number;
 	created_at?: string | number;
 	updated_at: string | number;
-	deleted_at?: string | number | null;
+	deleted_at?: TransferTimestamp;
 };
 
 type OfficialCompendiumItemVersionRow = {
@@ -162,14 +162,16 @@ type OfficialCompendiumItemVersionRow = {
 	item: unknown;
 	created_at: string | number;
 	published_at: string | number;
-	deleted_at?: string | number | null;
+	deleted_at?: TransferTimestamp;
 };
+
+type TransferTimestamp = string | number | Date | null;
 
 type CompendiumTransferSource = SourceMetadata & {
 	enabled: boolean;
 	created_at?: string | number;
 	updated_at?: string | number;
-	deleted_at?: string | number | null;
+	deleted_at?: TransferTimestamp;
 };
 
 type CompendiumTransferItem = {
@@ -179,7 +181,7 @@ type CompendiumTransferItem = {
 	current_version: number;
 	created_at?: string | number;
 	updated_at?: string | number;
-	deleted_at?: string | number | null;
+	deleted_at?: TransferTimestamp;
 };
 
 type CompendiumTransferVersion = {
@@ -192,7 +194,7 @@ type CompendiumTransferVersion = {
 	item: unknown;
 	created_at?: string | number;
 	published_at?: string | number;
-	deleted_at?: string | number | null;
+	deleted_at?: TransferTimestamp;
 };
 
 type CompendiumTransfer = {
@@ -286,6 +288,25 @@ function nowIso() {
 
 function nowDbTimestamp() {
 	return databaseDialect === 'sqlite' ? Date.now() : nowIso();
+}
+
+function normalizeDbTimestamp(value: TransferTimestamp | undefined) {
+	if (value == null || value === '') return null;
+	if (value instanceof Date) {
+		return databaseDialect === 'sqlite' ? value.getTime() : value.toISOString();
+	}
+	if (typeof value === 'number') {
+		if (!Number.isFinite(value)) return null;
+		return databaseDialect === 'sqlite' ? value : new Date(value).toISOString();
+	}
+	if (/^\d+$/.test(value)) {
+		const timestamp = Number(value);
+		if (!Number.isFinite(timestamp)) return null;
+		return databaseDialect === 'sqlite' ? timestamp : new Date(timestamp).toISOString();
+	}
+	const parsed = Date.parse(value);
+	if (!Number.isFinite(parsed)) return null;
+	return databaseDialect === 'sqlite' ? parsed : new Date(parsed).toISOString();
 }
 
 function parseOperationsSettings(value: unknown): OperationsSettings {
@@ -1351,7 +1372,7 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			short_title: string;
 			action: CompendiumImportAction;
 			enabled: boolean;
-			deleted_at: string | number | null;
+			deleted_at: ReturnType<typeof normalizeDbTimestamp>;
 		}>,
 		versions: [] as Array<{
 			key: string;
@@ -1362,7 +1383,7 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			title: string;
 			label: string;
 			action: CompendiumImportAction;
-			deleted_at: string | number | null;
+			deleted_at: ReturnType<typeof normalizeDbTimestamp>;
 		}>,
 		items: [] as Array<{
 			key: string;
@@ -1371,7 +1392,7 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			item_id: string;
 			current_version: number;
 			action: CompendiumImportAction;
-			deleted_at: string | number | null;
+			deleted_at: ReturnType<typeof normalizeDbTimestamp>;
 		}>,
 		summary: {
 			sources_created: 0,
@@ -1400,15 +1421,16 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			[source.source_key]
 		);
 		const metadata = existing ? parseOfficialSourceRow(existing) : null;
-		const deletedAt = rawSource.deleted_at ?? null;
+		const deletedAt = normalizeDbTimestamp(rawSource.deleted_at);
 		let action: CompendiumImportAction = 'create';
 		if (existing) {
+			const existingDeletedAt = normalizeDbTimestamp(existing.deleted_at);
 			const changed =
 				metadata?.name !== source.name ||
 				metadata?.short_title !== source.short_title ||
 				isEnabledValue(existing.enabled) !== source.enabled ||
-				(existing.deleted_at ?? null) !== deletedAt;
-			action = changed ? (existing.deleted_at && !deletedAt ? 'restore' : 'update') : 'unchanged';
+				existingDeletedAt !== deletedAt;
+			action = changed ? (existingDeletedAt && !deletedAt ? 'restore' : 'update') : 'unchanged';
 		}
 		if (action === 'create') result.summary.sources_created += 1;
 		else if (action === 'unchanged') result.summary.sources_unchanged += 1;
@@ -1434,7 +1456,7 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			'select item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at from official_compendium_item_versions where source_key = ? and item_type = ? and item_id = ? and item_version = ?',
 			[version.source_key, version.item_type, version.item_id, version.item_version]
 		);
-		const deletedAt = rawVersion.deleted_at ?? null;
+		const deletedAt = normalizeDbTimestamp(rawVersion.deleted_at);
 		let action: CompendiumImportAction = 'import';
 		if (existing) {
 			const existingItem = JSON.stringify(parseJson(existing.item));
@@ -1448,7 +1470,7 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 				result.summary.version_conflicts += 1;
 				conflictingVersionKeys.add(key);
 			} else {
-				action = (existing.deleted_at ?? null) !== deletedAt ? 'update' : 'skip';
+				action = normalizeDbTimestamp(existing.deleted_at) !== deletedAt ? 'update' : 'skip';
 				result.summary.versions_skipped += 1;
 			}
 		} else {
@@ -1478,7 +1500,7 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			'select item_type, item_id, source_key, current_version, updated_at, deleted_at from official_compendium_items where source_key = ? and item_type = ? and item_id = ?',
 			[item.source_key, item.item_type, item.item_id]
 		);
-		const deletedAt = rawItem.deleted_at ?? null;
+		const deletedAt = normalizeDbTimestamp(rawItem.deleted_at);
 		let action: CompendiumImportAction = 'create';
 		if (!existing) {
 			result.summary.items_created += 1;
@@ -1491,7 +1513,7 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 		} else if (Number(existing.current_version) < item.current_version) {
 			action = 'advance';
 			result.summary.items_advanced += 1;
-		} else if ((existing.deleted_at ?? null) !== deletedAt) {
+		} else if (normalizeDbTimestamp(existing.deleted_at) !== deletedAt) {
 			action = deletedAt ? 'delete' : 'restore';
 			result.summary.items_advanced += 1;
 		} else {
@@ -1537,6 +1559,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 
 	for (const rawSource of transfer.sources) {
 		const source = normalizeTransferSource(rawSource);
+		const deletedAt = normalizeDbTimestamp(rawSource.deleted_at);
 		await execute(
 			[
 				'insert into official_sources (source_key, metadata, enabled, created_at, updated_at, deleted_at)',
@@ -1557,7 +1580,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 				source.enabled,
 				timestamp,
 				timestamp,
-				rawSource.deleted_at ?? null
+				deletedAt
 			]
 		);
 		result.sources_upserted += 1;
@@ -1566,6 +1589,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 	for (const rawVersion of transfer.versions) {
 		const version = normalizeTransferVersion(rawVersion);
 		const key = versionConflictKey(version);
+		const deletedAt = normalizeDbTimestamp(rawVersion.deleted_at);
 		const existing = await queryOne<OfficialCompendiumItemVersionRow>(
 			'select item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at from official_compendium_item_versions where source_key = ? and item_type = ? and item_id = ? and item_version = ?',
 			[version.source_key, version.item_type, version.item_id, version.item_version]
@@ -1588,7 +1612,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 							version.changelog,
 							jsonParam(version.item),
 							timestamp,
-							rawVersion.deleted_at ?? null,
+							deletedAt,
 							version.source_key,
 							version.item_type,
 							version.item_id,
@@ -1635,7 +1659,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 							jsonParam(version.item),
 							timestamp,
 							timestamp,
-							rawVersion.deleted_at ?? null
+							deletedAt
 						]
 					);
 					remappedVersionKeys.set(key, targetVersion);
@@ -1648,7 +1672,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 			await execute(
 				'update official_compendium_item_versions set deleted_at = ? where source_key = ? and item_type = ? and item_id = ? and item_version = ?',
 				[
-					rawVersion.deleted_at ?? null,
+					deletedAt,
 					version.source_key,
 					version.item_type,
 					version.item_id,
@@ -1674,7 +1698,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 				jsonParam(version.item),
 				timestamp,
 				timestamp,
-				rawVersion.deleted_at ?? null
+				deletedAt
 			]
 		);
 		result.versions_imported += 1;
@@ -1682,6 +1706,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 
 	for (const rawItem of transfer.items) {
 		const item = normalizeTransferItem(rawItem);
+		const deletedAt = normalizeDbTimestamp(rawItem.deleted_at);
 		const currentVersionKey = `${item.source_key}:${item.item_type}:${item.item_id}:${item.current_version}`;
 		const remappedCurrentVersion = remappedVersionKeys.get(currentVersionKey);
 		const currentVersion = remappedCurrentVersion ?? item.current_version;
@@ -1703,7 +1728,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 					currentVersion,
 					timestamp,
 					timestamp,
-					rawItem.deleted_at ?? null
+					deletedAt
 				]
 			);
 			result.items_created += 1;
@@ -1711,7 +1736,7 @@ export async function importAdminCompendium(userId: string | undefined, data: un
 		}
 		await execute(
 			'update official_compendium_items set deleted_at = ?, updated_at = ? where source_key = ? and item_type = ? and item_id = ?',
-			[rawItem.deleted_at ?? null, timestamp, item.source_key, item.item_type, item.item_id]
+			[deletedAt, timestamp, item.source_key, item.item_type, item.item_id]
 		);
 		if (
 			Number(existing.current_version) < currentVersion &&

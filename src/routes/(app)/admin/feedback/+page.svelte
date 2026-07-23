@@ -228,16 +228,16 @@
 		</div>
 
 		<div class="border-border/70 bg-card/40 overflow-hidden rounded-lg border">
-			<div class="border-border/70 sticky top-[var(--navbar-height,0px)] z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-card p-4">
-				<div>
-					<h2 class="text-xl font-semibold">
+			<div class="border-border/70 flex flex-col gap-4 border-b bg-card p-4 sm:flex-row sm:items-start sm:justify-between">
+				<div class="min-w-0">
+					<h2 class="break-words text-xl leading-tight font-semibold">
 						{selected?.subject ?? 'Select feedback'}
 					</h2>
-					<p class="text-sm text-muted-foreground">
+					<p class="mt-1 text-sm break-words text-muted-foreground">
 						{selected ? `${reporter(selected)} / ${formatDate(selected.created_at)}` : 'Choose a submission to review.'}
 					</p>
 				</div>
-				<Button class="gap-2" disabled={!selected || isSaving || !hasSelectionChanges} onclick={saveFeedback}>
+				<Button class="shrink-0 gap-2 self-start" disabled={!selected || isSaving || !hasSelectionChanges} onclick={saveFeedback}>
 					<Save class="size-4" />
 					{isSaving ? 'Saving...' : 'Save'}
 				</Button>

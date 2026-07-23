@@ -44,6 +44,11 @@
 			version_conflicts: number;
 			current_version_conflicts: number;
 		};
+		omitted?: {
+			sources: number;
+			versions: number;
+			items: number;
+		};
 		sources: Array<{
 			source_key: string;
 			name: string;
@@ -665,50 +670,80 @@
 
 				<section class="preview-section">
 					<h3>Sources</h3>
+					{#if importPreview.omitted?.sources}
+						<p class="preview-note">
+							{importPreview.omitted.sources} unchanged source{importPreview.omitted.sources === 1 ? '' : 's'}
+							hidden from this list.
+						</p>
+					{/if}
 					<div class="preview-list">
-						{#each importPreview.sources as source}
-							<div class="preview-row">
-								<span class="preview-action">{actionLabel(source.action)}</span>
-								<span>{source.source_key}</span>
-								<span>{source.name}</span>
-								<span>{source.enabled ? 'enabled' : 'disabled'}</span>
-							</div>
-						{/each}
+						{#if importPreview.sources.length}
+							{#each importPreview.sources as source}
+								<div class="preview-row">
+									<span class="preview-action">{actionLabel(source.action)}</span>
+									<span>{source.source_key}</span>
+									<span>{source.name}</span>
+									<span>{source.enabled ? 'enabled' : 'disabled'}</span>
+								</div>
+							{/each}
+						{:else}
+							<p class="preview-empty">No source changes.</p>
+						{/if}
 					</div>
 				</section>
 
 				<section class="preview-section">
 					<h3>Versions</h3>
+					{#if importPreview.omitted?.versions}
+						<p class="preview-note">
+							{importPreview.omitted.versions} skipped version{importPreview.omitted.versions === 1 ? '' : 's'}
+							hidden from this list.
+						</p>
+					{/if}
 					<div class="preview-list">
-						{#each importPreview.versions as version}
-							<div class="preview-row {needsAttention(version.action) ? 'preview-conflict' : ''}">
-								<span class="preview-action">{actionLabel(version.action)}</span>
-								<span>{version.source_key}</span>
-								<span>{itemTypeLabel(version.item_type)}</span>
-								<span>{version.title}</span>
-								<span>v{version.item_version}</span>
-								{#if version.action === 'conflict'}
-									<span class="preview-resolution">
-										{conflictResolutionLabel(conflictResolutions[version.key])}
-									</span>
-								{/if}
-							</div>
-						{/each}
+						{#if importPreview.versions.length}
+							{#each importPreview.versions as version}
+								<div class="preview-row {needsAttention(version.action) ? 'preview-conflict' : ''}">
+									<span class="preview-action">{actionLabel(version.action)}</span>
+									<span>{version.source_key}</span>
+									<span>{itemTypeLabel(version.item_type)}</span>
+									<span>{version.title}</span>
+									<span>v{version.item_version}</span>
+									{#if version.action === 'conflict'}
+										<span class="preview-resolution">
+											{conflictResolutionLabel(conflictResolutions[version.key])}
+										</span>
+									{/if}
+								</div>
+							{/each}
+						{:else}
+							<p class="preview-empty">No version changes.</p>
+						{/if}
 					</div>
 				</section>
 
 				<section class="preview-section">
 					<h3>Items</h3>
+					{#if importPreview.omitted?.items}
+						<p class="preview-note">
+							{importPreview.omitted.items} unchanged item{importPreview.omitted.items === 1 ? '' : 's'}
+							hidden from this list.
+						</p>
+					{/if}
 					<div class="preview-list">
-						{#each importPreview.items as item}
-							<div class="preview-row {needsAttention(item.action) ? 'preview-conflict' : ''}">
-								<span class="preview-action">{actionLabel(item.action)}</span>
-								<span>{item.source_key}</span>
-								<span>{itemTypeLabel(item.item_type)}</span>
-								<span>{item.item_id}</span>
-								<span>current v{item.current_version}</span>
-							</div>
-						{/each}
+						{#if importPreview.items.length}
+							{#each importPreview.items as item}
+								<div class="preview-row {needsAttention(item.action) ? 'preview-conflict' : ''}">
+									<span class="preview-action">{actionLabel(item.action)}</span>
+									<span>{item.source_key}</span>
+									<span>{itemTypeLabel(item.item_type)}</span>
+									<span>{item.item_id}</span>
+									<span>current v{item.current_version}</span>
+								</div>
+							{/each}
+						{:else}
+							<p class="preview-empty">No item changes.</p>
+						{/if}
 					</div>
 				</section>
 			</div>
@@ -1056,6 +1091,12 @@
 		color: hsl(var(--foreground));
 		font-size: 0.95rem;
 		font-weight: 700;
+	}
+
+	.preview-note,
+	.preview-empty {
+		color: hsl(var(--muted-foreground));
+		font-size: 0.875rem;
 	}
 
 	.preview-list {

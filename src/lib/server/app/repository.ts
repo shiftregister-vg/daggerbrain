@@ -1384,6 +1384,11 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			versions_skipped: 0,
 			version_conflicts: 0,
 			current_version_conflicts: 0
+		},
+		omitted: {
+			sources: 0,
+			versions: 0,
+			items: 0
 		}
 	};
 	const conflictingVersionKeys = new Set<string>();
@@ -1408,14 +1413,18 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 		if (action === 'create') result.summary.sources_created += 1;
 		else if (action === 'unchanged') result.summary.sources_unchanged += 1;
 		else result.summary.sources_updated += 1;
-		result.sources.push({
-			source_key: source.source_key,
-			name: source.name,
-			short_title: source.short_title,
-			action,
-			enabled: source.enabled,
-			deleted_at: deletedAt
-		});
+		if (action === 'unchanged') {
+			result.omitted.sources += 1;
+		} else {
+			result.sources.push({
+				source_key: source.source_key,
+				name: source.name,
+				short_title: source.short_title,
+				action,
+				enabled: source.enabled,
+				deleted_at: deletedAt
+			});
+		}
 	}
 
 	for (const rawVersion of transfer.versions) {
@@ -1445,17 +1454,21 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 		} else {
 			result.summary.versions_imported += 1;
 		}
-		result.versions.push({
-			key,
-			source_key: version.source_key,
-			item_type: version.item_type,
-			item_id: version.item_id,
-			item_version: version.item_version,
-			title: itemTitle(version.item),
-			label: version.label,
-			action,
-			deleted_at: deletedAt
-		});
+		if (action === 'skip') {
+			result.omitted.versions += 1;
+		} else {
+			result.versions.push({
+				key,
+				source_key: version.source_key,
+				item_type: version.item_type,
+				item_id: version.item_id,
+				item_version: version.item_version,
+				title: itemTitle(version.item),
+				label: version.label,
+				action,
+				deleted_at: deletedAt
+			});
+		}
 	}
 
 	for (const rawItem of transfer.items) {
@@ -1485,15 +1498,19 @@ export async function previewAdminCompendiumImport(userId: string | undefined, d
 			action = 'unchanged';
 			result.summary.items_unchanged += 1;
 		}
-		result.items.push({
-			key,
-			source_key: item.source_key,
-			item_type: item.item_type,
-			item_id: item.item_id,
-			current_version: item.current_version,
-			action,
-			deleted_at: deletedAt
-		});
+		if (action === 'unchanged') {
+			result.omitted.items += 1;
+		} else {
+			result.items.push({
+				key,
+				source_key: item.source_key,
+				item_type: item.item_type,
+				item_id: item.item_id,
+				current_version: item.current_version,
+				action,
+				deleted_at: deletedAt
+			});
+		}
 	}
 
 	return result;

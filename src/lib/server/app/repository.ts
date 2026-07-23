@@ -13,7 +13,7 @@ import type { SourceMetadata } from '@domain/schemas/sources';
 import type { HomebrewAccess, HomebrewItem, HomebrewTable } from '@domain/permissions';
 import type { Id } from '@domain/ids';
 import { publish } from './events';
-import { execute, jsonParam, parseJson, queryOne, queryRows } from '$lib/server/db/client';
+import { databaseDialect, execute, jsonParam, parseJson, queryOne, queryRows } from '$lib/server/db/client';
 import {
 	createEmptyCompendiumContentIds,
 	normalizeCompendiumContentIds
@@ -23,6 +23,7 @@ import {
 	ensureOfficialCompendiumSeeded,
 	validateOfficialCompendiumItem
 } from '$lib/server/compendium/official-seed';
+import { acceptCampaignInviteForUser } from './invite-access';
 
 const VAULT_KEYS = [
 	'primary_weapons',
@@ -48,7 +49,41 @@ type UserRow = {
 	email: string | null;
 	image: string | null;
 	is_admin: boolean | number;
+	invite_accepted_at?: string | number | null;
+	disabled_at?: string | number | null;
+	disabled_reason?: string | null;
+	banned_at?: string | number | null;
+	ban_reason?: string | null;
 	homebrew_vault: unknown;
+};
+
+type AdminUserRow = UserRow & {
+	created_at: string | number;
+	updated_at: string | number;
+	character_count: string | number;
+	campaign_count: string | number;
+	encounter_count: string | number;
+	homebrew_count: string | number;
+	session_count: string | number;
+};
+
+type InvitationRow = {
+	id: string;
+	invite_type: 'admin' | 'campaign';
+	email: string | null;
+	invite_code: string;
+	campaign_id: string | null;
+	campaign?: unknown;
+	campaign_name?: string | null;
+	created_by_user_id: string | null;
+	created_by_name?: string | null;
+	accepted_by_user_id: string | null;
+	accepted_by_name?: string | null;
+	accepted_at: string | number | null;
+	revoked_at: string | number | null;
+	expires_at: string | number | null;
+	created_at: string | number;
+	updated_at: string | number;
 };
 
 type CharacterRow = {
@@ -190,6 +225,10 @@ function nowIso() {
 	return new Date().toISOString();
 }
 
+function nowDbTimestamp() {
+	return databaseDialect === 'sqlite' ? Date.now() : nowIso();
+}
+
 function requireUserId(userId: string | undefined) {
 	if (!userId) throw new Error('Unauthenticated');
 	return userId;
@@ -224,12 +263,16 @@ function emptyCompendium(): CompendiumContent {
 	};
 }
 
-async function getUserRow(userId: string): Promise<UserRow> {
+async function getUserRow(userId: string, options: { allowRestricted?: boolean } = {}): Promise<UserRow> {
 	const row = await queryOne<UserRow>(
-		'select id, name, email, image, is_admin, homebrew_vault from users where id = ?',
+		'select id, name, email, image, is_admin, invite_accepted_at, disabled_at, disabled_reason, banned_at, ban_reason, homebrew_vault from users where id = ?',
 		[userId]
 	);
 	if (!row) throw new Error('User not found');
+	if (!options.allowRestricted) {
+		if (row.banned_at) throw new Error('Account banned');
+		if (row.disabled_at) throw new Error('Account disabled');
+	}
 	return row;
 }
 
@@ -286,6 +329,7 @@ export async function getCurrentUser(userId: string | undefined) {
 		homebrew_count: Number(homebrewCount?.count ?? 0),
 		homebrew_vault: parseVault(user.homebrew_vault),
 		is_admin: isAdminValue(user.is_admin),
+		invite_accepted: Boolean(user.invite_accepted_at),
 		name: user.name,
 		email: user.email,
 		image: user.image
@@ -306,6 +350,319 @@ export async function getAdminAccess(userId: string | undefined) {
 			image: user.image
 		}
 	};
+}
+
+function adminUserStatus(row: Pick<UserRow, 'disabled_at' | 'banned_at'>) {
+	if (row.banned_at) return 'banned';
+	if (row.disabled_at) return 'disabled';
+	return 'active';
+}
+
+function parseAdminUserRow(row: AdminUserRow) {
+	return {
+		id: row.id,
+		name: row.name,
+		email: row.email,
+		image: row.image,
+		is_admin: isAdminValue(row.is_admin),
+		status: adminUserStatus(row),
+		invite_accepted_at: row.invite_accepted_at ?? null,
+		disabled_at: row.disabled_at ?? null,
+		disabled_reason: row.disabled_reason ?? null,
+		banned_at: row.banned_at ?? null,
+		ban_reason: row.ban_reason ?? null,
+		created_at: row.created_at,
+		updated_at: row.updated_at,
+		character_count: Number(row.character_count ?? 0),
+		campaign_count: Number(row.campaign_count ?? 0),
+		encounter_count: Number(row.encounter_count ?? 0),
+		homebrew_count: Number(row.homebrew_count ?? 0),
+		session_count: Number(row.session_count ?? 0)
+	};
+}
+
+export async function listAdminUsers(userId: string | undefined) {
+	await getAdminAccess(userId);
+	const rows = await queryRows<AdminUserRow>(
+		`select
+			users.id,
+			users.name,
+			users.email,
+			users.image,
+			users.is_admin,
+			users.invite_accepted_at,
+			users.disabled_at,
+			users.disabled_reason,
+			users.banned_at,
+			users.ban_reason,
+			users.homebrew_vault,
+			users.created_at,
+			users.updated_at,
+			(select count(*) from characters where characters.owner_user_id = users.id) as character_count,
+			(select count(*) from campaigns where cast(campaigns.members as text) like '%' || cast(users.id as text) || '%') as campaign_count,
+			(select count(*) from encounters where encounters.owner_user_id = users.id) as encounter_count,
+			(select count(*) from homebrew_items where homebrew_items.owner_user_id = users.id) as homebrew_count,
+			(select count(*) from sessions where sessions.user_id = users.id) as session_count
+		from users
+		order by coalesce(users.name, users.email), users.email`
+	);
+	return rows.map(parseAdminUserRow);
+}
+
+export async function getAdminUser(userId: string | undefined, targetUserId: string) {
+	await getAdminAccess(userId);
+	const row = await queryOne<AdminUserRow>(
+		`select
+			users.id,
+			users.name,
+			users.email,
+			users.image,
+			users.is_admin,
+			users.invite_accepted_at,
+			users.disabled_at,
+			users.disabled_reason,
+			users.banned_at,
+			users.ban_reason,
+			users.homebrew_vault,
+			users.created_at,
+			users.updated_at,
+			(select count(*) from characters where characters.owner_user_id = users.id) as character_count,
+			(select count(*) from campaigns where cast(campaigns.members as text) like '%' || cast(users.id as text) || '%') as campaign_count,
+			(select count(*) from encounters where encounters.owner_user_id = users.id) as encounter_count,
+			(select count(*) from homebrew_items where homebrew_items.owner_user_id = users.id) as homebrew_count,
+			(select count(*) from sessions where sessions.user_id = users.id) as session_count
+		from users
+		where users.id = ?`,
+		[targetUserId]
+	);
+	if (!row) throw new Error('User not found');
+	return parseAdminUserRow(row);
+}
+
+function nullableReason(value: unknown) {
+	if (typeof value !== 'string') return null;
+	const trimmed = value.trim();
+	return trimmed.length ? trimmed : null;
+}
+
+async function requireNotSelf(adminUserId: string | undefined, targetUserId: string) {
+	const id = requireUserId(adminUserId);
+	if (id === targetUserId) throw new Error('Admins cannot moderate their own account');
+	await getAdminAccess(id);
+	return id;
+}
+
+export async function setAdminUserDisabled(
+	userId: string | undefined,
+	targetUserId: string,
+	data: { disabled: boolean; reason?: string }
+) {
+	await requireNotSelf(userId, targetUserId);
+	const target = await getUserRow(targetUserId, { allowRestricted: true });
+	if (isAdminValue(target.is_admin) && data.disabled) {
+		throw new Error('Admin accounts cannot be disabled from this dashboard');
+	}
+	await execute(
+		'update users set disabled_at = ?, disabled_reason = ?, updated_at = ? where id = ?',
+		[
+			data.disabled ? nowDbTimestamp() : null,
+			data.disabled ? nullableReason(data.reason) : null,
+			nowDbTimestamp(),
+			targetUserId
+		]
+	);
+	if (data.disabled) await invalidateAdminUserSessions(userId, targetUserId);
+	return getAdminUser(userId, targetUserId);
+}
+
+export async function setAdminUserBanned(
+	userId: string | undefined,
+	targetUserId: string,
+	data: { banned: boolean; reason?: string }
+) {
+	await requireNotSelf(userId, targetUserId);
+	const target = await getUserRow(targetUserId, { allowRestricted: true });
+	if (isAdminValue(target.is_admin) && data.banned) {
+		throw new Error('Admin accounts cannot be banned from this dashboard');
+	}
+	await execute('update users set banned_at = ?, ban_reason = ?, updated_at = ? where id = ?', [
+		data.banned ? nowDbTimestamp() : null,
+		data.banned ? nullableReason(data.reason) : null,
+		nowDbTimestamp(),
+		targetUserId
+	]);
+	if (data.banned) await invalidateAdminUserSessions(userId, targetUserId);
+	return getAdminUser(userId, targetUserId);
+}
+
+export async function invalidateAdminUserSessions(userId: string | undefined, targetUserId: string) {
+	await requireNotSelf(userId, targetUserId);
+	await getUserRow(targetUserId, { allowRestricted: true });
+	await execute('delete from sessions where user_id = ?', [targetUserId]);
+	return getAdminUser(userId, targetUserId);
+}
+
+function parseInvitationRow(row: InvitationRow) {
+	const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : null;
+	return {
+		id: row.id,
+		invite_type: row.invite_type,
+		email: row.email,
+		invite_code: row.invite_code,
+		campaign_id: row.campaign_id,
+		campaign_name: row.campaign_name ?? (row.campaign ? parseJson<Campaign>(row.campaign).name : null),
+		created_by_user_id: row.created_by_user_id,
+		created_by_name: row.created_by_name ?? null,
+		accepted_by_user_id: row.accepted_by_user_id,
+		accepted_by_name: row.accepted_by_name ?? null,
+		accepted_at: row.accepted_at,
+		revoked_at: row.revoked_at,
+		expires_at: row.expires_at,
+		created_at: row.created_at,
+		updated_at: row.updated_at,
+		status: row.revoked_at
+			? 'revoked'
+			: row.accepted_at
+				? 'accepted'
+				: expiresAt && expiresAt < Date.now()
+					? 'expired'
+					: 'pending'
+	};
+}
+
+function adminInviteCode() {
+	return crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+}
+
+export async function listAdminInvitations(userId: string | undefined) {
+	await getAdminAccess(userId);
+	const rows = await queryRows<InvitationRow>(
+		`select
+			invitations.id,
+			invitations.invite_type,
+			invitations.email,
+			invitations.invite_code,
+			invitations.campaign_id,
+			invitations.created_by_user_id,
+			invitations.accepted_by_user_id,
+			invitations.accepted_at,
+			invitations.revoked_at,
+			invitations.expires_at,
+			invitations.created_at,
+			invitations.updated_at,
+			creator.name as created_by_name,
+			accepted_user.name as accepted_by_name,
+			campaigns.campaign as campaign
+		from invitations
+		left join users creator on creator.id = invitations.created_by_user_id
+		left join users accepted_user on accepted_user.id = invitations.accepted_by_user_id
+		left join campaigns on campaigns.id = invitations.campaign_id
+		order by invitations.created_at desc`
+	);
+	return rows.map(parseInvitationRow);
+}
+
+export async function createAdminInvitation(
+	userId: string | undefined,
+	data: { expires_in_hours?: number } = {}
+) {
+	const admin = await getAdminAccess(userId);
+	const expiresInHours = Number(data.expires_in_hours ?? 168);
+	if (!Number.isFinite(expiresInHours) || expiresInHours <= 0) {
+		throw new Error('Invite expiration is required');
+	}
+	const now = nowDbTimestamp();
+	const expiresAt =
+		databaseDialect === 'sqlite'
+			? Date.now() + expiresInHours * 60 * 60 * 1000
+			: new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+	await execute(
+		`insert into invitations (
+			id,
+			invite_type,
+			email,
+			invite_code,
+			created_by_user_id,
+			expires_at,
+			created_at,
+			updated_at
+		) values (?, ?, ?, ?, ?, ?, ?, ?)`,
+		[
+			newId(),
+			'admin',
+			null,
+			adminInviteCode(),
+			admin.user._id,
+			expiresAt,
+			now,
+			now
+		]
+	);
+	return listAdminInvitations(userId);
+}
+
+export async function resolveAccessInvitation(userId: string | undefined, inviteCode: string) {
+	const invitation = await queryOne<InvitationRow>(
+		`select
+			invitations.id,
+			invitations.invite_type,
+			invitations.email,
+			invitations.invite_code,
+			invitations.campaign_id,
+			invitations.created_by_user_id,
+			invitations.accepted_by_user_id,
+			invitations.accepted_at,
+			invitations.revoked_at,
+			invitations.expires_at,
+			invitations.created_at,
+			invitations.updated_at,
+			creator.name as created_by_name,
+			accepted_user.name as accepted_by_name,
+			campaigns.campaign as campaign
+		from invitations
+		left join users creator on creator.id = invitations.created_by_user_id
+		left join users accepted_user on accepted_user.id = invitations.accepted_by_user_id
+		left join campaigns on campaigns.id = invitations.campaign_id
+		where invitations.invite_type = 'admin' and invitations.invite_code = ?`,
+		[inviteCode]
+	);
+	if (!invitation) return null;
+	return parseInvitationRow(invitation);
+}
+
+export async function acceptAccessInvitation(userId: string | undefined, inviteCode: string) {
+	const id = requireUserId(userId);
+	await getUserRow(id);
+	const invitation = await queryOne<InvitationRow>(
+		`select * from invitations
+		where invite_type = 'admin' and invite_code = ?`,
+		[inviteCode]
+	);
+	if (!invitation) throw new Error('Invite not found');
+	const parsed = parseInvitationRow(invitation);
+	if (parsed.status !== 'pending') throw new Error('Invite is no longer available');
+
+	const now = nowDbTimestamp();
+	await execute(
+		'update invitations set accepted_by_user_id = ?, accepted_at = ?, updated_at = ? where id = ?',
+		[id, now, now, invitation.id]
+	);
+	await execute('update users set invite_accepted_at = ?, updated_at = ? where id = ?', [now, now, id]);
+	return resolveAccessInvitation(userId, inviteCode);
+}
+
+export async function revokeAdminInvitation(userId: string | undefined, invitationId: string) {
+	await getAdminAccess(userId);
+	const invitation = await queryOne<InvitationRow>('select * from invitations where id = ?', [invitationId]);
+	if (!invitation) throw new Error('Invite not found');
+	if (invitation.accepted_at) throw new Error('Accepted invites cannot be revoked');
+	const now = nowDbTimestamp();
+	await execute('update invitations set revoked_at = ?, updated_at = ? where id = ?', [
+		now,
+		now,
+		invitationId
+	]);
+	return listAdminInvitations(userId);
 }
 
 export async function listSources(userId: string | undefined) {
@@ -1710,6 +2067,7 @@ export async function resolveInvite(userId: string | undefined, code: string) {
 
 export async function joinCampaign(userId: string | undefined, code: string, displayName: string) {
 	const id = requireUserId(userId);
+	const user = await getUserRow(id);
 	const row = await queryOne<CampaignRow>(
 		'select id, invite_code, campaign, members, characters from campaigns where invite_code = ?',
 		[code]
@@ -1723,6 +2081,9 @@ export async function joinCampaign(userId: string | undefined, code: string, dis
 			nowIso(),
 			row.id
 		]);
+	}
+	if (!user.invite_accepted_at) {
+		await acceptCampaignInviteForUser(id, user.email, row.id, code);
 	}
 	return row.id;
 }

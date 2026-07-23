@@ -47,6 +47,11 @@ export const users = pgTable(
 		image: text('image'),
 		legacyClerkId: text('legacy_clerk_id').unique(),
 		isAdmin: boolean('is_admin').default(false).notNull(),
+		inviteAcceptedAt: timestamp('invite_accepted_at', { mode: 'date' }),
+		disabledAt: timestamp('disabled_at', { mode: 'date' }),
+		disabledReason: text('disabled_reason'),
+		bannedAt: timestamp('banned_at', { mode: 'date' }),
+		banReason: text('ban_reason'),
 		homebrewVault: jsonb('homebrew_vault')
 			.$type<CompendiumContentIds>()
 			.default(emptyHomebrewVaultSql)
@@ -136,6 +141,30 @@ export const userUnlockedSources = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		unlockedSourceKeys: jsonb('unlocked_source_keys').$type<SourceKey[]>().notNull()
 	}
+);
+
+export const invitations = pgTable(
+	'invitations',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		inviteType: text('invite_type').notNull(),
+		email: text('email'),
+		inviteCode: text('invite_code').notNull().unique(),
+		campaignId: uuid('campaign_id'),
+		createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+		acceptedByUserId: uuid('accepted_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+		acceptedAt: timestamp('accepted_at', { mode: 'date' }),
+		revokedAt: timestamp('revoked_at', { mode: 'date' }),
+		expiresAt: timestamp('expires_at', { mode: 'date' }),
+		createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+		updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull()
+	},
+	(table) => ({
+		emailIdx: index('invitations_email_idx').on(table.email),
+		inviteCodeIdx: index('invitations_invite_code_idx').on(table.inviteCode),
+		campaignIdIdx: index('invitations_campaign_id_idx').on(table.campaignId),
+		acceptedByUserIdIdx: index('invitations_accepted_by_user_id_idx').on(table.acceptedByUserId)
+	})
 );
 
 export const officialSources = pgTable('official_sources', {

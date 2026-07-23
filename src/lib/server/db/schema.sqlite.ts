@@ -46,6 +46,11 @@ export const users = sqliteTable(
 		image: text('image'),
 		legacyClerkId: text('legacy_clerk_id').unique(),
 		isAdmin: integer('is_admin', { mode: 'boolean' }).default(false).notNull(),
+		inviteAcceptedAt: integer('invite_accepted_at', { mode: 'timestamp_ms' }),
+		disabledAt: integer('disabled_at', { mode: 'timestamp_ms' }),
+		disabledReason: text('disabled_reason'),
+		bannedAt: integer('banned_at', { mode: 'timestamp_ms' }),
+		banReason: text('ban_reason'),
 		homebrewVault: text('homebrew_vault', { mode: 'json' })
 			.$type<CompendiumContentIds>()
 			.default(sql.raw(`'${emptyHomebrewVault}'`))
@@ -133,6 +138,30 @@ export const userUnlockedSources = sqliteTable('user_unlocked_sources', {
 		.references(() => users.id, { onDelete: 'cascade' }),
 	unlockedSourceKeys: text('unlocked_source_keys', { mode: 'json' }).$type<SourceKey[]>().notNull()
 });
+
+export const invitations = sqliteTable(
+	'invitations',
+	{
+		id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+		inviteType: text('invite_type').notNull(),
+		email: text('email'),
+		inviteCode: text('invite_code').notNull().unique(),
+		campaignId: text('campaign_id'),
+		createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+		acceptedByUserId: text('accepted_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+		acceptedAt: integer('accepted_at', { mode: 'timestamp_ms' }),
+		revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+		expiresAt: integer('expires_at', { mode: 'timestamp_ms' }),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowSql).notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(nowSql).notNull()
+	},
+	(table) => ({
+		emailIdx: index('invitations_email_idx').on(table.email),
+		inviteCodeIdx: uniqueIndex('invitations_invite_code_idx').on(table.inviteCode),
+		campaignIdIdx: index('invitations_campaign_id_idx').on(table.campaignId),
+		acceptedByUserIdIdx: index('invitations_accepted_by_user_id_idx').on(table.acceptedByUserId)
+	})
+);
 
 export const officialSources = sqliteTable('official_sources', {
 	sourceKey: text('source_key').primaryKey().$type<SourceKey>(),

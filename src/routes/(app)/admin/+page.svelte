@@ -40,8 +40,9 @@
 			<Users class="size-5 text-accent" />
 			<h2 class="mt-4 text-lg font-semibold text-foreground">Users</h2>
 			<p class="mt-2 text-sm text-muted-foreground">
-				Placeholder for account lookup, role management, and support workflows.
+				List accounts, review activity, disable access, ban users, and invalidate active sessions.
 			</p>
+			<Button href="/admin/users" size="sm" class="mt-4 w-fit">Open Users</Button>
 		</div>
 
 		<div class="border-border/70 bg-card/50 rounded-lg border p-5">

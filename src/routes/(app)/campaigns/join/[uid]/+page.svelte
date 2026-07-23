@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { signIn } from '@auth/sveltekit/client';
 	import { artCampaigns } from '$lib/assets/images';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
@@ -20,7 +21,8 @@
 		campaign_name: string;
 		is_member: boolean;
 	} | null>(
-		async () => (!userCtx.isLoading && inviteCode ? await getApi(`/invites/${inviteCode}`) : null)
+		async () =>
+			!userCtx.isLoading && userCtx.user && inviteCode ? await getApi(`/invites/${inviteCode}`) : null
 	);
 	const inviteStatus = $derived(inviteQuery.data ?? null);
 	const isLoading = $derived(userCtx.isLoading || inviteQuery.isLoading);
@@ -86,6 +88,24 @@
 	>
 		{#if isLoading || inviteStatus?.is_member}
 			<div></div>
+		{:else if !userCtx.user}
+			<div class="flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
+				<div class="flex flex-col items-center gap-2 text-center">
+					<h1 class="font-eveleth text-2xl">Join Campaign</h1>
+					<p class="max-w-md text-sm text-muted-foreground">
+						Sign in with Google to accept this campaign invite and create your Daggerlore account.
+					</p>
+				</div>
+				<div class="mx-auto w-full max-w-[420px] rounded-xl border bg-card p-6 text-center shadow-lg">
+					<Button
+						type="button"
+						class="w-full"
+						onclick={() => signIn('google', { redirectTo: page.url.pathname })}
+					>
+						Sign In to Accept Invite
+					</Button>
+				</div>
+			</div>
 		{:else if loadError || !inviteStatus}
 			<LoadError />
 		{:else}

@@ -33,7 +33,12 @@ function notFound() {
 
 async function handleError(error: unknown) {
 	const message = error instanceof Error ? error.message : 'Request failed';
-	const status = message === 'Unauthenticated' ? 401 : message === 'Not authorized' ? 403 : 400;
+	const status =
+		message === 'Unauthenticated'
+			? 401
+			: message === 'Not authorized' || message === 'Account disabled' || message === 'Account banned'
+				? 403
+				: 400;
 	return text(message, { status });
 }
 
@@ -103,6 +108,15 @@ export async function GET(event) {
 				})
 			);
 		}
+		if (parts[0] === 'admin' && parts[1] === 'users' && parts.length === 2) {
+			return ok(await repo.listAdminUsers(uid));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'invitations' && parts.length === 2) {
+			return ok(await repo.listAdminInvitations(uid));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'users' && parts[2]) {
+			return ok(await repo.getAdminUser(uid, parts[2]));
+		}
 		if (parts[0] === 'characters' && parts.length === 1) return ok(await repo.listCharacters(uid));
 		if (parts[0] === 'characters' && parts[2] === 'scope') {
 			return ok(await repo.getCharacterCompendiumScope(uid, parts[1]));
@@ -121,6 +135,9 @@ export async function GET(event) {
 		}
 		if (parts[0] === 'campaigns' && parts[1]) return ok(await repo.getCampaignAccess(uid, parts[1]));
 		if (parts[0] === 'invites' && parts[1]) return ok(await repo.resolveInvite(uid, parts[1]));
+		if (parts[0] === 'access-invites' && parts[1]) {
+			return ok(await repo.resolveAccessInvitation(uid, parts[1]));
+		}
 		if (parts[0] === 'stream' && parts[1] && parts[2] === 'events') {
 			return new Response(eventStream(`stream:${parts[1]}`), {
 				headers: {
@@ -164,6 +181,9 @@ export async function POST(event) {
 			const data = await body<{ displayName: string }>(event);
 			return ok({ id: await repo.joinCampaign(uid, parts[1], data.displayName) });
 		}
+		if (parts[0] === 'access-invites' && parts[1] && parts[2] === 'accept') {
+			return ok(await repo.acceptAccessInvitation(uid, parts[1]));
+		}
 		if (parts[0] === 'campaigns' && parts[2] === 'invite-code') {
 			return ok({ inviteCode: await repo.rotateInviteCode(uid, parts[1]) });
 		}
@@ -183,6 +203,9 @@ export async function POST(event) {
 		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'sources') {
 			await repo.createAdminOfficialSource(uid, await body(event));
 			return noContent();
+		}
+		if (parts[0] === 'admin' && parts[1] === 'invitations') {
+			return ok(await repo.createAdminInvitation(uid, await body(event)));
 		}
 
 		return notFound();
@@ -245,6 +268,15 @@ export async function PATCH(event) {
 			await repo.updateAdminOfficialSource(uid, await body(event));
 			return noContent();
 		}
+		if (parts[0] === 'admin' && parts[1] === 'users' && parts[2] && parts[3] === 'disabled') {
+			return ok(await repo.setAdminUserDisabled(uid, parts[2], await body(event)));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'users' && parts[2] && parts[3] === 'ban') {
+			return ok(await repo.setAdminUserBanned(uid, parts[2], await body(event)));
+		}
+		if (parts[0] === 'admin' && parts[1] === 'users' && parts[2] && parts[3] === 'invalidate') {
+			return ok(await repo.invalidateAdminUserSessions(uid, parts[2]));
+		}
 		if (parts[0] === 'campaigns' && parts[1]) {
 			await repo.updateCampaign(uid, parts[1], await body(event));
 			return noContent();
@@ -284,6 +316,9 @@ export async function DELETE(event) {
 		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'items') {
 			await repo.deleteAdminCompendiumItem(uid, await body(event));
 			return noContent();
+		}
+		if (parts[0] === 'admin' && parts[1] === 'invitations' && parts[2]) {
+			return ok(await repo.revokeAdminInvitation(uid, parts[2]));
 		}
 
 		return notFound();

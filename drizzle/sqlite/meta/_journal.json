@@ -36,6 +36,20 @@
       "when": 1784487200000,
       "tag": "0004_compendium_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1784560000000,
+      "tag": "0005_user_moderation",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1784563600000,
+      "tag": "0006_invite_only",
+      "breakpoints": true
     }
   ]
 }

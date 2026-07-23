@@ -14,6 +14,7 @@ type AppUser = {
 	character_count: number;
 	homebrew_count: number;
 	is_admin: boolean;
+	invite_accepted: boolean;
 	homebrew_vault: ReturnType<typeof createEmptyCompendiumContentIds>;
 	name?: string | null;
 	email?: string | null;
@@ -35,6 +36,7 @@ function userContext() {
 					character_count: 0,
 					homebrew_count: 0,
 					is_admin: false,
+					invite_accepted: false,
 					homebrew_vault: createEmptyCompendiumContentIds(),
 					name: sessionUser.name,
 					email: sessionUser.email,

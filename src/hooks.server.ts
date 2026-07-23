@@ -5,6 +5,7 @@ import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { dev } from '$app/environment';
 import { handle as authHandle } from './auth';
+import { ensureInviteAccessForRequest } from '$lib/server/app/invite-access';
 
 const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 	if (building) {
@@ -24,6 +25,16 @@ const maintenanceModeHandle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+const inviteOnlyHandle: Handle = async ({ event, resolve }) => {
+	if (building) {
+		return resolve(event);
+	}
+
+	const session = await event.locals.auth();
+	await ensureInviteAccessForRequest(session?.user?.id, event.url.pathname);
+	return resolve(event);
+};
+
 const sentryCloudflareHandle = Sentry.initCloudflareSentryHandle({
 	dsn: '',
 	tracesSampleRate: 1.0,
@@ -35,6 +46,7 @@ export const handle = sequence(
 	sentryCloudflareHandle,
 	Sentry.sentryHandle(),
 	authHandle,
-	maintenanceModeHandle
+	maintenanceModeHandle,
+	inviteOnlyHandle
 );
 export const handleError = Sentry.handleErrorWithSentry();

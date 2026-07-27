@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CharacterSheet from '$lib/components/character-sheet/character-sheet.svelte';
+	import CompendiumUpdatesDialog from '$lib/components/character-sheet/compendium-updates-dialog.svelte';
 	import SheetTheme from '$lib/components/character-sheet/sheet-theme.svelte';
 	import { CHARACTER_SHEET_BACKGROUNDS } from '$lib/constants/themes';
 	import CampaignInfo from '$lib/components/character-sheet/campaign/campaign-section.svelte';
@@ -29,6 +30,7 @@
 
 <SheetTheme id={theme_id}>
 	<DiceRoller />
+	<CompendiumUpdatesDialog />
 	<DiceRecents bind:showDiceLog />
 	<DiceLogSheet
 		bind:open={showDiceLog}

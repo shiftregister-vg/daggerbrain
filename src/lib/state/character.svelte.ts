@@ -1,5 +1,9 @@
 import type { Id } from '@domain/ids';
-import type { Character, CharacterCompendiumScope } from '@domain/schemas/characters';
+import type {
+	Character,
+	CharacterCompendiumScope,
+	OfficialItemVersions
+} from '@domain/schemas/characters';
 import type { CompendiumContent } from '@domain/schemas/compendium';
 import type { SourceKey } from '@domain/schemas/rules';
 import type { SourceMetadata } from '@domain/schemas/sources';
@@ -34,12 +38,14 @@ function sourceQuery(sourceKeys: SourceKey[]) {
 	return query ? `?${query}` : '';
 }
 
-function sourceVersionQuery(sourceKeys: SourceKey[], sourceVersions: Partial<Record<SourceKey, number>>) {
+function itemVersionQuery(sourceKeys: SourceKey[], itemVersions: OfficialItemVersions) {
 	const params = new URLSearchParams();
-	for (const sourceKey of sourceKeys) {
-		params.append('source_key', sourceKey);
-		const version = sourceVersions[sourceKey];
-		if (version) params.append('source_version', `${sourceKey}:${version}`);
+	for (const sourceKey of sourceKeys) params.append('source_key', sourceKey);
+	for (const [key, version] of Object.entries(itemVersions)) {
+		const [sourceKey, itemType, itemId] = key.split(':');
+		if (!sourceKey || !itemType || !itemId) continue;
+		if (!sourceKeys.includes(sourceKey as SourceKey)) continue;
+		params.append('item_version', `${key}:${version}`);
 	}
 	const query = params.toString();
 	return query ? `?${query}` : '';
@@ -76,6 +82,7 @@ function createCharacter() {
 		() => compendiumScope?.campaign_source_keys ?? null
 	);
 	const pinnedSourceVersions = $derived.by(() => compendiumScope?.source_versions ?? {});
+	const pinnedItemVersions = $derived.by(() => compendiumScope?.official_item_versions ?? {});
 	const sourceKeySignature = $derived(sourceKeys.join('|'));
 	const officialSourcesQuery = createApiResource<SourceMetadata[]>(async () => {
 		if (!activeCharacterId || sourceKeys.length === 0) return [];
@@ -99,12 +106,18 @@ function createCharacter() {
 	const enabledOfficialSourceVersionSignature = $derived(
 		enabledOfficialSourceKeys.map((sourceKey) => `${sourceKey}:${pinnedSourceVersions[sourceKey] ?? ''}`).join('|')
 	);
+	const enabledOfficialItemVersionSignature = $derived(
+		Object.entries(pinnedItemVersions)
+			.sort(([left], [right]) => left.localeCompare(right))
+			.map(([key, version]) => `${key}:${version}`)
+			.join('|')
+	);
 	const officialCompendiumQuery = createApiResource<CompendiumContent>(async () => {
 		if (!activeCharacterId || enabledOfficialSourceKeys.length === 0) {
 			return merge_compendium_content();
 		}
 		return await getApi<CompendiumContent>(
-			`/official-compendium${sourceVersionQuery(enabledOfficialSourceKeys, pinnedSourceVersions)}`
+			`/official-compendium${itemVersionQuery(enabledOfficialSourceKeys, pinnedItemVersions)}`
 		);
 	});
 	const ownerHomebrewVaultState = createVaultCompendiumSubscription({
@@ -247,6 +260,7 @@ function createCharacter() {
 	$effect(() => {
 		enabledOfficialSourceKeySignature;
 		enabledOfficialSourceVersionSignature;
+		enabledOfficialItemVersionSignature;
 		untrack(() => void officialCompendiumQuery.refresh());
 	});
 
@@ -520,6 +534,10 @@ function createCharacter() {
 		character.scars -= 1;
 	}
 
+	async function refreshCompendiumState() {
+		await Promise.all([characterQuery.refresh(), compendiumScopeQuery.refresh()]);
+	}
+
 	return {
 		get id() {
 			return id;
@@ -562,6 +580,7 @@ function createCharacter() {
 		getSourceByKey(sourceKey: SourceKey) {
 			return sources.find((source) => source.source_key === sourceKey);
 		},
+		refreshCompendiumState,
 		addToInventory,
 		removeFromInventory,
 		equipItem,

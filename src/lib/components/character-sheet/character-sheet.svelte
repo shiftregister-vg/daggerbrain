@@ -4,8 +4,7 @@
 	import { getCharacterContext } from '$lib/state/character.svelte';
 
 	// character sheet components
-	import Loadout from './cards/loadout.svelte';
-	import CharacterCards from './cards/character-cards.svelte';
+	import CardTabletop from './cards/card-tabletop.svelte';
 	import CharacterFeatures from './features/character-features.svelte';
 	import HopeFeature from './features/hope-feature.svelte';
 	import Slideover, { type SlideoverContent } from './slideover/slideover-sheet.svelte';
@@ -162,6 +161,24 @@
 		};
 	});
 
+	const spellcast_trait_highlights: Partial<Record<TraitId, boolean>> = $derived.by(() => {
+		const primary_spellcast_trait =
+			derived_character_data?.primary_subclass?.spellcast_trait ??
+			derived_character_data?.primary_class?.spellcast_trait;
+		const secondary_spellcast_trait =
+			derived_character_data?.secondary_subclass?.spellcast_trait ??
+			derived_character_data?.secondary_class?.spellcast_trait;
+
+		return {
+			agility: primary_spellcast_trait === 'agility' || secondary_spellcast_trait === 'agility',
+			strength: primary_spellcast_trait === 'strength' || secondary_spellcast_trait === 'strength',
+			finesse: primary_spellcast_trait === 'finesse' || secondary_spellcast_trait === 'finesse',
+			instinct: primary_spellcast_trait === 'instinct' || secondary_spellcast_trait === 'instinct',
+			presence: primary_spellcast_trait === 'presence' || secondary_spellcast_trait === 'presence',
+			knowledge: primary_spellcast_trait === 'knowledge' || secondary_spellcast_trait === 'knowledge'
+		};
+	});
+
 	const evasion_highlighted = $derived(
 		derived_character_data &&
 			derived_character_data.derived_beastform &&
@@ -307,7 +324,7 @@
 		<!-- layout grid -->
 		<div
 			class={cn(
-				'layout-grid mx-auto grid max-w-6xl gap-4 pt-3 sm:px-4',
+				'layout-grid mx-auto grid max-w-6xl gap-4 pt-3 sm:max-w-[74rem] sm:px-4',
 				hasConditions && 'md:-mt-6'
 			)}
 		>
@@ -394,7 +411,11 @@
 
 			<!-- traits -->
 			<div style="grid-area: traits" class="grow pt-4">
-				<Traits traits={derived_character_data.traits} highlights={trait_highlights} />
+				<Traits
+					traits={derived_character_data.traits}
+					highlights={trait_highlights}
+					spellcastTraits={spellcast_trait_highlights}
+				/>
 			</div>
 
 			<!-- experiences -->
@@ -448,12 +469,8 @@
 		</div>
 
 		<!-- bottom section: cards -->
-		<div class="flex flex-col gap-6 pt-8 pb-24">
-			<!-- Character cards -->
-			<CharacterCards {openHeritageCardCatalog} />
-
-			<!-- domain card loadout -->
-			<Loadout {openDomainCardCatalog} />
+		<div class="flex flex-col gap-5 pt-5 pb-24 sm:px-4">
+			<CardTabletop {openHeritageCardCatalog} {openDomainCardCatalog} />
 		</div>
 	</div>
 

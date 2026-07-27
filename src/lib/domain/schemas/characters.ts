@@ -160,6 +160,14 @@ const CharacterQuestionAnswerSchema = z.object({
 	answer: z.string()
 });
 
+export const CharacterCardLayoutSchema = z.object({
+	version: z.literal(1),
+	loose_card_keys: z.array(z.string().trim().min(1)),
+	tabletop_order: z.array(z.string().trim().min(1)).optional(),
+	view_mode: z.enum(['cards', 'summary']).optional()
+});
+export type CharacterCardLayout = z.infer<typeof CharacterCardLayoutSchema>;
+
 // ============================================================================
 // Character Schema (full character model)
 // ============================================================================
@@ -275,6 +283,7 @@ export const CharacterSchema = z.object({
 	sheet_addon_resources: z.record(z.string(), z.number().int().min(0)).optional(),
 	card_choices: z.record(z.string(), CardChoicesSchema), // only for cards (inventory and other compendium choices are stored elsewhere)
 	card_tokens: z.record(z.string(), z.number().int().min(0)),
+	card_layout: CharacterCardLayoutSchema.optional(),
 	feature_choices: z.record(z.string(), z.array(z.string())), // used by specific feature flags
 	unarmed_attack_choices: z.record(z.string(), z.array(z.string())),
 	mixed_ancestry_choices: z.record(

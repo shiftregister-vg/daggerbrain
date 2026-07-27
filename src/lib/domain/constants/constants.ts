@@ -125,6 +125,7 @@ export const CHARACTER_DEFAULTS: Character = {
 	// ephemeral stats set by the player
 	card_choices: {},
 	card_tokens: {},
+	card_layout: undefined,
 	mixed_ancestry_choices: {},
 	feature_choices: {},
 	unarmed_attack_choices: {},

@@ -3,7 +3,6 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { getCharacterContext } from '$lib/state/character.svelte';
 	import { getLocalstorageContext } from '$lib/state/localstorage.svelte';
-	import ClassFeatures from './tabs/class-features/class-features.svelte';
 	import Inventory from './tabs/inventory.svelte';
 	import ActiveEquipment from './tabs/active-equipment.svelte';
 	import Background from './tabs/background.svelte';
@@ -44,7 +43,6 @@
 
 	type TabValue =
 		| 'weapons'
-		| 'features'
 		| 'inventory'
 		| 'background'
 		| 'notes'
@@ -52,11 +50,27 @@
 		| 'companion'
 		| 'addons';
 	const fallbackTab: TabValue = 'weapons';
-	let tab = $state<TabValue>(
-		characterCtx.id
-			? (localstorageCtx.app_preferences.character_feature_tab[characterCtx.id] ?? fallbackTab)
-			: fallbackTab
-	);
+
+	function isTabValue(value: string | undefined): value is TabValue {
+		return (
+			value === 'weapons' ||
+			value === 'inventory' ||
+			value === 'background' ||
+			value === 'notes' ||
+			value === 'beastform' ||
+			value === 'companion' ||
+			value === 'addons'
+		);
+	}
+
+	function initialTab(): TabValue {
+		const persistedTab = characterCtx.id
+			? localstorageCtx.app_preferences.character_feature_tab[characterCtx.id]
+			: undefined;
+		return isTabValue(persistedTab) ? persistedTab : fallbackTab;
+	}
+
+	let tab = $state<TabValue>(initialTab());
 
 	const hasSheetAddons = $derived.by(() => {
 		const compendium = characterCtx.character_compendium;
@@ -69,7 +83,6 @@
 
 	const availableTabs = $derived.by<TabValue[]>(() => [
 		'weapons',
-		'features',
 		...(hasSheetAddons ? ['addons' as const] : []),
 		...(derived_character_data?.hasBeastformClassFeature ? ['beastform' as const] : []),
 		...(derived_character_data?.hasCompanionSubclassFeature ? ['companion' as const] : []),
@@ -106,7 +119,6 @@
 	<div class={cn('relative z-11 grid h-full grid-rows-[auto_1fr]')}>
 		<Tabs.List class="-mt-2 flex h-auto w-full flex-wrap gap-y-1 rounded-none p-2">
 			<Tabs.Trigger value="weapons" class="h-auto flex-initial">Weapons & Armor</Tabs.Trigger>
-			<Tabs.Trigger value="features" class="h-auto flex-initial">Features</Tabs.Trigger>
 			{#if hasSheetAddons}
 				<Tabs.Trigger value="addons" class="h-auto flex-initial">Add-ons</Tabs.Trigger>
 			{/if}
@@ -126,9 +138,6 @@
 				<div class="pt-2">
 					<Tabs.Content value="weapons">
 						<ActiveEquipment {onItemClick} onBeastformClick={handleBeastformClick} />
-					</Tabs.Content>
-					<Tabs.Content value="features" class="px-4">
-						<ClassFeatures />
 					</Tabs.Content>
 					{#if hasSheetAddons}
 						<Tabs.Content value="addons" class="px-4">

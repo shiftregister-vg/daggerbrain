@@ -1010,5 +1010,4 @@
 		outline-offset: 4px;
 		background-color: hsl(var(--primary) / 0.14);
 	}
-
 </style>

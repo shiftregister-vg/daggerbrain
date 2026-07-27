@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/button/button.svelte';
+	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { getCampaignContext } from '$lib/state/campaign.svelte';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -37,18 +37,23 @@
 				class="relative mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4"
 			>
 				<div class="flex items-center gap-2 truncate">
-					<Button
+					<a
 						href="/campaigns"
-						variant="link"
-						class="hidden px-0 text-muted-foreground sm:flex"
+						class={cn(
+							buttonVariants({ variant: 'link' }),
+							'hidden px-0 text-muted-foreground sm:flex'
+						)}
 					>
 						Campaigns
-					</Button>
+					</a>
 					<ChevronRight class="hidden size-3.5 text-muted-foreground sm:block" />
 
-					<Button href="/campaigns" variant="ghost" size="icon" class="shrink-0 sm:hidden">
+					<a
+						href="/campaigns"
+						class={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'shrink-0 sm:hidden')}
+					>
 						<ChevronLeft class="shrink-0" />
-					</Button>
+					</a>
 
 					{#if isGM && editingName}
 						<Input
@@ -59,44 +64,46 @@
 							placeholder="Campaign name"
 						/>
 					{:else}
-						<Button
-							variant="ghost"
+						<button
+							type="button"
 							onclick={() => (editingName = true)}
-							class={cn('-ml-2 truncate px-2', !isGM && 'pointer-events-none')}
+							class={cn(
+								buttonVariants({ variant: 'ghost' }),
+								'-ml-2 truncate px-2',
+								!isGM && 'pointer-events-none'
+							)}
 						>
 							<span class="truncate">{campaign.name || 'Unnamed Campaign'}</span>
-						</Button>
+						</button>
 					{/if}
 				</div>
 
 				<div class="flex shrink-0 items-center gap-2">
 					{#if isGM}
-						<Button
-							variant="outline"
-							size="sm"
-							class="h-7"
+						<button
+							type="button"
+							class={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-7')}
 							title="Stream Overlay"
 							onclick={onStreamSettingsClick}
 						>
 							<TvMinimalPlay class="size-3.5" />
-							<p class="hidden sm:block">Stream Overlay</p>
-						</Button>
+							<span class="hidden sm:block">Stream Overlay</span>
+						</button>
 					{/if}
 
-					<Button
-						variant="outline"
-						size="sm"
-						class="h-7"
+					<button
+						type="button"
+						class={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-7')}
 						onclick={isGM ? onSettingsClick : onPlayerSettingsClick}
 					>
 						<Settings class="size-3.5" />
-						<p class="hidden sm:block">Settings</p>
-					</Button>
+						<span class="hidden sm:block">Settings</span>
+					</button>
 
-					<Button size="sm" href={`/campaigns/${campaignId}/live`}>
-						<p>Launch</p>
+					<a href={`/campaigns/${campaignId}/live`} class={buttonVariants({ size: 'sm' })}>
+						<span>Launch</span>
 						<Play class="size-3.5" />
-					</Button>
+					</a>
 				</div>
 			</div>
 		</div>

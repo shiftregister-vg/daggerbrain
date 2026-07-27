@@ -7,8 +7,14 @@
 	let {
 		class: className = '',
 		traits,
-		highlights
-	}: { class?: string; traits: Traits; highlights?: Record<TraitId, boolean> } = $props();
+		highlights,
+		spellcastTraits
+	}: {
+		class?: string;
+		traits: Traits;
+		highlights?: Record<TraitId, boolean>;
+		spellcastTraits?: Partial<Record<TraitId, boolean>>;
+	} = $props();
 
 	const diceCtx = getDiceContext();
 	const LONG_PRESS_DELAY_MS = 500;
@@ -69,9 +75,15 @@
 
 {#snippet trait(trait: keyof Traits)}
 	{@const traitValue = traits[trait] ?? 0}
+	{@const isHighlighted = highlights && highlights[trait]}
+	{@const isSpellcast = spellcastTraits && spellcastTraits[trait]}
 	<div class="mx-auto w-min">
 		<button
-			class="group relative select-none"
+			class={cn(
+				'group relative select-none rounded-md',
+				isSpellcast &&
+					'trait-spellcast drop-shadow-[0_0_12px_hsl(var(--accent)/0.45)] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+			)}
 			onclick={() => rollTrait(trait)}
 			oncontextmenu={(event) => openTraitPicker(event, trait)}
 			onpointerdown={(event) => onpointerdown(event, trait)}
@@ -80,26 +92,24 @@
 			{onpointerleave}
 		>
 			<svg
-				class={cn('size-22 text-primary', highlights && highlights[trait] && 'text-accent')}
+				class={cn(
+					'size-22 text-primary',
+					isHighlighted && 'text-accent',
+					isSpellcast && 'text-accent'
+				)}
 				xmlns="http://www.w3.org/2000/svg"
 				viewBox="-9.199 3.544 58.968 48.466"
 			>
 				<path
 					d="M 1.486 35.836 L -1.716 32.453 L -1.716 25.907 L 1.385 29.381"
 					fill="currentColor"
-					class={cn(
-						'group-hover:brightness-150',
-						highlights && highlights[trait] && 'group-hover:brightness-150'
-					)}
+					class="group-hover:brightness-150"
 					style="stroke-width: 0.1;"
 				/>
 				<path
 					d="M 41.922 32.248 L 38.74 35.598 L 38.726 29.523 L 41.922 26.001"
 					fill="currentColor"
-					class={cn(
-						'group-hover:brightness-150',
-						highlights && highlights[trait] && 'group-hover:brightness-150'
-					)}
+					class="group-hover:brightness-150"
 					style="stroke-width: 0.1;"
 				/>
 				<path
@@ -110,10 +120,7 @@
 				<path
 					d="M 42.365 5.1 L -2.156 5.1 L -2.156 26.385 L -1.903 26.67 L 0.709 29.604 L 0.709 44.563 L 0.709 45.274 L 1.381 45.507 L 19.747 51.893 L 20.084 52.01 L 20.419 51.888 L 38.844 45.147 L 39.5 44.907 L 39.5 44.208 L 39.5 29.795 L 42.117 26.806 L 42.365 26.523 L 42.365 26.147 L 42.365 6.1 L 42.365 5.1 Z M 41.365 6.1 L 41.365 26.147 L 38.5 29.42 L 38.5 44.208 L 20.076 50.948 L 1.709 44.563 L 1.709 29.224 L -1.156 26.006 L -1.156 6.1"
 					fill="currentColor"
-					class={cn(
-						'group-hover:brightness-150',
-						highlights && highlights[trait] && 'group-hover:brightness-150'
-					)}
+					class="group-hover:brightness-150"
 					style="stroke-width: 0.1;"
 				/>
 				<path
@@ -172,7 +179,8 @@
 			<p
 				class={cn(
 					'absolute top-[9px] left-1/2 -translate-x-1/2 text-[11px] leading-none font-medium text-primary-foreground uppercase',
-					highlights && highlights[trait] && 'font-bold text-accent-muted'
+					isHighlighted && 'font-bold text-accent-muted',
+					isSpellcast && 'font-bold text-background'
 				)}
 			>
 				{TRAITS[trait].name}
@@ -181,11 +189,20 @@
 			<p
 				class={cn(
 					'absolute top-7.5 left-1/2 -translate-x-1/2 text-2xl font-bold group-hover:brightness-150',
-					highlights && highlights[trait] && 'text-accent group-hover:brightness-150'
+					isHighlighted && 'text-accent group-hover:brightness-150',
+					isSpellcast && 'text-accent-foreground drop-shadow-[0_1px_2px_hsl(var(--background))]'
 				)}
 			>
 				{traitValue !== null && traitValue > 0 ? '+' + traitValue : traitValue}
 			</p>
+
+			{#if isSpellcast}
+				<p
+					class="absolute -top-1 left-1/2 -translate-x-1/2 rounded-full border border-accent/70 bg-background px-2 py-0.5 text-[8px] leading-none font-bold tracking-wide text-accent uppercase shadow-md shadow-background/40"
+				>
+					Spellcast
+				</p>
+			{/if}
 		</button>
 
 		<div class="-mt-1.5 text-center text-[10px] text-muted-foreground italic select-none">
@@ -208,3 +225,16 @@
 		{@render trait('knowledge')}
 	</div>
 </div>
+
+<style>
+	.trait-spellcast::before {
+		content: '';
+		position: absolute;
+		inset: 9px 6px auto;
+		height: 10px;
+		border-radius: 999px;
+		background: hsl(var(--accent));
+		opacity: 0.9;
+		pointer-events: none;
+	}
+</style>

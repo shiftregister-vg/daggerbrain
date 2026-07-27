@@ -32,6 +32,24 @@
 	const backgroundEntries = Object.entries(CHARACTER_SHEET_BACKGROUNDS) as Array<
 		[string, SheetBackground]
 	>;
+	const textSizeOptions = [
+		{
+			value: 'normal',
+			title: 'Normal',
+			description: 'Default text sizing for the character sheet.'
+		},
+		{
+			value: 'large',
+			title: 'Large',
+			description: 'Increases sheet body text for easier reading.'
+		},
+		{
+			value: 'extra_large',
+			title: 'Extra Large',
+			description: 'Largest sheet body text for higher readability.'
+		}
+	] as const;
+	type SheetTextSize = (typeof textSizeOptions)[number]['value'];
 	let isExportingPdf = $state(false);
 
 	async function downloadOfficialPdf() {
@@ -51,24 +69,25 @@
 		}
 	}
 
-	function setTheme(themeId?: string) {
+	function setSheetAppearance(next: {
+		theme_id?: string;
+		background_id?: string;
+		text_size?: SheetTextSize;
+	}) {
 		if (!character) return;
 
-		if (!themeId) {
-			if (character.sheet_appearance?.background_id) {
-				character.sheet_appearance = {
-					background_id: character.sheet_appearance.background_id
-				};
-			} else {
-				character.sheet_appearance = undefined;
-			}
-			return;
-		}
+		const sheet_appearance = Object.fromEntries(
+			Object.entries(next).filter(([, value]) => Boolean(value) && value !== 'normal')
+		);
 
-		character.sheet_appearance = {
-			...character.sheet_appearance,
+		character.sheet_appearance = Object.keys(sheet_appearance).length ? sheet_appearance : undefined;
+	}
+
+	function setTheme(themeId?: string) {
+		setSheetAppearance({
+			...character?.sheet_appearance,
 			theme_id: themeId
-		};
+		});
 	}
 
 	function getThemePreviewStyle(theme: Theme) {
@@ -105,24 +124,29 @@
 		);
 	}
 
+	function setTextSize(textSize: SheetTextSize) {
+		setSheetAppearance({
+			...character?.sheet_appearance,
+			text_size: textSize
+		});
+	}
+
+	function getSelectedTextSize() {
+		return character?.sheet_appearance?.text_size ?? 'normal';
+	}
+
+	function getSelectedTextSizeTitle() {
+		const selectedTextSize = getSelectedTextSize();
+		return (
+			textSizeOptions.find((option) => option.value === selectedTextSize)?.title ?? selectedTextSize
+		);
+	}
+
 	function setBackground(backgroundId?: string) {
-		if (!character) return;
-
-		if (!backgroundId) {
-			if (character.sheet_appearance?.theme_id) {
-				character.sheet_appearance = {
-					theme_id: character.sheet_appearance.theme_id
-				};
-			} else {
-				character.sheet_appearance = undefined;
-			}
-			return;
-		}
-
-		character.sheet_appearance = {
-			...character.sheet_appearance,
+		setSheetAppearance({
+			...character?.sheet_appearance,
 			background_id: backgroundId
-		};
+		});
 	}
 
 	function getSelectedBackgroundTitle() {
@@ -222,6 +246,40 @@
 				{/if}
 			</Button>
 		</div>
+
+		<section class="flex flex-col gap-4">
+			<Dropdown title="Readability" subtitle={`Text size: ${getSelectedTextSizeTitle()}`} class="border">
+				<div class="grid gap-2">
+					{#each textSizeOptions as option}
+						<button
+							type="button"
+							class={cn(
+								'flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-left ring-primary transition-colors hover:border-primary hover:ring-2',
+								getSelectedTextSize() === option.value
+									? 'border-primary bg-primary-muted/50 ring-2'
+									: 'border-border'
+							)}
+							onclick={() => setTextSize(option.value)}
+						>
+							<div>
+								<p class="text-sm font-semibold">{option.title}</p>
+								<p class="text-xs text-muted-foreground">{option.description}</p>
+							</div>
+							<p
+								class={cn(
+									'rounded border border-border bg-card px-2 py-1 font-medium text-card-foreground',
+									option.value === 'normal' && 'text-xs',
+									option.value === 'large' && 'text-sm',
+									option.value === 'extra_large' && 'text-base'
+								)}
+							>
+								Aa
+							</p>
+						</button>
+					{/each}
+				</div>
+			</Dropdown>
+		</section>
 
 		<section class="flex flex-col gap-4">
 			<Dropdown title="Theme" subtitle={getSelectedThemeTitle()} class="border">

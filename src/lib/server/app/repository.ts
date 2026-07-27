@@ -2471,7 +2471,28 @@ export async function getHomebrewAccess<T extends HomebrewTable>(
 		[itemId]
 	);
 	if (!row) return null;
-	if (row.owner_user_id !== id) return null;
+	if (row.owner_user_id !== id) {
+		const campaigns = await queryRows<CampaignRow>(
+			'select id, invite_code, campaign, members, characters from campaigns order by updated_at desc'
+		);
+		const canReadFromCampaignVault = campaigns.some((campaignRow) => {
+			const members = parseJson<CampaignMember[]>(campaignRow.members);
+			if (!members.some((member) => member.clerk_id === id)) return false;
+
+			const campaign = parseJson<Campaign>(campaignRow.campaign);
+			const vault = normalizeCompendiumContentIds(campaign.homebrew_vault);
+			return (vault[row.type] as readonly string[]).includes(itemId);
+		});
+
+		if (!canReadFromCampaignVault) return null;
+
+		return {
+			item: parseJson<HomebrewItem<T>>(row.item),
+			canEdit: false,
+			isOwner: false
+		};
+	}
+
 	return {
 		item: parseJson<HomebrewItem<T>>(row.item),
 		canEdit: true,

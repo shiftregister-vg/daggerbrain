@@ -63,6 +63,12 @@ function getAllVaultIds(vault: CompendiumContentIds): string[] {
 	return ids;
 }
 
+function vaultSignature(vault: CompendiumContentIds | null): string {
+	if (!vault) return '';
+
+	return VAULT_KEYS.map((key) => `${key}:${vault[key].join(',')}`).join('|');
+}
+
 export function hasAnyVaultItems(vault: CompendiumContentIds | null | undefined): boolean {
 	if (!vault) return false;
 
@@ -116,6 +122,11 @@ export function createVaultCompendiumSubscription(options: {
 	}
 
 	$effect(() => {
+		const prereqLoading = options.getPrereqLoading?.() ?? false;
+		const signature = vaultSignature(options.getVault());
+		if (prereqLoading) return;
+		signature;
+
 		untrack(() => void refresh());
 	});
 

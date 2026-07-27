@@ -180,7 +180,8 @@ export const CharacterSchema = z.object({
 	sheet_appearance: z
 		.object({
 			theme_id: z.string().optional(),
-			background_id: z.string().optional()
+			background_id: z.string().optional(),
+			text_size: z.enum(['normal', 'large', 'extra_large']).optional()
 		})
 		.optional(),
 	settings: z.object({

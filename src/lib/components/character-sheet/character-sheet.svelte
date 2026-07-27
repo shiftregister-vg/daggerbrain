@@ -115,6 +115,7 @@
 	const character = $derived(characterCtx.character);
 	const derived_character_data = $derived(characterCtx.derived_character_data);
 	const compendium = $derived(characterCtx.character_compendium);
+	const sheetTextSize = $derived(character?.sheet_appearance?.text_size ?? 'normal');
 	const activeConditions = $derived(
 		(character?.conditions ?? []).filter((condition) => condition.enabled)
 	);
@@ -190,7 +191,13 @@
 </script>
 
 {#if character_id && character && derived_character_data}
-	<div class={cn(' relative w-full overflow-hidden', className)}>
+	<div
+		class={cn(
+			'character-sheet-text relative w-full overflow-hidden',
+			`character-sheet-text-${sheetTextSize}`,
+			className
+		)}
+	>
 		<!-- character header -->
 		<div class="border-b bg-background/70 shadow-lg">
 			<div
@@ -331,7 +338,9 @@
 			<!-- evasion -->
 			<div
 				style="grid-area: evasion"
-				class={cn('flex flex-wrap items-center justify-center gap-x-10 gap-y-10 pt-6 pb-4 md:pb-6')}
+				class={cn(
+					'character-sheet-fixed-text flex flex-wrap items-center justify-center gap-x-10 gap-y-10 pt-6 pb-4 md:pb-6'
+				)}
 			>
 				<div class="flex items-center justify-center gap-8">
 					<Evasion evasion={derived_character_data.evasion} highlighted={evasion_highlighted} />
@@ -352,7 +361,7 @@
 			<div
 				style="grid-area: hp"
 				class={cn(
-					'mx-6 mt-6 mb-8 flex flex-col items-center justify-evenly gap-x-8 gap-y-12 sm:flex-row sm:gap-y-10 md:mt-3 lg:mb-3'
+					'character-sheet-fixed-text mx-6 mt-6 mb-8 flex flex-col items-center justify-evenly gap-x-8 gap-y-12 sm:flex-row sm:gap-y-10 md:mt-3 lg:mb-3'
 				)}
 			>
 				<div class="relative">
@@ -410,7 +419,7 @@
 			</div>
 
 			<!-- traits -->
-			<div style="grid-area: traits" class="grow pt-4">
+			<div style="grid-area: traits" class="character-sheet-fixed-text grow pt-4">
 				<Traits
 					traits={derived_character_data.traits}
 					highlights={trait_highlights}
@@ -512,5 +521,58 @@
 				'experiences hp'
 				'experiences features';
 		}
+	}
+
+	.character-sheet-text {
+		--sheet-readable-text-scale: 1;
+		--sheet-card-max-width: 335px;
+		--sheet-card-modal-max-width: 352px;
+	}
+
+	.character-sheet-text-large {
+		--sheet-readable-text-scale: 1.12;
+		--sheet-card-max-width: 360px;
+		--sheet-card-modal-max-width: 378px;
+	}
+
+	.character-sheet-text-extra_large {
+		--sheet-readable-text-scale: 1.25;
+		--sheet-card-max-width: 385px;
+		--sheet-card-modal-max-width: 404px;
+	}
+
+	:global(.character-sheet-text .text-xs) {
+		font-size: calc(0.75rem * var(--sheet-readable-text-scale)) !important;
+		line-height: 1.45;
+	}
+
+	:global(.character-sheet-text .text-sm) {
+		font-size: calc(0.875rem * var(--sheet-readable-text-scale)) !important;
+		line-height: 1.45;
+	}
+
+	:global(.character-sheet-text .text-base) {
+		font-size: calc(1rem * var(--sheet-readable-text-scale)) !important;
+		line-height: 1.5;
+	}
+
+	:global(.character-sheet-text .prose) {
+		font-size: calc(1rem * var(--sheet-readable-text-scale));
+		line-height: 1.55;
+	}
+
+	:global(.character-sheet-text .character-sheet-fixed-text .text-xs) {
+		font-size: 0.75rem !important;
+		line-height: 1;
+	}
+
+	:global(.character-sheet-text .character-sheet-fixed-text .text-sm) {
+		font-size: 0.875rem !important;
+		line-height: 1.25rem;
+	}
+
+	:global(.character-sheet-text .character-sheet-fixed-text .text-base) {
+		font-size: 1rem !important;
+		line-height: 1.5rem;
 	}
 </style>

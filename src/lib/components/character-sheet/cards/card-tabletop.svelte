@@ -536,11 +536,12 @@
 	});
 </script>
 
-{#snippet renderCard(card: CardSpaceItem, compact = false, interactive = true)}
+{#snippet renderCard(card: CardSpaceItem, compact = false, interactive = true, modal = false)}
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<div
 		class={cn(
-			'mx-auto w-full min-w-[220px] max-w-[320px]',
+			'character-card-readable mx-auto w-full min-w-[220px]',
+			modal && 'character-card-readable-modal',
 			compact && 'min-w-[170px] max-w-[210px]',
 			interactive && 'cursor-zoom-in'
 		)}
@@ -973,7 +974,7 @@
 			{#if selectedDialogKey && allCardsByKey.get(selectedDialogKey)}
 				{@const selectedCard = allCardsByKey.get(selectedDialogKey)!}
 				<div style="width: min(520px, 92vw);">
-					{@render renderCard(selectedCard)}
+					{@render renderCard(selectedCard, false, false, true)}
 				</div>
 			{/if}
 		</Dialog.Content>
@@ -983,9 +984,25 @@
 <style>
 	.tabletop-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--sheet-card-max-width, 320px)), 1fr));
 		gap: 1.5rem;
 		align-items: start;
+	}
+
+	.character-card-readable {
+		max-width: var(--sheet-card-max-width, 320px);
+	}
+
+	.character-card-readable-modal {
+		max-width: var(--sheet-card-modal-max-width, 336px);
+	}
+
+	:global(.character-card-readable > div) {
+		max-width: var(--sheet-card-max-width, 320px) !important;
+	}
+
+	:global(.character-card-readable-modal > div) {
+		max-width: var(--sheet-card-modal-max-width, 336px) !important;
 	}
 
 	:global(.card-drop-target) {
@@ -993,4 +1010,5 @@
 		outline-offset: 4px;
 		background-color: hsl(var(--primary) / 0.14);
 	}
+
 </style>

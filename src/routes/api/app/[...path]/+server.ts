@@ -4,7 +4,7 @@ import { eventStream } from '$lib/server/app/events';
 import { SourceKeySchema, type SourceKey } from '@domain/schemas/rules';
 import { OFFICIAL_COMPENDIUM_TABLES } from '$lib/server/compendium/official-seed';
 import type { HomebrewTable } from '@domain/permissions';
-import type { OfficialSourceVersions } from '@domain/schemas/characters';
+import type { OfficialItemVersions, OfficialSourceVersions } from '@domain/schemas/characters';
 
 async function userId(event: RequestEvent) {
 	const session = await event.locals.auth();
@@ -71,6 +71,22 @@ function sourceVersionMap(event: RequestEvent): OfficialSourceVersions | undefin
 	return versions;
 }
 
+function itemVersionMap(event: RequestEvent): OfficialItemVersions | undefined {
+	const rawVersions = event.url.searchParams.getAll('item_version').filter(Boolean);
+	if (!rawVersions.length) return undefined;
+	const versions: OfficialItemVersions = {};
+	for (const rawVersion of rawVersions) {
+		const [sourceKey, itemType, itemId, rawVersionNumber] = rawVersion.split(':');
+		if (!sourceKey || !itemType || !itemId || !rawVersionNumber) {
+			throw new Error('Invalid item version');
+		}
+		const version = Number(rawVersionNumber);
+		if (!Number.isInteger(version) || version < 1) throw new Error('Invalid item version');
+		versions[`${sourceKey}:${itemType}:${itemId}`] = version;
+	}
+	return versions;
+}
+
 function version(event: RequestEvent): number | undefined {
 	const value = event.url.searchParams.get('version');
 	if (!value) return undefined;
@@ -91,7 +107,12 @@ export async function GET(event) {
 		}
 		if (parts[0] === 'official-compendium') {
 			return ok(
-				await repo.getOfficialCompendiumFromSourceKeys(uid, sourceKeys(event), sourceVersionMap(event))
+				await repo.getOfficialCompendiumFromSourceKeys(
+					uid,
+					sourceKeys(event),
+					sourceVersionMap(event),
+					itemVersionMap(event)
+				)
 			);
 		}
 		if (parts[0] === 'admin' && parts[1] === 'compendium' && parts[2] === 'export') {
@@ -129,6 +150,9 @@ export async function GET(event) {
 		if (parts[0] === 'characters' && parts.length === 1) return ok(await repo.listCharacters(uid));
 		if (parts[0] === 'characters' && parts[2] === 'scope') {
 			return ok(await repo.getCharacterCompendiumScope(uid, parts[1]));
+		}
+		if (parts[0] === 'characters' && parts[2] === 'compendium-updates') {
+			return ok(await repo.getCharacterCompendiumUpdates(uid, parts[1]));
 		}
 		if (parts[0] === 'characters' && parts[1]) return ok(await repo.getCharacterAccess(uid, parts[1]));
 		if (parts[0] === 'homebrew' && parts.length === 1) return ok(await repo.listHomebrew(uid));
@@ -169,6 +193,9 @@ export async function POST(event) {
 		const parts = pathParts(event);
 		const uid = await userId(event);
 
+		if (parts[0] === 'characters' && parts[1] && parts[2] === 'compendium-updates') {
+			return ok(await repo.updateCharacterCompendiumVersions(uid, parts[1], await body(event)));
+		}
 		if (parts[0] === 'characters') {
 			return ok({ id: await repo.createCharacter(uid, await body(event)) });
 		}

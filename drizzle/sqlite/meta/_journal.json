@@ -64,6 +64,13 @@
       "when": 1784570800000,
       "tag": "0008_feedback_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1784657200000,
+      "tag": "0009_backfill_character_item_versions",
+      "breakpoints": true
     }
   ]
 }

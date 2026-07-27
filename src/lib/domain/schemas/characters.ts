@@ -16,6 +16,8 @@ import { AdventuringGearSchema, CompendiumContentIdsSchema } from './compendium'
 
 export const OfficialSourceVersionsSchema = z.record(SourceKeySchema, z.number().int().min(1));
 export type OfficialSourceVersions = z.infer<typeof OfficialSourceVersionsSchema>;
+export const OfficialItemVersionsSchema = z.record(z.string(), z.number().int().min(1));
+export type OfficialItemVersions = z.infer<typeof OfficialItemVersionsSchema>;
 
 // ============================================================================
 // Inventory Items
@@ -184,6 +186,8 @@ export const CharacterSchema = z.object({
 	level: z.number().int().min(1).max(10),
 	experiences: z.array(z.string()),
 	official_source_versions: OfficialSourceVersionsSchema.optional(),
+	official_item_versions: OfficialItemVersionsSchema.optional(),
+	compendium_update_muted_until: z.string().optional(),
 
 	// derived descriptors
 	derived_descriptors: z.object({
@@ -301,6 +305,7 @@ export const CharacterCompendiumScopeSchema = z.object({
 	source_keys: z.array(SourceKeySchema),
 	source_versions: OfficialSourceVersionsSchema,
 	latest_source_versions: OfficialSourceVersionsSchema,
+	official_item_versions: OfficialItemVersionsSchema,
 	campaign_source_keys: z.array(SourceKeySchema).optional(),
 	homebrew_vault: CompendiumContentIdsSchema,
 	campaign_id: zid('campaigns').nullable(),

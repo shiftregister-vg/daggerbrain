@@ -36,6 +36,8 @@ export const CHARACTER_DEFAULTS: Character = {
 	level: 1,
 	experiences: ['', ''],
 	official_source_versions: {},
+	official_item_versions: {},
+	compendium_update_muted_until: undefined,
 
 	// derived descriptors
 	derived_descriptors: {

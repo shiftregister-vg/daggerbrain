@@ -3,6 +3,7 @@ import type { Campaign, CampaignCharacter, CampaignMember } from '@domain/schema
 import type {
 	Character,
 	CharacterCompendiumScope,
+	OfficialItemVersions,
 	OfficialSourceVersions
 } from '@domain/schemas/characters';
 import type { CompendiumContent, CompendiumContentIds } from '@domain/schemas/compendium';
@@ -228,6 +229,21 @@ type CompendiumImportRequest = {
 	resolutions: {
 		version_conflicts: Record<string, CompendiumImportResolution>;
 	};
+};
+
+type CharacterCompendiumUpdate = {
+	key: string;
+	source_key: SourceKey;
+	item_type: HomebrewTable;
+	item_id: string;
+	title: string;
+	pinned_version: number;
+	latest_version: number;
+	current_label: string;
+	latest_label: string;
+	changelog: string;
+	current_item: unknown;
+	latest_item: unknown;
 };
 
 type StreamOverlayRow = {
@@ -1012,6 +1028,140 @@ function addOfficialItemToCompendium(
 	(compendium[row.item_type] as Record<string, HomebrewItem<HomebrewTable>>)[row.item_id] = item;
 }
 
+function officialItemVersionKey(sourceKey: SourceKey, itemType: HomebrewTable, itemId: string) {
+	return `${sourceKey}:${itemType}:${itemId}`;
+}
+
+function parseOfficialItemVersionKey(key: string) {
+	const [sourceKey, itemType, ...itemIdParts] = key.split(':');
+	const itemId = itemIdParts.join(':');
+	if (!sourceKey || !itemType || !itemId) return null;
+	if (!OFFICIAL_COMPENDIUM_TABLES.includes(itemType as HomebrewTable)) return null;
+	return {
+		sourceKey: sourceKey as SourceKey,
+		itemType: itemType as HomebrewTable,
+		itemId
+	};
+}
+
+function addUsedId(
+	used: Partial<Record<HomebrewTable, Set<string>>>,
+	itemType: HomebrewTable,
+	itemId: string | undefined | null
+) {
+	if (!itemId) return;
+	(used[itemType] ??= new Set()).add(itemId);
+}
+
+function addUsedIds(
+	used: Partial<Record<HomebrewTable, Set<string>>>,
+	itemType: HomebrewTable,
+	itemIds: Iterable<string | undefined | null>
+) {
+	for (const itemId of itemIds) addUsedId(used, itemType, itemId);
+}
+
+function collectStrings(value: unknown, result = new Set<string>()) {
+	if (typeof value === 'string') {
+		result.add(value);
+		return result;
+	}
+	if (Array.isArray(value)) {
+		for (const entry of value) collectStrings(entry, result);
+		return result;
+	}
+	if (value && typeof value === 'object') {
+		for (const entry of Object.values(value)) collectStrings(entry, result);
+	}
+	return result;
+}
+
+function usedOfficialItemIds(character: Character): Partial<Record<HomebrewTable, Set<string>>> {
+	const used: Partial<Record<HomebrewTable, Set<string>>> = {};
+
+	addUsedId(used, 'ancestry_cards', character.ancestry_card_id);
+	addUsedIds(used, 'ancestry_cards', character.additional_ancestry_card_ids ?? []);
+	for (const choice of Object.values(character.mixed_ancestry_choices ?? {})) {
+		addUsedId(used, 'ancestry_cards', choice.top_ancestry_id);
+		addUsedId(used, 'ancestry_cards', choice.bottom_ancestry_id);
+	}
+
+	addUsedId(used, 'community_cards', character.community_card_id);
+	addUsedIds(used, 'community_cards', character.additional_community_card_ids ?? []);
+	addUsedId(used, 'transformations', character.transformation_card_id);
+	addUsedIds(used, 'transformations', character.additional_transformation_card_ids ?? []);
+
+	addUsedId(used, 'classes', character.primary_class_id);
+	addUsedId(used, 'classes', character.secondary_class_id);
+	addUsedId(used, 'subclasses', character.primary_subclass_id);
+	addUsedId(used, 'subclasses', character.secondary_subclass_id);
+	addUsedId(used, 'domains', character.secondary_class_domain_id);
+
+	addUsedIds(
+		used,
+		'domain_cards',
+		(character.loadout_domain_card_ids ?? []).map((card) => card.card_id)
+	);
+	addUsedIds(
+		used,
+		'domain_cards',
+		(character.additional_domain_card_ids ?? []).map((card) => card.card_id)
+	);
+	addUsedIds(used, 'domain_cards', collectStrings(character.level_up_domain_card_ids));
+
+	addUsedIds(
+		used,
+		'primary_weapons',
+		(character.inventory.primary_weapons ?? []).map((item) => item.base_primary_weapon_id)
+	);
+	addUsedIds(
+		used,
+		'secondary_weapons',
+		(character.inventory.secondary_weapons ?? []).map((item) => item.base_secondary_weapon_id)
+	);
+	addUsedIds(
+		used,
+		'armor',
+		(character.inventory.armor ?? []).map((item) => item.base_armor_id)
+	);
+	addUsedIds(
+		used,
+		'loot',
+		(character.inventory.loot ?? []).map((item) => item.base_loot_id)
+	);
+	addUsedIds(
+		used,
+		'consumables',
+		(character.inventory.consumables ?? []).map((item) => item.base_consumable_id)
+	);
+	addUsedId(used, 'beastforms', character.chosen_beastform?.beastform_id);
+	addUsedIds(used, 'character_sheet_addons', Object.keys(character.sheet_addon_choices ?? {}));
+	addUsedIds(used, 'character_sheet_addons', Object.keys(character.sheet_addon_resources ?? {}));
+
+	return used;
+}
+
+async function currentOfficialItemVersionMap(
+	sourceKeys: SourceKey[],
+	used: Partial<Record<HomebrewTable, Set<string>>>
+): Promise<OfficialItemVersions> {
+	if (!sourceKeys.length) return {};
+	const rows = await queryRows<OfficialCompendiumItemRow>(
+		`select item_type, item_id, source_key, current_version, updated_at, deleted_at from official_compendium_items where deleted_at is null and source_key in (${placeholders(
+			sourceKeys
+		)})`,
+		sourceKeys
+	);
+	const result: OfficialItemVersions = {};
+	for (const row of rows) {
+		if (!used[row.item_type]?.has(row.item_id)) continue;
+		result[officialItemVersionKey(row.source_key, row.item_type, row.item_id)] = Number(
+			row.current_version
+		);
+	}
+	return result;
+}
+
 async function getLatestOfficialSourceVersions(sourceKeys: SourceKey[]): Promise<OfficialSourceVersions> {
 	return Object.fromEntries(sourceKeys.map((sourceKey) => [sourceKey, 1])) as OfficialSourceVersions;
 }
@@ -1041,7 +1191,8 @@ export async function listOfficialSources(
 export async function getOfficialCompendiumFromSourceKeys(
 	userId: string | undefined,
 	sourceKeys?: SourceKey[],
-	sourceVersions?: OfficialSourceVersions
+	sourceVersions?: OfficialSourceVersions,
+	itemVersions?: OfficialItemVersions
 ): Promise<CompendiumContent> {
 	const id = requireUserId(userId);
 	const unlockedSourceKeys = await getUnlockedSourceKeys(id);
@@ -1079,6 +1230,37 @@ export async function getOfficialCompendiumFromSourceKeys(
 	);
 	for (const row of rows) {
 		addOfficialItemToCompendium(compendium, row);
+	}
+
+	const pinnedEntries = Object.entries(itemVersions ?? {})
+		.map(([key, itemVersion]) => ({ key, itemVersion, parsed: parseOfficialItemVersionKey(key) }))
+		.filter(
+			(entry): entry is {
+				key: string;
+				itemVersion: number;
+				parsed: { sourceKey: SourceKey; itemType: HomebrewTable; itemId: string };
+			} =>
+				!!entry.parsed &&
+				allowedSourceKeys.includes(entry.parsed.sourceKey) &&
+				Number.isInteger(entry.itemVersion) &&
+				entry.itemVersion > 0
+		);
+
+	for (const entry of pinnedEntries) {
+		const row = await queryOne<OfficialCompendiumItemVersionRow>(
+			[
+				'select item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at',
+				'from official_compendium_item_versions',
+				'where source_key = ? and item_type = ? and item_id = ? and item_version = ? and deleted_at is null'
+			].join(' '),
+			[
+				entry.parsed.sourceKey,
+				entry.parsed.itemType,
+				entry.parsed.itemId,
+				entry.itemVersion
+			]
+		);
+		if (row) addOfficialItemToCompendium(compendium, row);
 	}
 	return compendium;
 }
@@ -2080,6 +2262,141 @@ export async function updateCharacter(
 	]);
 }
 
+async function getOfficialVersionRow(
+	sourceKey: SourceKey,
+	itemType: HomebrewTable,
+	itemId: string,
+	itemVersion: number
+) {
+	return queryOne<OfficialCompendiumItemVersionRow>(
+		[
+			'select item_type, item_id, source_key, item_version, label, changelog, item, created_at, published_at, deleted_at',
+			'from official_compendium_item_versions',
+			'where source_key = ? and item_type = ? and item_id = ? and item_version = ? and deleted_at is null'
+		].join(' '),
+		[sourceKey, itemType, itemId, itemVersion]
+	);
+}
+
+export async function getCharacterCompendiumUpdates(userId: string | undefined, characterId: string) {
+	const access = await getCharacterAccess(userId, characterId);
+	if (!access) return null;
+	await ensureOfficialCompendiumSeeded();
+
+	const mutedUntil = access.character.compendium_update_muted_until;
+	const isMuted = mutedUntil ? new Date(mutedUntil).getTime() > Date.now() : false;
+	if (isMuted) {
+		return {
+			muted_until: mutedUntil,
+			updates: [] as CharacterCompendiumUpdate[]
+		};
+	}
+
+	const sourceKeys = await getUnlockedSourceKeys(access.ownerUserId);
+	const used = usedOfficialItemIds(access.character);
+	const currentVersions = await currentOfficialItemVersionMap(sourceKeys, used);
+	const pinnedVersions: OfficialItemVersions = {
+		...currentVersions,
+		...(access.character.official_item_versions ?? {})
+	};
+	const updates: CharacterCompendiumUpdate[] = [];
+
+	for (const [key, latestVersion] of Object.entries(currentVersions)) {
+		const pinnedVersion = pinnedVersions[key] ?? latestVersion;
+		if (pinnedVersion >= latestVersion) continue;
+
+		const parsed = parseOfficialItemVersionKey(key);
+		if (!parsed) continue;
+
+		const currentRow = await getOfficialVersionRow(
+			parsed.sourceKey,
+			parsed.itemType,
+			parsed.itemId,
+			pinnedVersion
+		);
+		const latestRow = await getOfficialVersionRow(
+			parsed.sourceKey,
+			parsed.itemType,
+			parsed.itemId,
+			latestVersion
+		);
+		if (!currentRow || !latestRow) continue;
+
+		const currentItem = {
+			...parseJson<HomebrewItem<HomebrewTable>>(currentRow.item),
+			source_key: currentRow.source_key
+		};
+		const latestItem = {
+			...parseJson<HomebrewItem<HomebrewTable>>(latestRow.item),
+			source_key: latestRow.source_key
+		};
+
+		updates.push({
+			key,
+			source_key: parsed.sourceKey,
+			item_type: parsed.itemType,
+			item_id: parsed.itemId,
+			title: itemTitle(latestItem),
+			pinned_version: pinnedVersion,
+			latest_version: latestVersion,
+			current_label: currentRow.label,
+			latest_label: latestRow.label,
+			changelog: latestRow.changelog,
+			current_item: currentItem,
+			latest_item: latestItem
+		});
+	}
+
+	return {
+		muted_until: mutedUntil ?? null,
+		updates: updates.sort((left, right) => left.title.localeCompare(right.title))
+	};
+}
+
+export async function updateCharacterCompendiumVersions(
+	userId: string | undefined,
+	characterId: string,
+	data: { action: 'update' | 'mute'; keys?: string[]; mute_days?: number }
+) {
+	const access = await getCharacterAccess(userId, characterId);
+	if (!access?.canEdit) throw new Error('Not authorized');
+	await ensureOfficialCompendiumSeeded();
+
+	if (data.action === 'mute') {
+		const days = Number.isInteger(data.mute_days) && data.mute_days && data.mute_days > 0 ? data.mute_days : 7;
+		const nextCharacter: Character = {
+			...access.character,
+			compendium_update_muted_until: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+		};
+		await execute('update characters set character = ?, updated_at = ? where id = ?', [
+			jsonParam(nextCharacter),
+			nowIso(),
+			characterId
+		]);
+		return getCharacterCompendiumUpdates(userId, characterId);
+	}
+
+	const updates = await getCharacterCompendiumUpdates(userId, characterId);
+	if (!updates) return null;
+	const requested = new Set(data.keys?.length ? data.keys : updates.updates.map((update) => update.key));
+	const nextVersions: OfficialItemVersions = { ...(access.character.official_item_versions ?? {}) };
+	for (const update of updates.updates) {
+		if (requested.has(update.key)) nextVersions[update.key] = update.latest_version;
+	}
+
+	const nextCharacter: Character = {
+		...access.character,
+		official_item_versions: nextVersions,
+		compendium_update_muted_until: undefined
+	};
+	await execute('update characters set character = ?, updated_at = ? where id = ?', [
+		jsonParam(nextCharacter),
+		nowIso(),
+		characterId
+	]);
+	return getCharacterCompendiumUpdates(userId, characterId);
+}
+
 export async function deleteCharacter(userId: string | undefined, characterId: string) {
 	const access = await getCharacterAccess(userId, characterId);
 	if (!access?.isOwner) throw new Error('Not authorized');
@@ -2613,6 +2930,26 @@ export async function getCharacterCompendiumScope(
 		...latestSourceVersions,
 		...(access.character.official_source_versions ?? {})
 	};
+	const used = usedOfficialItemIds(access.character);
+	const currentItemVersions = await currentOfficialItemVersionMap(sourceKeys, used);
+	const itemVersions: OfficialItemVersions = {
+		...currentItemVersions,
+		...(access.character.official_item_versions ?? {})
+	};
+	const missingPins = Object.entries(currentItemVersions).filter(
+		([key]) => access.character.official_item_versions?.[key] == null
+	);
+	if (missingPins.length && access.canEdit) {
+		const nextCharacter: Character = {
+			...access.character,
+			official_item_versions: itemVersions
+		};
+		await execute('update characters set character = ?, updated_at = ? where id = ?', [
+			jsonParam(nextCharacter),
+			nowIso(),
+			characterId
+		]);
+	}
 	const owner = await getUserRow(access.ownerUserId);
 	const campaignId = access.character.campaign_id ?? null;
 	const campaign = campaignId ? await getCampaignRow(campaignId) : null;
@@ -2621,6 +2958,7 @@ export async function getCharacterCompendiumScope(
 		source_keys: sourceKeys,
 		source_versions: sourceVersions,
 		latest_source_versions: latestSourceVersions,
+		official_item_versions: itemVersions,
 		campaign_source_keys: campaignData?.enabled_source_keys,
 		homebrew_vault: parseVault(owner.homebrew_vault),
 		campaign_id: campaignId as CharacterCompendiumScope['campaign_id'],
